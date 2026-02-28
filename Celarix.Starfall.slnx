@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Celarix.Starfall.Playground/Celarix.Starfall.Playground.csproj" />
+  <Project Path="Celarix.Starfall/Celarix.Starfall.csproj" />
+</Solution>

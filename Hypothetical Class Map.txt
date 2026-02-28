@@ -1,0 +1,79 @@
+Starfall/
+│
+├── Graph/
+│   ├── PresentationGraph.cs
+│   ├── LayoutNode.cs
+│   ├── TransitionEdge.cs
+│   ├── NodeId.cs
+│   └── TransitionId.cs
+│
+├── Layout/
+│   ├── LayoutTree.cs
+│   ├── LayoutObject.cs
+│   ├── ElementId.cs
+│   ├── LayoutCloneService.cs
+│   └── LayoutComparer.cs
+│
+├── Elements/
+│   ├── IElement.cs
+│   ├── TextElement.cs
+│   ├── ShapeElement.cs
+│   ├── ImageElement.cs
+│   ├── ContainerElement.cs
+│   └── GroupElement.cs
+│
+├── Properties/
+│   ├── Transform.cs
+│   ├── Style.cs
+│   ├── Typography.cs
+│   ├── Alignment.cs
+│   └── Visibility.cs
+│
+├── Animation/
+│   ├── ITransition.cs
+│   ├── Transition.cs
+│   ├── TransitionDefaults.cs
+│   ├── StructuralLerpTransition.cs
+│   ├── SnapTransition.cs
+│   ├── Easing.cs
+│   └── AnimationClock.cs
+│
+├── Animation/Operations/
+│   ├── IAnimationOperation.cs
+│   ├── LerpPropertyOperation.cs
+│   ├── FadeOperation.cs
+│   ├── MoveOperation.cs
+│   ├── ScaleOperation.cs
+│   ├── ReplaceTextOperation.cs
+│   └── CompositeOperation.cs
+│
+├── Runtime/
+│   ├── PresentationRuntime.cs
+│   ├── PlaybackController.cs
+│   ├── RuntimeState.cs
+│   └── InputController.cs
+│
+├── Rendering/
+│   ├── IRenderer.cs
+│   ├── SceneRenderer.cs
+│   ├── FrameComposer.cs
+│   ├── RenderSurface.cs
+│   └── VideoExporter.cs
+│
+├── Math/
+│   ├── Lerp.cs
+│   ├── Interpolation.cs
+│   ├── Rect.cs
+│   ├── Vector2.cs
+│   └── Color.cs
+│
+├── DSL/
+│   ├── SlideBuilder.cs
+│   ├── LayoutBuilder.cs
+│   ├── Grid.cs
+│   └── AlignmentHelpers.cs
+│
+└── Diagnostics/
+    ├── LayoutValidator.cs
+    ├── GraphValidator.cs
+    └── DebugRenderer.cs
