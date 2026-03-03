@@ -5,6 +5,7 @@ using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using static Celarix.Starfall.Rendering.Converters.SkiaConverters;
 
 namespace Celarix.Starfall.Rendering.Targets
 {
@@ -41,14 +42,26 @@ namespace Celarix.Starfall.Rendering.Targets
 
             window.Load += () =>
             {
+                // Ensure viewport matches framebuffer
+                GL.Viewport(0, 0, window.ClientSize.X, window.ClientSize.Y);
+
+                // If OpenTK exposes FramebufferSize or similar, prefer that:
+                var fbWidth = window.ClientSize.X;
+                var fbHeight = window.ClientSize.Y;
+
                 grContext = GRContext.CreateGl();
-                surface = SKSurface.Create(grContext, new GRBackendRenderTarget(
-                    window.Size.X,
-                    window.Size.Y,
-                    0,
-                    8,
-                    new GRGlFramebufferInfo((uint)GL.GetInteger(GetPName.DrawFramebufferBinding), SKColorType.Rgba8888.ToGlSizedFormat())
-                ), GRSurfaceOrigin.BottomLeft, SKColorType.Rgba8888);
+                surface = SKSurface.Create(
+                    grContext,
+                    new GRBackendRenderTarget(
+                        fbWidth,
+                        fbHeight,
+                        0,
+                        8,
+                        new GRGlFramebufferInfo(
+                            (uint)GL.GetInteger(GetPName.DrawFramebufferBinding),
+                            SKColorType.Rgba8888.ToGlSizedFormat())),
+                    GRSurfaceOrigin.BottomLeft,
+                    SKColorType.Rgba8888);
             };
             window.RenderFrame += args => Window_RenderFrame(window, args);
         }
@@ -56,6 +69,11 @@ namespace Celarix.Starfall.Rendering.Targets
         private void Window_RenderFrame(object? sender, OpenTK.Windowing.Common.FrameEventArgs e)
         {
             frameRequested.OnFrameRequested(e.Time);
+        }
+
+        public void Start()
+        {
+            window.Run();
         }
 
         // =======
@@ -74,6 +92,18 @@ namespace Celarix.Starfall.Rendering.Targets
         public void Clear(SColor color)
         {
             surface?.Canvas.Clear(color.ToSKColor());
+        }
+
+        public void DrawRectangle(SRectF bounds, SColor color, SAngle rotation)
+        {
+            if (surface == null) { return; }
+            using var paint = new SKPaint
+            {
+                Color = color.ToSKColor(),
+                IsAntialias = true,
+                Style = SKPaintStyle.Fill
+            };
+            surface.Canvas.DrawRect(bounds.ToSKRect(), paint);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Helium.Layout;
+﻿using Celarix.Starfall.Layout.Helium.Renderables;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using System;
@@ -17,8 +17,18 @@ namespace Celarix.Starfall.Layout.Helium.Elements
         public abstract double DesiredWidthFraction { get; }
         public abstract double DesiredHeightFraction { get; }
 
-        public abstract PositionedHeliumElement Measure(SSizeF maxSize);
-        public abstract SPointF Arrange(SPointF parentPosition, SPointF parentSize, SSizeF thisSize);
+        // Properties used during the layout phase.
+        internal SPointF? ActualPosition { get; set; }
+        internal SSizeF? ActualSize { get; set; }
+        internal SRectF? ActualBounds => ActualPosition.HasValue && ActualSize.HasValue
+            ? new SRectF(ActualPosition.Value, ActualSize.Value)
+            : null;
+
+        public abstract void MeasureSelf(SSizeF availableSize);
+        public abstract void ArrangeChildren(SRectF thisBounds);
+        public abstract IReadOnlyList<IRenderable> GetRenderables();
+
+        public abstract HeliumElement Clone();
 
         public bool HasClass(string className) => classes.Contains(className);
 

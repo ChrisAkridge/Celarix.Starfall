@@ -53,6 +53,62 @@ namespace Celarix.Starfall.Presentation
             }
         }
 
+        public void SetCurrentScene(string sceneId)
+        {
+            if (currentSceneId == sceneId)
+            {
+                if (options.ErrorLevel == ErrorLevel.Exception)
+                {
+                    throw new InvalidOperationException($"Scene '{sceneId}' is already the currently active scene.");
+                }
+                // TODO: Display error on Display level
+                else { return; }
+            }
+
+            if (!nodes.ContainsKey(sceneId))
+            {
+                if (options.ErrorLevel == ErrorLevel.Exception)
+                {
+                    throw new InvalidOperationException($"Scene '{sceneId}' does not exist in the presentation graph.");
+                }
+                // TODO: Display error on Display level
+                else { return; }
+            }
+
+            if (currentSceneId == null)
+            {
+                // This happens when we're starting the presentation. There's no transition to perform.
+                // If you do want to i.e. fade from black, set up a black slide as the first scene and
+                // transition from it to your actual first scene.
+                currentSceneId = sceneId;
+                return;
+            }
+
+            var fromScene = nodes[currentSceneId];
+            var toScene = nodes[sceneId];
+            var transitionEdge = edges.Find(e => e.From == fromScene && e.To == toScene);
+            if (transitionEdge == null)
+            {
+                // Perform the "zero transition", which is just an instant switch to the new scene without any animation.
+                currentSceneId = sceneId;
+            }
+            else
+            {
+                activeTransition = new ActiveTransition<TScene, TTransition>(transitionEdge, _layoutEngine, fromScene.Scene, toScene.Scene, sceneId);
+            }
+        }
+
+        public void Start()
+        {
+            if (nodes.Count == 0 || !nodes.ContainsKey(currentSceneId))
+            {
+                // Always throw since we have nothing to draw on.
+                throw new InvalidOperationException($"Cannot start presentation engine. There are no scenes or the current scene ID '{currentSceneId}' does not exist in the presentation graph.");
+            }
+
+            _layoutEngine.Start();
+        }
+
         public void AddScene(string sceneId, TScene scene)
         {
             nodes[sceneId] = new SceneNode<TScene>(scene);

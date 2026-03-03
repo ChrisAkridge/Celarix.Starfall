@@ -1,5 +1,7 @@
 ﻿using Celarix.Starfall.Layout;
 using Celarix.Starfall.Presentation.Graph;
+using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Targets;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,16 +13,23 @@ namespace Celarix.Starfall.Presentation
         where TTransition : ITransition
     {
         private readonly TransitionEdge<TScene, TTransition> transitionEdge;
+        private readonly ILayoutEngine<TScene, TTransition> layoutEngine;
         private double progress;
 
-        public string FromSceneId { get; }
+        public TScene FromScene { get; }
+        public TScene ToScene { get; }
         public string ToSceneId { get; }
 
-        public ActiveTransition(TransitionEdge<TScene, TTransition> transitionEdge, string fromSceneId, string toSceneId)
+        public ActiveTransition(TransitionEdge<TScene, TTransition> transitionEdge,
+            ILayoutEngine<TScene, TTransition> layoutEngine,
+            TScene fromScene, TScene toScene,
+            string toSceneId)
         {
             this.transitionEdge = transitionEdge;
+            this.layoutEngine = layoutEngine;
             progress = 0;
-            FromSceneId = fromSceneId;
+            FromScene = fromScene;
+            ToScene = toScene;
             ToSceneId = toSceneId;
         }
 
@@ -40,7 +49,7 @@ namespace Celarix.Starfall.Presentation
 
         public void Render()
         {
-            transitionEdge.Transition.Render(progress);
+            layoutEngine.Render(transitionEdge.Transition, progress);
         }
     }
 }

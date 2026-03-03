@@ -13,5 +13,7 @@ namespace Celarix.Starfall.Rendering.Models
             Width = width;
             Height = height;
         }
+
+        public override readonly string ToString() => $"(Width: {Width}d, Height: {Height}d)";
     }
 }

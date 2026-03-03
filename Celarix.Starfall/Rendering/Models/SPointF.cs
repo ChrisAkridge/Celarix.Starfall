@@ -15,5 +15,27 @@ namespace Celarix.Starfall.Rendering.Models
             X = x;
             Y = y;
         }
+
+        public override readonly string ToString() => $"({X}d, {Y}d)";
+
+        public SRectF WithSize(SSizeF size)
+        {
+            return new SRectF(X, Y, size.Width, size.Height);
+        }
+
+        public static SPointF operator +(SPointF a, SPointF b)
+        {
+            return new SPointF(a.X + b.X, a.Y + b.Y);
+        }
+
+        public static SPointF operator -(SPointF a, SPointF b)
+        {
+            return new SPointF(a.X - b.X, a.Y - b.Y);
+        }
+
+        public static SPointF operator *(SPointF point, double scalar)
+        {
+            return new SPointF(point.X * scalar, point.Y * scalar);
+        }
     }
 }

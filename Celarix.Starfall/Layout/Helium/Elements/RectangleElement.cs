@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Helium.Layout;
+﻿using Celarix.Starfall.Layout.Helium.Renderables;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
@@ -16,16 +16,42 @@ namespace Celarix.Starfall.Layout.Helium.Elements
         public override double DesiredHeightFraction => desiredHeightFraction;
         public SColor Color { get; set; }
 
-        public override PositionedHeliumElement Measure(SSizeF maxSize)
+        public RectangleElement(double desiredWidthFraction, double desiredHeightFraction, SColor color, string? id = null)
+        {
+            this.desiredWidthFraction = desiredWidthFraction;
+            this.desiredHeightFraction = desiredHeightFraction;
+            Color = color;
+            Id = id;
+        }
+
+        public override void MeasureSelf(SSizeF maxSize)
         {
             var width = maxSize.Width * (double)DesiredWidthFraction;
             var height = maxSize.Height * (double)DesiredHeightFraction;
-            return new PositionedHeliumElement(this, new SSizeF(width, height));
+            ActualSize = new SSizeF(width, height);
         }
 
-        public override SPointF Arrange(SPointF parentPosition, SPointF? parentSize, SSizeF thisSize)
+        public override void ArrangeChildren(SRectF parentBounds)
         {
-            return AlignmentHelper.Align()
+            // No children, so nothing to do.
+        }
+
+        public override HeliumElement Clone()
+        {
+            return new RectangleElement(desiredWidthFraction, desiredHeightFraction, Color)
+            {
+                Id = Id,
+            };
+        }
+
+        public override IReadOnlyList<IRenderable> GetRenderables()
+        {
+            return [new RectangleRenderable
+            {
+                Bounds = ActualBounds!.Value,
+                Color = Color,
+                Id = Id
+            }];
         }
 
         public override void SetDesiredWidthFraction(double widthFraction)

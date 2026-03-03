@@ -26,6 +26,8 @@ namespace Celarix.Starfall.Rendering.Models
             this.alpha = alpha;
         }
 
+        public override readonly string ToString() => $"#{Red:X2}{Green:X2}{Blue:X2} (alpha {Alpha:X2})";
+
         public readonly SKColor ToSKColor() => new(red, green, blue, alpha);
 
         public readonly HSV ToHSV()

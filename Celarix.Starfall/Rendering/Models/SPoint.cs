@@ -8,5 +8,7 @@ namespace Celarix.Starfall.Rendering.Models
     {
         public readonly int X { get; } = x;
         public readonly int Y { get; } = y;
+
+        public override readonly string ToString() => $"({X}, {Y})";
     }
 }

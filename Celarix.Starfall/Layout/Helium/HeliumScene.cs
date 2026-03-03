@@ -1,5 +1,5 @@
 ﻿using Celarix.Starfall.Layout.Helium.Elements;
-using Celarix.Starfall.Layout.Helium.Layout;
+using Celarix.Starfall.Layout.Helium.Renderables;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using System;
@@ -19,8 +19,56 @@ namespace Celarix.Starfall.Layout.Helium
 
             if (Root == null) { return; }
 
-            var positionedRoot = Root.Measure(maxSize);
-            positionedRoot.Arrange(SPointF.Zero);
+            Root.MeasureSelf(maxSize);
+            Root.ArrangeChildren(new SRectF(SPointF.Zero, maxSize));
+
+            var renderables = Root.GetRenderables();
+
+            foreach (var renderable in renderables)
+            {
+                renderable.Render(target);
+            }
+        }
+
+        /// <summary>
+        /// Creates a deep clone of the current <see cref="HeliumScene"/> instance, including all of its elements and their properties.
+        /// </summary>
+        /// <returns>A clone of this scene with all objects cloned to new object instances.</returns>
+        public HeliumScene Clone()
+        {
+            return new HeliumScene
+            {
+                Root = Root?.Clone(),
+                BackgroundColor = BackgroundColor
+            };
+        }
+
+        public IEnumerable<IRenderable> GetRenderables(SSizeF maxSize)
+        {
+            if (Root == null) { return []; }
+
+            Root.MeasureSelf(maxSize);
+            Root.ArrangeChildren(new SRectF(SPointF.Zero, maxSize));
+            var renderables = Root.GetRenderables();
+            ClearLayoutData(Root);
+            return renderables;
+        }
+
+        /// <summary>
+        /// Clears the layout data for the specified element and all of its descendant elements.
+        /// </summary>
+        /// <remarks>This method resets the layout-related properties, such as position and size, for the
+        /// given element and recursively for all of its children. Use this method to prepare elements for a fresh
+        /// layout calculation.</remarks>
+        /// <param name="element">The root <see cref="HeliumElement"/> whose layout data will be cleared. Cannot be null.</param>
+        private static void ClearLayoutData(HeliumElement element)
+        {
+            element.ActualPosition = null;
+            element.ActualSize = null;
+            foreach (var child in element.Children)
+            {
+                ClearLayoutData(child);
+            }
         }
     }
 }

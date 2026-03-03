@@ -8,6 +8,7 @@ namespace Celarix.Starfall.Layout
         where TTransition : ITransition
     {
         void Render(TScene scene);
+        void Render(TTransition scene, double progress);
         void Transition(TScene from, TScene to, TTransition transition);
 
         /// <summary>
@@ -17,5 +18,11 @@ namespace Celarix.Starfall.Layout
         /// animating scene completes its animation, this property will return <see cref="false"/>.
         /// </summary>
         bool IsAnimating { get; }
+
+        /// <summary>
+        /// Starts the layout engine and the underlying render target. This might, for example, open a
+        /// window or open a file handle. Similar to the "play" button on a traditional presentation program.
+        /// </summary>
+        void Start();
     }
 }

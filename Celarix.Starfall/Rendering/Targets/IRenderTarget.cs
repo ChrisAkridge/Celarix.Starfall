@@ -10,8 +10,10 @@ namespace Celarix.Starfall.Rendering.Targets
         bool CanAnimate { get; }
         bool IsAnimating { get; set; }
 
+        void Start();
         void Complete();
 
         void Clear(SColor color);
+        void DrawRectangle(SRectF bounds, SColor color, SAngle rotation);
     }
 }

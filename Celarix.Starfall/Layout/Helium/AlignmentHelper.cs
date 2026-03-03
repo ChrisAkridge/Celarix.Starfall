@@ -7,36 +7,36 @@ namespace Celarix.Starfall.Layout.Helium
 {
     public static class AlignmentHelper
     {
-        public static SPointF Align(Alignment alignment, SPointF outerPosition, SPointF outerSize, SPointF innerSize)
+        public static SPointF Align(Alignment alignment, SRectF outerBounds, SSizeF innerSize)
         {
             // Horizontal alignment
             double innerX = double.NaN;
             if (alignment is Alignment.TopLeft or Alignment.LeftCenter or Alignment.BottomLeft)
             {
-                innerX = LeftAlign(outerPosition.X, outerPosition.X + outerSize.X, innerSize.X);
+                innerX = LeftAlign(outerBounds.X, outerBounds.X + outerBounds.Width, innerSize.Width);
             }
             else if (alignment is Alignment.TopRight or Alignment.RightCenter or Alignment.BottomRight)
             {
-                innerX = RightAlign(outerPosition.X, outerPosition.X + outerSize.X, innerSize.X);
+                innerX = RightAlign(outerBounds.X, outerBounds.X + outerBounds.Width, innerSize.Width);
             }
             else if (alignment is Alignment.TopCenter or Alignment.Center or Alignment.BottomCenter)
             {
-                innerX = CenterAlign(outerPosition.X, outerPosition.X + outerSize.X, innerSize.X);
+                innerX = CenterAlign(outerBounds.X, outerBounds.X + outerBounds.Width, innerSize.Width);
             }
 
             // Vertical alignment
             double innerY = double.NaN;
             if (alignment is Alignment.TopLeft or Alignment.TopCenter or Alignment.TopRight)
             {
-                innerY = LeftAlign(outerPosition.Y, outerPosition.Y + outerSize.Y, innerSize.Y);
+                innerY = LeftAlign(outerBounds.Y, outerBounds.Y + outerBounds.Height, innerSize.Height);
             }
             else if (alignment is Alignment.BottomLeft or Alignment.BottomCenter or Alignment.BottomRight)
             {
-                innerY = RightAlign(outerPosition.Y, outerPosition.Y + outerSize.Y, innerSize.Y);
+                innerY = RightAlign(outerBounds.Y, outerBounds.Y + outerBounds.Height, innerSize.Height);
             }
             else if (alignment is Alignment.LeftCenter or Alignment.Center or Alignment.RightCenter)
             {
-                innerY = CenterAlign(outerPosition.Y, outerPosition.Y + outerSize.Y, innerSize.Y);
+                innerY = CenterAlign(outerBounds.Y, outerBounds.Y + outerBounds.Height, innerSize.Height);
             }
 
             return new SPointF(innerX, innerY);

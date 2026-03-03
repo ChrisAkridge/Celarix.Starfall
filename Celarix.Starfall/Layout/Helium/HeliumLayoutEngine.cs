@@ -21,10 +21,24 @@ namespace Celarix.Starfall.Layout.Helium
             this.viewportHeight = viewportHeight;
         }
 
+        public void Start()
+        {
+            ThrowIfNoRenderTarget();
+            renderTarget!.Start();
+        }
+
         public void Render(HeliumScene scene)
         {
             ThrowIfNoRenderTarget();
             scene.Render(renderTarget!, new SSizeF(viewportWidth, viewportHeight));
+            renderTarget!.Complete();
+        }
+
+        public void Render(IHeliumTransition transition, double progress)
+        {
+            ThrowIfNoRenderTarget();
+            transition.Render(progress, renderTarget!);
+            renderTarget!.Complete();
         }
 
         public void Transition(HeliumScene from, HeliumScene to, IHeliumTransition transition)
