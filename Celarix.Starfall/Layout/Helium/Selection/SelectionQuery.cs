@@ -7,32 +7,6 @@ namespace Celarix.Starfall.Layout.Helium.Selection
     public sealed class SelectionQuery<T>
         where T : ISelectable<T>
     {
-        private class FlatSelectedList(IEnumerable<T> selectedItems) : ISelectable<T>
-        {
-            private readonly T[] selectedItems = [.. selectedItems];
-
-            public string? Id => throw new NotImplementedException();
-
-            public IReadOnlyList<string> Classes => throw new NotImplementedException();
-
-            public IReadOnlyList<T> Children => selectedItems;
-
-            public void AddClass(string className)
-            {
-                throw new NotImplementedException();
-            }
-
-            public bool HasClass(string className)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void RemoveClass(string className)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
         private readonly List<string> classNames = new();
         private SelectionQuery<T>? nextQuery;
 
@@ -82,12 +56,11 @@ namespace Celarix.Starfall.Layout.Helium.Selection
 
             if (nextQuery != null)
             {
-                var flattenedResults = new FlatSelectedList(results);
-                return nextQuery.Query(flattenedResults);
+                return nextQuery.Query(results.Cast<ISelectable<T>>());
             }
             else
             {
-                return results;
+                return [.. results.Distinct()];
             }
         }
 

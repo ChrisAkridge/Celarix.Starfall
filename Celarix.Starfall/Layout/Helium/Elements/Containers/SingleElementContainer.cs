@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Layout.Helium.Renderables;
+﻿using Celarix.Starfall.Layout.Helium.Components;
+using Celarix.Starfall.Layout.Helium.Renderables;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
@@ -9,10 +10,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
     public sealed class SingleElementContainer : HeliumElement
     {
         public override IReadOnlyList<HeliumElement> Children => Child != null ? [Child] : Array.Empty<HeliumElement>();
-        public double LeftPadding { get; set; }
-        public double TopPadding { get; set; }
-        public double RightPadding { get; set; }
-        public double BottomPadding { get; set; }
+        public Padding Padding { get; set; }
         public Alignment Alignment { get; set; } = Alignment.Center;
         public HeliumElement? Child { get; set; }
         public override double DesiredWidthFraction => Constants.FullSize;
@@ -30,20 +28,14 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             }
 
             // Calculate the available size for the child by subtracting padding.
-            var availableWidth = Math.Max(0, ActualSize.Value.Width - LeftPadding - RightPadding);
-            var availableHeight = Math.Max(0, ActualSize.Value.Height - TopPadding - BottomPadding);
-            Child.MeasureSelf(new SSizeF(availableWidth, availableHeight));
+            Child.MeasureSelf(Padding.GetInnerSize(ActualSize.Value));
         }
 
         public override void ArrangeChildren(SRectF thisBounds)
         {
             if (Child == null) { return; }
 
-            var containerSize = ActualSize!.Value;
-            var innerWidth = Math.Max(0, containerSize.Width - LeftPadding - RightPadding);
-            var innerHeight = Math.Max(0, containerSize.Height - TopPadding - BottomPadding);
-            var innerBounds = new SRectF(thisBounds.X + LeftPadding,
-                thisBounds.Y + TopPadding, innerWidth, innerHeight);
+            var innerBounds = Padding.GetInnerRectForOuterRect(thisBounds);
             var childSize = Child.ActualSize!.Value;
             Child.ActualPosition = AlignmentHelper.Align(Alignment, innerBounds, childSize);
             Child.ArrangeChildren(Child.ActualBounds!.Value);
@@ -59,36 +51,10 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             return new SingleElementContainer
             {
                 Id = Id,
-                LeftPadding = LeftPadding,
-                TopPadding = TopPadding,
-                RightPadding = RightPadding,
-                BottomPadding = BottomPadding,
+                Padding = Padding,
                 Alignment = Alignment,
                 Child = Child?.Clone()
             };
-        }
-
-        public void SetPadding(double padding, Sides side)
-        {
-            if (side.HasFlag(Sides.Left))
-            {
-                LeftPadding = padding;
-            }
-
-            if (side.HasFlag(Sides.Top))
-            {
-                TopPadding = padding;
-            }
-
-            if (side.HasFlag(Sides.Right))
-            {
-                RightPadding = padding;
-            }
-
-            if (side.HasFlag(Sides.Bottom))
-            {
-                BottomPadding = padding;
-            }
         }
     }
 }

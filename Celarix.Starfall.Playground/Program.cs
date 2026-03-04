@@ -28,34 +28,24 @@ namespace Celarix.Starfall.Playground
 
             layoutEngine.SetRenderTarget(tkTarget);
 
-            var firstSlide = new HeliumScene();
-            var singleElementContainer = new SingleElementContainer()
+            var slide = new HeliumScene();
+            var binaryElementContainer = new BinaryElementContainer
             {
-                Alignment = Alignment.Center,
-                Child = new RectangleElement(0.3d, 0.3d, new SColor(0, 0, 255, 255), "blue-rect")
+                Alignment = Alignment.Center
             };
-            firstSlide.Root = singleElementContainer;
-            presentationEngine.AddScene(nameof(firstSlide), firstSlide);
+            binaryElementContainer.SplitVertical(1, 1);
 
-            var secondSlide = firstSlide.Clone();
-            var secondSEC = secondSlide.Root as SingleElementContainer;
-            secondSEC!.Alignment = Alignment.TopLeft;
-            presentationEngine.AddScene(nameof(secondSlide), secondSlide);
+            var blueRect = new RectangleElement(0.5d, 0.5d, new SColor(0, 0, 255, 255), "blue-rect");
+            var greenRect = new RectangleElement(0.5d, 0.5d, new SColor(0, 255, 0, 255), "green-rect");
+            var redRect = new RectangleElement(0.5d, 0.5d, new SColor(255, 0, 0, 255), "red-rect");
+            binaryElementContainer.FirstSplit!.SplitHorizontal(1, 1);
+            binaryElementContainer.SecondSplit!.SetSingleChild(greenRect);
+            binaryElementContainer.FirstSplit.FirstSplit!.SetSingleChild(blueRect);
+            binaryElementContainer.FirstSplit.SecondSplit!.SetSingleChild(redRect);
+            slide.Root = binaryElementContainer;
 
-            var transition = new FirstTransition(firstSlide, secondSlide, 0.5d, new SSizeF(1280, 720));
-            presentationEngine.AddTransition(nameof(firstSlide), nameof(secondSlide), transition);
-
-            presentationEngine.SetCurrentScene(nameof(firstSlide));
-
-            // Register callback in 2 seconds to perform the transition
-            var timer = new System.Timers.Timer(2000);
-            timer.Start();
-            timer.Elapsed += (sender, e) =>
-            {
-                // Stop the timer first! Otherwise it will keep firing every 2 seconds, which we don't want.
-                timer.Stop();
-                presentationEngine.SetCurrentScene(nameof(secondSlide));
-            };
+            presentationEngine.AddScene(nameof(slide), slide);
+            presentationEngine.SetCurrentScene(nameof(slide));
 
             presentationEngine.Start();
         }

@@ -100,6 +100,11 @@ namespace Celarix.Starfall.Presentation
 
         public void Start()
         {
+            if (currentSceneId == null)
+            {
+                throw new InvalidOperationException("Cannot start presentation engine. Current scene ID is not set. Call SetCurrentScene first.");
+            }
+
             if (nodes.Count == 0 || !nodes.ContainsKey(currentSceneId))
             {
                 // Always throw since we have nothing to draw on.
