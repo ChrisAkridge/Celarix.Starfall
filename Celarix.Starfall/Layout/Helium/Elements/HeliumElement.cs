@@ -24,6 +24,13 @@ namespace Celarix.Starfall.Layout.Helium.Elements
             ? new SRectF(ActualPosition.Value, ActualSize.Value)
             : null;
 
+        public virtual void MeasureText(IRenderTarget target, SSizeF availableSize)
+        {
+            // Not all elements will have text to measure, so this is a no-op by default.
+            // But text measuring depends on the render target in a way no other phase does,
+            // so we do need to pass it down.
+        }
+
         public abstract void MeasureSelf(SSizeF availableSize);
         public abstract void ArrangeChildren(SRectF thisBounds);
         public abstract IReadOnlyList<IRenderable> GetRenderables();

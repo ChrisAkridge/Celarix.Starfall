@@ -1,0 +1,109 @@
+Starfall Notes 2026-02-26:
+    - Working from an example slide which is a view of how a single-precision float is built, bit by bit
+    - Displayed as 254 0 bits with a binary point after 128 of them
+    - Number is built one bit at a time, starting from its highest set bit over the range down to its least (maximum 24 bits)
+    - A bit is shown as a bit with a place value above it in the form 2^k
+    - The user would create this entire process with one method on a component they define: SingleConstructionSequence.SequenceFor(float). It would:
+        1. Create BinaryTreeContainer as slide root.
+        2. Horizontal-split container into parts of heights 1 and 3
+        3. In the lower leaf, horizontal-split container into parts of height 1 and 2 (now slide is a stack with heights 1, 1, 2)
+        4. In the upper leaf of the lower leaf, add a FlexRowContainer and set the margin to, say, 0.1 container heights.
+        5. For each of the 254 bits:
+            1. Create a BinaryTreeContainer.
+            2. Horizontal-split it into parts of height 1 and 3.
+            3. Create a MathTypesettingElement and set font and color. Set id to "bit-k" for the kth bit and add the class "place-value". Set Alignment to Center.
+            4. Add a Term with a value "2".
+            5. Add a Superscript which has a term with a value equal to that of the exponent.
+            6. Add this to the top leaf of the BinaryTreeContainer.
+            7. Create a TextElement with a monospace font, white color, and Center alignment. Set the text to "0".
+            8. Add this to the bottom leaf of the BinaryTreeContainer.
+        6. After the 128th bit, instead of creating a BinaryTreeContainer, create a SingleElementContainer and add a TextElement representing the binary point.
+    - This constructs one slide, so let's pause here and see how layout and rendering occurs. This is purely internal to the Helium scene engine.
+    - Layout has two phases: sizing and positioning.
+    - A slide is a tree of Helium elements, and sizing begins by making a copy of the tree with PositionedHeliumElements that have properties for X, Y, Width, and Height and a reference to the element they're made from.
+    - Those four properties are of type Measurement?, which has the following properties:
+        - Unit: either ContainerWidth, ContainerHeight, or Pixel
+        - Value: 0-1 for ContainerWidth or ContainerHeight, or some whole number of pixels
+    - The goal of sizing is that all Width and Height properties on all tree nodes have a pixel value.
+    - Each element is asked to set its own size and is handed the size of its parent.
+    - Let's see how that works with our slide example:
+        1. The slide is known to be, for simplicity, 1000 by 1000 pixels.
+        2. The BinaryTreeContainer knows its first-level splits have a 1:3 ratio. It sizes the two splits as 1000x334 and 1000x666.
+        3. The second-level splits have a 1:2 ratio. They become 1000x222 and 1000x444, respectively.
+        4. The FlexRowContainer is programmed to fill the entire height of its container, so it knows it is 222 pixels tall, but not yet its width. It asks its elements to size themselves.
+        5. For each BinaryTreeContainer representing one bit and its place value:
+            1. It knows its total height is 222 pixels and that it has 1 split with a 1:3 ratio. Thus, the leaves are 56 and 166 pixels, respectively.
+            2. It asks the MathTypeSetting element to size itself, passing the height.
+            3. The MathTypeSetting element asks for the size of the first element, a Term, given its height. The Term asks SkiaSharp "if I can be this tall, how wide would I be?" for the text of "2" and gets an answer.
+            4. Next, the superscript is considered. It has a default kerning of, say, 0.1 container heights (here, 6 pixels) and an offset from the top of the line of, say, 0.1 container heights (also 6 pixels). It also has, say, a scale factor of 0.5, so it has half the height of the 2. This means it is 28 pixels tall, and it asks SkiaSharp "how wide am I if I'm this tall?" for the superscript.
+            5. The width of the 2, the gap to the exponent, and the exponent are summed and reported as the width. Call it 60 pixels, so this place value expression is 60x56.
+            6. The same thing is done for the bit. Knowing it has a height of 166 pixels, it asks SkiaSharp how wide the 0 would be, and gets, say, 64 pixels.
+            7. The BinaryTreeContainer reports its width as the wider of the two leaves, so it becomes 64x222. All such children report the same. The binary point is also 64x222.
+            8. The FlexRowContainer has a margin of, say, 0.05 container heights = 11 pixels, so it adds the widths of all 255 children plus 254 margins and reports its width as 19114 pixels.
+        6. We now enter the positioning phase...
+       
+       
+Okay, I'm going to stop here for a second. Part of the design goal of Starfall is to give me a way to write presentations the way I'd describe them, but I feel like I'm taking an idea and trying to fit it into the framing metaphor in a way it's not built for. For instance, the bit for 2^9 would be so wide, but then 2^10 would be a bit wider since the place value takes more space and the width of the BinaryTreeContainer is the width of its widest leaf. So the spacing between bits would be inconsistent.
+
+Leaning hard into "no absolute positioning" is important, but maybe I'm overdoing it. How would I describe the construction of this slide and the sequence that follows, in the Platonic realm of design?
+
+1. A rectangular slide is colored dark blue.
+2. A row of monospace 0s appears with a consistent gap between each 0. Between 2 of the bits is a white period representing the binary point, which occupies the gap.
+3. Above them, gray expressions of the form 2^k appear, representing place values of each bit.
+
+This is enough to start with. It's easy enough to write code that computes all the "please draw text at (X, Y)" but part of the idea of Starfall is that you wouldn't have to write loops and do math like this. That you could say "make this row of bits have THIS height" and it would just adjust, albeit spilling off the sides, but that's fine here.
+
+The question becomes, how do we define a component that will do this, but define it with a general pattern for everything else? In HTML, you'd likely do it as <span>, I guess, or <div> in a Flexbox container. Each bit does have semantic meaning, but we can leave that for the user component to handle, we only care about what needs to be shown at the end of the day.
+
+What's stopping me from defining SingleBitElement : IHeliumLayoutElement? How would it work?
+
+1. Start with a slide and add a SingleElementContainer to it.
+2. Make a SingleBitElement with a height of 0.3 container heights and add it to the SingleElementContainer.
+3. Begin the layout phase.
+    4. Begin the sizing phase.
+        1. The SingleElementContainer knows it's 1000x1000, so it asks the SingleBitElement how big it is.
+        2. The SingleBitElement knows it's 0.3 container heights = 300 pixels tall. For the width, it KNOWS it wants a place value 1/4th the height of itself, so it asks SkiaSharp "how wide would the text 2^-127 be if the height is 75?" Whatever that width is becomes the width of all bits. That times 254 is the width of this element. If 2^-127 took, say, 225 pixels, then the size is 57,150 pixels.
+    5. Begin the positioning phase.
+        1. Being the root element, the SingleElementContainer knows it goes at (0, 0).
+        2. The SingleBitElement is centered.
+            1. On the X-axis, it should be such that its center equals the container's center, which is 500. Place the element at X = 500 and subtract half its width from that, which is X = -28075.
+            2. On the Y-axis, same deal. Place the element at Y = 500 and subtract half its height from that, which is Y = 350.
+            3. The SingleBitElement is positioned at (-28075, 350).
+    6. Given the fully positioned elements, convert those into "renderables".
+        1. The SingleElementContainer has no renderables of its own, so it asks the SingleBitContainer.
+        2. For each bit, it asks "how wide is this place value" and centers it in a 225x75 box at (x, 0). It then asks "how wide is this 0" and centers it in a 225x225 box at (x, 75). This produces two TextRenderables (well, three - one for the base, one for the exponent, and one for the 0 bit, but math rendering is its own thing).
+        3. It produces a TextRenderable for the binary point, a single "." positioned so its X is halfway between the centers of the two 0s it goes between and its Y such that the bottom of the dot is 0.05 screen containers = 15 pixels from the bottom of the element.
+    7. A total of 763 TextRenderables result. Culling checks if any of the four corners of the renderables are in the slide, and throws away any that are fully outside of it.
+    8. The renderables each have a Render(IRenderTarget) so they know what to call to actually draw themselves.
+   
+I like this a lot more. It says "for simple stuff, use the premade elements, for more complex stuff, you know exactly what you want, so don't worry about making the internal structure using premade elements, just pretend like you have it all and only produce it when I need to know size and position and renderables."
+
+====
+
+Very nice! I forgot to mention how transitions work. So, the PresentationEngine is either rendering a slide OR a transition, only one or the other, never both. A transition is passed the "from" and "to" slides, and while it doesn't need to know exactly every single thing, it is allowed to expect the slides to have a particular structure.
+
+Imagine a property ShowPlaceValues on SingleBitElement. If false, the place values don't show, but nothing else changes - bit spacing is equivalent and they still only take 3/4 of the height of the element. If true, place values render. These two slides with the zero transition just has the place values pop into place.
+
+Let's say I want a transition where the place values slide in from below and fade in. How would I do this? As author of SingleBitElement, I also write ShowPlaceValueTransitionComponent (or maybe just PlaceValueTransitionComponent). What does it do? Let's examine the off-to-on case first. This is PlaceValueTransitionComponent.Render(double progress)
+
+1. Take the "from" slide and clone it.
+2. On this clone, find the SingleBitElement with the matching ID (i.e. new PlaceValueTransitionComponent(forId: "my-cool-bits", duration: 1d)) and set ShowPlaceValues to true.
+3. Lay the slide out, getting Renderables. Renderables can have IDs made during creation by SingleBitElement, and I've also added HTML-style classes. So the transition next selects the equivalent of #my-cool-bits.place-value and gets all renderables that are place values.
+4. It wants them to start from 2 self-heights below where they should end up. They're 75 pixels tall, so that's y += 150 at progress = 0, and they lerp to y += 0 over the progress. Their opacity also lerps from 0 to 1.
+
+That's it! The transition can care about anything, but here, all it cares about is "make yourself renderable so I can move stuff around". The reason it's a transition COMPONENT and not just a transition is that it allows you to make transitions out of multiple components if different stuff has to happen on a single transitions. Like if you have a SingleBitElement but also want to make the background brighten a bit, you can define them separately and add them to a single transition.
+
+How's this design?
+
+====
+
+"So instead of cloning the from slide and toggling the property, what if the transition simply:" Hmm. That is also a valid way of doing it. I don't see any issues with that, honestly, and it does save a clone. And caching both layouts also works, although is a bit more complicated than just having the "to" layout and the knowledge of which way it's going. As for transform contexts... hmm. This is quite interesting! So, a Renderable would have a base set of properties, then a list of transforms of the form "add VALUE to PROPERTY" or whatever. Though, I really do want transitions to be code-driven as much as possible, as there's so many more things a transition can do than just move stuff around. Not everything can be represented as property transforms! Transitions definitely are meant to know what slide they come from. I will offer many generic transitions like "just lerp every element with the same ID to wherever it just moved to", but I want people to be able to define transitions for the slides they actually have. "Is renderable present in to but not in from?" I'm going to push back a little on this. The idea of a transition edge between two slide nodes is that it represents a very particular action. This is the "no place values" slide, that is the "yes place values slide", this is the transition between the two. Though it might seem like this cheapens components, I contend it doesn't - it's more than a transition is meant to be something first-class, not like how Manim does it with arbitrary (and IMO ugly) geometry morphs at times. When you press "next slide", you should have a solid way to describe what is happening: "I want to show place values over the bits." "I want to show the target and current values and the arrow pointing at the bit being considered." "I want to..." followed by some verb. This turns the visual language of the presentation into the first-class feature of it.
+
+====
+
+Absolutely correct. Transitions are not mutations. Once the transition is done, the slide is rendered, and it is the source of truth, so if the transition failed to reproduce the slide, there will be a jarring cut. As for composability, I do agree that a transition boils down to property transforms, and I guess I can make it do that. So if multiple transitions want to use the same element, we get vector addition rather than overriding. The problem is that elements are pretty broad - renderables have position and size, but not every element has opacity or color, and other things transitions want to use. So, instead, I'm going to move it to the transition. A transition (can be) a set of transition components that each take a list of renderables, mutate some properties, and pass it to the next component until they're all done, so we keep that vector addition. That way you can be explicit and say exactly what you want changed.
+
+====
+
+Always compute N−1 children explicitly.
+Let the last child absorb remainder.

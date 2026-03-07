@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Rendering.Models;
+﻿using Celarix.Starfall.Layout.Helium;
+using Celarix.Starfall.Rendering.Models;
 using OpenTK.Graphics.ES11;
 using OpenTK.Windowing.Desktop;
 using SkiaSharp;
@@ -96,6 +97,7 @@ namespace Celarix.Starfall.Rendering.Targets
 
         public void DrawRectangle(SRectF bounds, SColor color, SAngle rotation)
         {
+            // TODO: Implement rotation
             if (surface == null) { return; }
             using var paint = new SKPaint
             {
@@ -104,6 +106,82 @@ namespace Celarix.Starfall.Rendering.Targets
                 Style = SKPaintStyle.Fill
             };
             surface.Canvas.DrawRect(bounds.ToSKRect(), paint);
+        }
+
+        public void DrawText(string text, SFont font, SRectF bounds, SColor color, SAngle rotation)
+        {
+            // TODO: Implement rotation
+            if (surface == null) { return; }
+
+            SKFont skFont;
+            var skColor = color.ToSKColor();
+
+            using var paint = new SKPaint
+            {
+                Color = skColor,
+                IsAntialias = true
+            };
+
+            // Expand the text to fit the widest dimension it can. We then want to center the text in
+            // the bounds, which could mean quite a big offset on the other dimension (i.e. if the bounds
+            // were 1000x100000 or something).
+            float fittedSize;
+            if (bounds.Width >= bounds.Height)
+            {
+                fittedSize = FitTextToWidth(text, font, (float)bounds.Width);
+            }
+            else
+            {
+                fittedSize = FitTextToHeight(text, font, (float)bounds.Height);
+            }
+
+            skFont = font.WithSize(fittedSize).ToSKFont();
+            SSizeF measuredNewSize = new(skFont.MeasureText(text, paint), skFont.Metrics.Descent - skFont.Metrics.Ascent);
+            bounds = AlignmentHelper.Align(Alignment.Center, bounds, measuredNewSize).WithSize(measuredNewSize);
+
+            surface.Canvas.DrawText(text,
+                (float)bounds.Left,
+                (float)bounds.Top - skFont.Metrics.Ascent,
+                skFont,
+                paint);
+        }
+
+        public float FitTextToWidth(string text, SFont font, float width)
+        {
+            var skFont = font.ToSKFont();
+            using var paint = new SKPaint
+            {
+                IsAntialias = true
+            };
+            var measuredWidth = skFont.MeasureText(text, paint);
+            var scale = width / measuredWidth;
+            return font.Size * scale;
+        }
+
+        public float FitTextToHeight(string text, SFont font, float height)
+        {
+            var skFont = font.ToSKFont();
+            using var paint = new SKPaint
+            {
+                IsAntialias = true
+            };
+            var metrics = skFont.Metrics;
+            var measuredHeight = metrics.Descent - metrics.Ascent;
+            var scale = height / measuredHeight;
+            return font.Size * scale;
+        }
+
+        public SSizeF MeasureText(string text, SFont font)
+        {
+            var skFont = font.ToSKFont();
+            using var paint = new SKPaint
+            {
+                IsAntialias = true
+            };
+            var width = skFont.MeasureText(text, paint);
+            var metrics = skFont.Metrics;
+            var height = metrics.Descent - metrics.Ascent;
+            return new SSizeF(width, height);
         }
     }
 }

@@ -8,12 +8,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements
 {
     public sealed class RectangleElement : ResizableHeliumElement
     {
-        private double desiredWidthFraction = Constants.DefaultSize;
-        private double desiredHeightFraction = Constants.DefaultSize;
-
         public override IReadOnlyList<HeliumElement> Children => Array.Empty<HeliumElement>();
-        public override double DesiredWidthFraction => desiredWidthFraction;
-        public override double DesiredHeightFraction => desiredHeightFraction;
         public SColor Color { get; set; }
 
         public RectangleElement(double desiredWidthFraction, double desiredHeightFraction, SColor color, string? id = null)
@@ -22,13 +17,6 @@ namespace Celarix.Starfall.Layout.Helium.Elements
             this.desiredHeightFraction = desiredHeightFraction;
             Color = color;
             Id = id;
-        }
-
-        public override void MeasureSelf(SSizeF maxSize)
-        {
-            var width = maxSize.Width * (double)DesiredWidthFraction;
-            var height = maxSize.Height * (double)DesiredHeightFraction;
-            ActualSize = new SSizeF(width, height);
         }
 
         public override void ArrangeChildren(SRectF parentBounds)
@@ -52,16 +40,6 @@ namespace Celarix.Starfall.Layout.Helium.Elements
                 Color = Color,
                 Id = Id
             }];
-        }
-
-        public override void SetDesiredWidthFraction(double widthFraction)
-        {
-            desiredWidthFraction = widthFraction;
-        }
-
-        public override void SetDesiredHeightFraction(double heightFraction)
-        {
-            desiredHeightFraction = heightFraction;
         }
     }
 }

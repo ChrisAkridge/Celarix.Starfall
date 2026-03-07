@@ -12,10 +12,10 @@ namespace Celarix.Starfall.Rendering.Models
         private readonly byte blue;
         private readonly byte alpha;
 
-        public readonly byte Red => red;
-        public readonly byte Green => green;
-        public readonly byte Blue => blue;
-        public readonly byte Alpha => alpha;
+        public readonly byte R => red;
+        public readonly byte G => green;
+        public readonly byte B => blue;
+        public readonly byte A => alpha;
         public readonly int PackedArgb => (alpha << 24) | (red << 16) | (green << 8) | blue;
 
         public SColor(byte red, byte green, byte blue, byte alpha)
@@ -26,9 +26,9 @@ namespace Celarix.Starfall.Rendering.Models
             this.alpha = alpha;
         }
 
-        public override readonly string ToString() => $"#{Red:X2}{Green:X2}{Blue:X2} (alpha {Alpha:X2})";
+        public override readonly string ToString() => $"#{R:X2}{G:X2}{B:X2} (alpha {A:X2})";
 
-        public readonly SKColor ToSKColor() => new(red, green, blue, alpha);
+        public readonly SKColor ToSKColor() => new(R, G, B, A);
 
         public readonly HSV ToHSV()
         {
@@ -126,5 +126,15 @@ namespace Celarix.Starfall.Rendering.Models
         {
             return FromHSV(hsv.H, hsv.S, hsv.V);
         }
+
+        #region Defined Colors
+        public static readonly SColor Transparent = new(0, 0, 0, 0);
+        public static readonly SColor Black = new(0, 0, 0, 255);
+        public static readonly SColor White = new(255, 255, 255, 255);
+        public static readonly SColor Red = new(255, 0, 0, 255);
+        public static readonly SColor Green = new(0, 255, 0, 255);
+        public static readonly SColor Blue = new(0, 0, 255, 255);
+        public static readonly SColor RebeccaPurple = new(0x33, 0x66, 0x99, 255);
+        #endregion
     }
 }

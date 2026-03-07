@@ -1,0 +1,58 @@
+﻿using Celarix.Starfall.Layout.Helium.Renderables;
+using Celarix.Starfall.Rendering.Models;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Celarix.Starfall.Layout.Helium.Elements
+{
+    public sealed class TextElement : ResizableHeliumElement
+    {
+        /// <summary>
+        /// Gets or sets the text to be rendered by this element. Multiple lines can be specified by
+        /// including newline characters in the string.
+        /// </summary>
+        public string Text { get; set; } = string.Empty;
+        public SFont Font { get; set; } = new SFontFamily("Arial", 16);
+        public SColor Color { get; set; } = SColor.Black;
+        public SAngle Rotation { get; set; } = SAngle.Zero;
+
+        public override IReadOnlyList<HeliumElement> Children => [];
+
+        // We'll let the user set the desired size on their own. Then this will make a TextRenderable,
+        // and that's what will ask the render target how big it can be. The TextRenderable will try to
+        // fill the width or the height, depending on which is the shorter dimension, and then scale the
+        // other dimension to maintain the aspect ratio of the text.
+
+        public override void ArrangeChildren(SRectF thisBounds)
+        {
+            // No children, so nothing to arrange.
+        }
+
+        public override HeliumElement Clone()
+        {
+            return new TextElement
+            {
+                Text = Text,
+                desiredWidthFraction = desiredWidthFraction,
+                desiredHeightFraction = desiredHeightFraction,
+                Font = Font,
+                Color = Color,
+                Rotation = Rotation,
+                Id = Id
+            };
+        }
+
+        public override IReadOnlyList<IRenderable> GetRenderables()
+        {
+            return [new TextRenderable
+            {
+                Text = Text,
+                Bounds = ActualBounds!.Value,
+                Font = Font,
+                Color = Color,
+                Rotation = Rotation
+            }];
+        }
+    }
+}
