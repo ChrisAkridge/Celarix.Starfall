@@ -41,5 +41,10 @@ namespace Celarix.Starfall.Rendering.Models
         {
             return new SRectF(rect.X + point.X, rect.Y + point.Y, rect.Width, rect.Height);
         }
+
+        public static bool Intersects(SRectF a, SRectF b)
+        {
+            return a.Left < b.Right && a.Right > b.Left && a.Top < b.Bottom && a.Bottom > b.Top;
+        }
     }
 }

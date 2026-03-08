@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Layout.Helium.Renderables;
+using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using System;
@@ -18,17 +19,24 @@ namespace Celarix.Starfall.Layout.Helium.Elements
         public abstract double DesiredHeightFraction { get; }
 
         // Properties used during the layout phase.
-        internal SPointF? ActualPosition { get; set; }
-        internal SSizeF? ActualSize { get; set; }
-        internal SRectF? ActualBounds => ActualPosition.HasValue && ActualSize.HasValue
+        protected internal SPointF? ActualPosition { get; set; }
+        protected internal SSizeF? ActualSize { get; set; }
+        protected internal SRectF? ActualBounds => ActualPosition.HasValue && ActualSize.HasValue
             ? new SRectF(ActualPosition.Value, ActualSize.Value)
             : null;
 
-        public virtual void MeasureText(IRenderTarget target, SSizeF availableSize)
+        public virtual void MeasureText(TextMeasurer textMeasurer, SSizeF? availableSize = null)
         {
             // Not all elements will have text to measure, so this is a no-op by default.
             // But text measuring depends on the render target in a way no other phase does,
             // so we do need to pass it down.
+
+            // We do want to handle asking children to measure their text if they have to. Do it here
+            // so derived types don't have to remember to do it themselves.
+            foreach (var child in Children)
+            {
+                child?.MeasureText(textMeasurer, availableSize);
+            }
         }
 
         public abstract void MeasureSelf(SSizeF availableSize);

@@ -24,6 +24,12 @@ namespace Celarix.Starfall
         Exception
     }
 
+    public enum Direction
+    {
+        Horizontal,
+        Vertical
+    }
+
     public enum Alignment
     {
         TopLeft,
@@ -35,6 +41,13 @@ namespace Celarix.Starfall
         BottomLeft,
         BottomCenter,
         BottomRight
+    }
+
+    public enum HAlignment
+    {
+        Left,
+        Center,
+        Right
     }
 
     public enum Unit

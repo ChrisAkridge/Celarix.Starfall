@@ -19,7 +19,7 @@ namespace Celarix.Starfall.Layout.Helium
 
             if (Root == null) { return; }
 
-            Root.MeasureText(target, maxSize);
+            Root.MeasureText(new Rendering.TextMeasurer(target), maxSize);
             Root.MeasureSelf(maxSize);
             Root.ArrangeChildren(new SRectF(SPointF.Zero, maxSize));
 

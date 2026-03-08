@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Celarix.Starfall.Layout.Helium.Renderables
 {
-    public sealed class TextRenderable : IRenderable
+    public sealed class TextRenderable : HeliumRenderable
     {
         public required string Text { get; init; }
         public required SRectF Bounds { get; init; }
@@ -14,7 +14,7 @@ namespace Celarix.Starfall.Layout.Helium.Renderables
         public required SColor Color { get; init; }
         public required SAngle Rotation { get; init; }
 
-        public void Render(IRenderTarget target)
+        public override void Render(IRenderTarget target)
         {
             target.DrawText(Text, Font, Bounds, Color, Rotation);
         }

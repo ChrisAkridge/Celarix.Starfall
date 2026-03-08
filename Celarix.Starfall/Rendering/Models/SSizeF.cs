@@ -6,6 +6,8 @@ namespace Celarix.Starfall.Rendering.Models
 {
     public readonly struct SSizeF
     {
+        public static readonly SSizeF Zero = new(0, 0);
+
         public double Width { get; }
         public double Height { get; }
         public SSizeF(double width, double height)

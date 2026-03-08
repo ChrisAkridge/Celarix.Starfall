@@ -28,3 +28,32 @@ timer.Elapsed += (sender, e) =>
     presentationEngine.RemoveScene($"slide{slideCount - 2}");
     firstSlide = nextSlide;
 };
+
+// Second
+
+var slide = new HeliumScene();
+var binaryElementContainer = new BinaryElementContainer
+{
+    Alignment = Alignment.Center
+};
+binaryElementContainer.SplitVertical(1, 1);
+
+var text = new TextElement()
+{
+    Text = "Hello, world!",
+    Font = new SFontFamily("Calibri", 1f),
+    Color = SColor.White,
+    Rotation = SAngle.Zero
+};
+text.SetDesiredWidthFraction(0.5d);
+text.SetDesiredHeightFraction(0.5d);
+var greenRect = new RectangleElement(0.5d, 0.5d, new SColor(0, 255, 0, 255), "green-rect");
+var redRect = new RectangleElement(0.5d, 0.5d, new SColor(255, 0, 0, 255), "red-rect");
+binaryElementContainer.FirstSplit!.SplitHorizontal(1, 1);
+binaryElementContainer.SecondSplit!.SetSingleChild(greenRect);
+binaryElementContainer.FirstSplit.FirstSplit!.SetSingleChild(text);
+binaryElementContainer.FirstSplit.SecondSplit!.SetSingleChild(redRect);
+slide.Root = binaryElementContainer;
+
+presentationEngine.AddScene(nameof(slide), slide);
+presentationEngine.SetCurrentScene(nameof(slide));

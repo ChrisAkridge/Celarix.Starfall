@@ -65,6 +65,7 @@ namespace Celarix.Starfall.Rendering.Targets
                     SKColorType.Rgba8888);
             };
             window.RenderFrame += args => Window_RenderFrame(window, args);
+            RegisterEventHandlers();
         }
 
         private void Window_RenderFrame(object? sender, OpenTK.Windowing.Common.FrameEventArgs e)
@@ -75,6 +76,21 @@ namespace Celarix.Starfall.Rendering.Targets
         public void Start()
         {
             window.Run();
+        }
+
+        // ======
+        // Inbound Event Handlers
+        // ======
+        public event EventHandler<OpenTK.Windowing.Common.KeyboardKeyEventArgs> KeyUp;
+
+        private void RegisterEventHandlers()
+        {
+            window.KeyUp += OnKeyUp;
+        }
+
+        private void OnKeyUp(OpenTK.Windowing.Common.KeyboardKeyEventArgs e)
+        {
+            KeyUp?.Invoke(this, e);
         }
 
         // =======
@@ -126,12 +142,19 @@ namespace Celarix.Starfall.Rendering.Targets
             // the bounds, which could mean quite a big offset on the other dimension (i.e. if the bounds
             // were 1000x100000 or something).
             float fittedSize;
-            if (bounds.Width >= bounds.Height)
+            if (bounds.Height >= bounds.Width)
             {
+                // ###
+                // ###
+                // ###
+                // ###
+                // ###, so the text can't be very wide
                 fittedSize = FitTextToWidth(text, font, (float)bounds.Width);
             }
             else
             {
+                // #####
+                // #####, so the text can't be very tall
                 fittedSize = FitTextToHeight(text, font, (float)bounds.Height);
             }
 

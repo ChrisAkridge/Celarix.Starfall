@@ -21,18 +21,12 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             Split
         }
 
-        public enum SplitDirection
-        {
-            Horizontal,
-            Vertical
-        }
-
         private HeliumElement? singleChild;
         private BinaryElementContainer? firstChild;
         private BinaryElementContainer? secondChild;
         private int? firstChildRatio;
         private int? secondChildRatio;
-        private SplitDirection? splitDirection;
+        private Direction? splitDirection;
 
         public override IReadOnlyList<HeliumElement> Children => singleChild != null
             ? [singleChild]
@@ -51,7 +45,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
         public (int FirstChildRatio, int SecondChildRatio)? SplitRatios => firstChildRatio.HasValue && secondChildRatio.HasValue
             ? (firstChildRatio.Value, secondChildRatio.Value)
             : null;
-        public SplitDirection? CurrentSplitDirection => splitDirection;
+        public Direction? CurrentSplitDirection => splitDirection;
 
         /// <summary>
         /// Gets or sets the padding. This applies both in single-child and split modes.
@@ -73,10 +67,10 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             singleChild = child;
         }
 
-        public void SplitHorizontal(int topRatio, int bottomRatio) => Split(topRatio, bottomRatio, SplitDirection.Horizontal);
-        public void SplitVertical(int leftRatio, int rightRatio) => Split(leftRatio, rightRatio, SplitDirection.Vertical);
+        public void SplitHorizontal(int topRatio, int bottomRatio) => Split(topRatio, bottomRatio, Direction.Horizontal);
+        public void SplitVertical(int leftRatio, int rightRatio) => Split(leftRatio, rightRatio, Direction.Vertical);
 
-        private void Split(int firstChildRatio, int secondChildRatio, SplitDirection splitDirection)
+        private void Split(int firstChildRatio, int secondChildRatio, Direction splitDirection)
         {
             if (singleChild != null)
             {
@@ -109,7 +103,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             else
             {
                 var totalRatio = firstChildRatio!.Value + secondChildRatio!.Value;
-                if (splitDirection == SplitDirection.Horizontal)
+                if (splitDirection == Direction.Horizontal)
                 {
                     var firstHeight = availableSize.Height * firstChildRatio.Value / totalRatio;
                     var secondHeight = availableSize.Height * secondChildRatio.Value / totalRatio;
@@ -143,7 +137,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             else
             {
                 var totalRatio = firstChildRatio!.Value + secondChildRatio!.Value;
-                if (splitDirection == SplitDirection.Horizontal)
+                if (splitDirection == Direction.Horizontal)
                 {
                     var firstHeight = thisBounds.Height * firstChildRatio.Value / totalRatio;
                     var secondHeight = thisBounds.Height * secondChildRatio.Value / totalRatio;

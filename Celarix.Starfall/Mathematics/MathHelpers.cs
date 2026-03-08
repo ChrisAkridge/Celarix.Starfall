@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Celarix.Starfall.Rendering.Models;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -15,6 +16,18 @@ namespace Celarix.Starfall.Mathematics
             double t = Math.Clamp(progress, 0, 1);
             double smoothProgress = t * t * (3 - 2 * t);
             return start + (end - start) * smoothProgress;
+        }
+
+        /// <summary>
+        /// Gets the largest square that can fit within the given rectangular size. The resulting square
+        /// will have its width and height equal to the smaller of the rectangle's width and height.
+        /// </summary>
+        /// <param name="rectangle">The rectangle containing the square.</param>
+        /// <returns>An <see cref="SSizeF"/> instance whose width equals its height.</returns>
+        public static SSizeF LargestSquareFittingSize(SSizeF rectangle)
+        {
+            double size = Math.Min(rectangle.Width, rectangle.Height);
+            return new SSizeF(size, size);
         }
     }
 }
