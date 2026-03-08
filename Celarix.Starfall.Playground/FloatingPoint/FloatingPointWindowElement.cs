@@ -114,8 +114,8 @@ namespace Celarix.Starfall.Playground.FloatingPoint
             selectedIndex = basePointIndex;
             windowLeftIndex = selectedIndex - (windowWidth - 1);
 
-            digitFont = new SFontFamily("Consolas", 12f);
-            placeValueFont = new SFontFamily("Calibri", 12f);
+            digitFont = new SFontFamily("Consolas");
+            placeValueFont = new SFontFamily("Calibri");
         }
 
         public void SetDigit(int index, char digit)
@@ -242,7 +242,7 @@ namespace Celarix.Starfall.Playground.FloatingPoint
             var arrowRenderable = new TextRenderable
             {
                 Text = "▼",
-                Font = new SFontFamily("Segoe UI", 12f),
+                Font = new SFontFamily("Segoe UI"),
                 Rotation = SAngle.Zero,
                 Color = SColor.Red,
                 Bounds = new SRectF(arrowX - (arrowHeight / 2d), outerPosition.Y, arrowHeight, arrowHeight),

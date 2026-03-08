@@ -16,7 +16,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements
         /// including newline characters in the string.
         /// </summary>
         public string Text { get; set; } = string.Empty;
-        public SFont Font { get; set; } = new SFontFamily("Arial", 16);
+        public SFont Font { get; set; } = new SFontFamily("Arial");
         public SColor Color { get; set; } = SColor.Black;
         public SAngle Rotation { get; set; } = SAngle.Zero;
         public Alignment Alignment { get; set; } = Alignment.Center;
@@ -31,6 +31,17 @@ namespace Celarix.Starfall.Layout.Helium.Elements
         public override void ArrangeChildren(SRectF thisBounds)
         {
             // No children, so nothing to arrange.
+        }
+
+        public override void MeasureSelf(SSizeF maxSize)
+        {
+            if (Font.Size == null)
+            {
+                base.MeasureSelf(maxSize);
+                return;
+            }
+
+            ActualSize = maxSize;
         }
 
         public override HeliumElement Clone()

@@ -130,6 +130,7 @@ namespace Celarix.Starfall.Rendering.Targets
             if (surface == null) { return; }
 
             SKFont skFont;
+            var useFontSize = font.Size != null;
             var skColor = color.ToSKColor();
 
             using var paint = new SKPaint
@@ -158,9 +159,25 @@ namespace Celarix.Starfall.Rendering.Targets
                 fittedSize = FitTextToHeight(text, font, (float)bounds.Height);
             }
 
-            skFont = font.WithSize(fittedSize).ToSKFont();
+            skFont = useFontSize
+                ? font.ToSKFont()
+                : font.WithSize(fittedSize).ToSKFont();
+
             SSizeF measuredNewSize = new(skFont.MeasureText(text, paint), skFont.Metrics.Descent - skFont.Metrics.Ascent);
-            bounds = AlignmentHelper.Align(alignment, bounds, measuredNewSize).WithSize(measuredNewSize);
+            if (!useFontSize)
+            {
+                bounds = AlignmentHelper.Align(alignment, bounds, measuredNewSize).WithSize(measuredNewSize);
+            }
+            else if (measuredNewSize.Width > bounds.Width || measuredNewSize.Height > bounds.Height)
+            {
+                // Too big! Reduce the font size until it fits. We can do this by finding the longest
+                // axis of the measured size and computing the scale factor between that and the corresponding
+                // axis of the bounds, then applying that scale factor to the font size.
+                var widthScale = (float)bounds.Width / measuredNewSize.Width;
+                var heightScale = (float)bounds.Height / measuredNewSize.Height;
+                var scale = Math.Min(widthScale, heightScale);
+                skFont = font.WithSize(skFont.Size * (float)scale).ToSKFont();
+            }
 
             surface.Canvas.DrawText(text,
                 (float)bounds.Left,
@@ -178,7 +195,7 @@ namespace Celarix.Starfall.Rendering.Targets
             };
             var measuredWidth = skFont.MeasureText(text, paint);
             var scale = width / measuredWidth;
-            return font.Size * scale;
+            return (font.Size ?? 12f) * scale;
         }
 
         public float FitTextToHeight(string text, SFont font, float height)
@@ -191,7 +208,7 @@ namespace Celarix.Starfall.Rendering.Targets
             var metrics = skFont.Metrics;
             var measuredHeight = metrics.Descent - metrics.Ascent;
             var scale = height / measuredHeight;
-            return font.Size * scale;
+            return (font.Size ?? 12f) * scale;
         }
 
         public SSizeF MeasureText(string text, SFont font)

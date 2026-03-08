@@ -137,16 +137,32 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
                 var child = children[i];
                 if (child != null)
                 {
-                    var cellOuterSize = direction == Direction.Horizontal
-                        ? new SSizeF(sizePerPart * sizeRatios[i], thisSize.Height)
-                        : new SSizeF(thisSize.Width, sizePerPart * sizeRatios[i]);
-                    var cellInnerSize = Padding.GetInnerSize(cellOuterSize);
-                    var cellInnerX = direction == Direction.Horizontal ? thisBounds.Left + currentOffset + Padding.Left : thisBounds.Left + Padding.Left;
-                    var cellInnerY = direction == Direction.Horizontal ? thisBounds.Top + Padding.Top : thisBounds.Top + currentOffset + Padding.Top;
-                    var cellInnerBounds = new SRectF(cellInnerX, cellInnerY, cellInnerSize.Width, cellInnerSize.Height);
-                    child.ActualPosition = AlignmentHelper.Align(Alignment, cellInnerBounds, child.ActualSize!.Value);
-                    child.ArrangeChildren(child.ActualBounds!.Value);
+                    if (direction == Direction.Horizontal)
+                    {
+                        var cellOuterBounds = new SRectF(
+                            thisBounds.X + currentOffset,
+                            thisBounds.Y,
+                            sizePerPart * sizeRatios[i],
+                            thisBounds.Height);
+                        var cellInnerBounds = Padding.GetInnerRectForOuterRect(cellOuterBounds);
+                        child.ActualPosition = AlignmentHelper.Align(Alignment, cellInnerBounds, child.ActualSize!.Value);
+                    }
+                    else if (direction == Direction.Vertical)
+                    {
+                        var cellOuterBounds = new SRectF(
+                            thisBounds.X,
+                            thisBounds.Y + currentOffset,
+                            thisBounds.Width,
+                            sizePerPart * sizeRatios[i]);
+                        var cellInnerBounds = Padding.GetInnerRectForOuterRect(cellOuterBounds);
+                        child.ActualPosition = AlignmentHelper.Align(Alignment, cellInnerBounds, child.ActualSize!.Value);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Unsupported direction: {direction}");
+                    }
 
+                    child.ArrangeChildren(child.ActualBounds!.Value);
                     currentOffset += sizePerPart * sizeRatios[i];
                 }
             }

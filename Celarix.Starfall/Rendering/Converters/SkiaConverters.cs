@@ -13,24 +13,6 @@ namespace Celarix.Starfall.Rendering.Converters
             return new SKRect((float)rect.Left, (float)rect.Top, (float)rect.Right, (float)rect.Bottom);
         }
 
-        public static SKFont ToSKFont(this SFontFamily fontFamily)
-        {
-            return new SKFont(
-                SKTypeface.FromFamilyName(
-                    fontFamily.Family,
-                    fontFamily.FontWeight.ToSKFontStyleWeight(),
-                    fontFamily.FontWidth.ToSKFontStyleWidth(),
-                    fontFamily.FontSlant.ToSKFontStyleSlant()),
-                fontFamily.Size);
-        }
-
-        public static SKFont ToSKFont(this SFontFile fontFile)
-        {
-            return new SKFont(
-                SKTypeface.FromFile(fontFile.FilePath, fontFile.Index),
-                fontFile.Size);
-        }
-
         public static SKFontStyleWeight ToSKFontStyleWeight(this FontWeight fontWeight)
         {
             return fontWeight switch
