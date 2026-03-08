@@ -124,7 +124,7 @@ namespace Celarix.Starfall.Rendering.Targets
             surface.Canvas.DrawRect(bounds.ToSKRect(), paint);
         }
 
-        public void DrawText(string text, SFont font, SRectF bounds, SColor color, SAngle rotation)
+        public void DrawText(string text, SFont font, SRectF bounds, SColor color, SAngle rotation, Alignment alignment = Alignment.Center)
         {
             // TODO: Implement rotation
             if (surface == null) { return; }
@@ -160,7 +160,7 @@ namespace Celarix.Starfall.Rendering.Targets
 
             skFont = font.WithSize(fittedSize).ToSKFont();
             SSizeF measuredNewSize = new(skFont.MeasureText(text, paint), skFont.Metrics.Descent - skFont.Metrics.Ascent);
-            bounds = AlignmentHelper.Align(Alignment.Center, bounds, measuredNewSize).WithSize(measuredNewSize);
+            bounds = AlignmentHelper.Align(alignment, bounds, measuredNewSize).WithSize(measuredNewSize);
 
             surface.Canvas.DrawText(text,
                 (float)bounds.Left,

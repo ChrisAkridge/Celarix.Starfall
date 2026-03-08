@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Layout.Helium.Renderables;
+using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,8 @@ namespace Celarix.Starfall.Layout.Helium.Elements
 {
     public sealed class TextElement : ResizableHeliumElement
     {
+        private float? fontSizeToFillDesiredSize;
+
         /// <summary>
         /// Gets or sets the text to be rendered by this element. Multiple lines can be specified by
         /// including newline characters in the string.
@@ -16,6 +19,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements
         public SFont Font { get; set; } = new SFontFamily("Arial", 16);
         public SColor Color { get; set; } = SColor.Black;
         public SAngle Rotation { get; set; } = SAngle.Zero;
+        public Alignment Alignment { get; set; } = Alignment.Center;
 
         public override IReadOnlyList<HeliumElement> Children => [];
 
@@ -49,6 +53,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements
             {
                 Text = Text,
                 Bounds = ActualBounds!.Value,
+                Alignment = Alignment,
                 Font = Font,
                 Color = Color,
                 Rotation = Rotation

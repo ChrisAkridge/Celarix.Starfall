@@ -124,5 +124,39 @@ namespace Celarix.Starfall.Playground.FloatingPoint
             element.SelectedIndex = currentBitIndex;
             return element;
         }
+
+        public List<string> GetDisplayText()
+        {
+            var targetValueLine = $"Target: {targetValue:R}";
+            var currentValueLine = $"Current: {CurrentValue:R}";
+            var differenceLine = $"Difference: {targetValue - CurrentValue:R}";
+            var placeValueLine = $"Current place value: 2^{BinaryPointAfterIndex - currentBitIndex} = {CurrentPlaceValue:R}";
+
+            var currentFloatBits = BitConverter.SingleToInt32Bits(CurrentValue);
+            var currentExponentPart = (currentFloatBits >> 23) & 0xFF;
+            var currentMantissaPart = currentFloatBits & 0x7FFFFF;
+            var currentUnbiasedExponent = currentExponentPart - ExponentOfFirstBit;
+
+            // Convert the mantissa value to a decimal number between 1 and 2 (or 0 and 1 for subnormal)
+            // so we can display the scientific notation of the current value.
+            double currentMantissaValue;
+            if (currentExponentPart > 0)
+            {
+                currentMantissaValue = 1 + (currentMantissaPart / (double)(1 << 23));
+            }
+            else
+            {
+                currentMantissaValue = currentMantissaPart / (double)(1 << 23);
+            }
+
+            var scientificNotationLine = $"{currentValueLine} = {currentMantissaValue} x 2^{currentUnbiasedExponent}";
+
+            return [
+                targetValueLine,
+                scientificNotationLine,
+                differenceLine,
+                placeValueLine
+            ];
+        }
     }
 }

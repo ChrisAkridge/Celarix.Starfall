@@ -97,7 +97,6 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
                 childrenInternalXPositions.Add(currentInternalX);
                 currentInternalX += childSize.Width + singleMarginSize.Width;
             }
-            var totalChildrenWidth = currentInternalX - singleMarginSize.Width;
             
             // Remove the last margin.
             // Next, figure out the scrolled element's alignment point within the container. This is

@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Celarix.Starfall.Layout.Helium;
+using Celarix.Starfall.Layout.Helium.Components;
 using Celarix.Starfall.Layout.Helium.Elements;
 using Celarix.Starfall.Layout.Helium.Elements.Containers;
 using Celarix.Starfall.Layout.Helium.Transitions;
@@ -36,12 +37,15 @@ namespace Celarix.Starfall.Playground
 
             var singleConstruction = new SingleConstructionView((float)Math.PI);
             var scenes = new List<HeliumScene>();
-            while (singleConstruction.MoveNext())
+            
+            do
             {
-                var element = singleConstruction.MakeWindowElement();
-                var scene = CreateFPScene(element);
+                var scene = CreateFPScene(singleConstruction);
                 scenes.Add(scene);
-            }
+            } while (singleConstruction.MoveNext());
+
+            // brain kinda mush, very hackish
+            scenes.Add(CreateFPScene(singleConstruction)); // add the final scene again so that the "next" button works on the last slide
 
             for (var i = 0; i < scenes.Count - 1; i++)
             {
@@ -72,19 +76,39 @@ namespace Celarix.Starfall.Playground
             }
         }
 
-        private static HeliumScene CreateFPScene(FloatingPointWindowElement element)
+        private static HeliumScene CreateFPScene(SingleConstructionView singleConstruction)
         {
-            var container0 = new BinaryElementContainer();
-            container0.SplitHorizontal(1, 4);
-            var container1 = container0.SecondSplit!;
-            container1.SplitHorizontal(1, 6);
-            var container2 = container1.FirstSplit!;
-            container2.SetSingleChild(element);
+            var element = singleConstruction.MakeWindowElement();
+            var stack = new StackContainer(Direction.Vertical)
+            {
+                Alignment = Alignment.Center,
+                Padding = new Padding(0.1d, 0.1d, 0.1d, 0.1d)
+            };
+            stack.AddChild(element, 2);
+
+            var textLines = singleConstruction.GetDisplayText()
+                .Select(l =>
+                {
+                    var textElement = new TextElement
+                    {
+                        Text = l,
+                        Color = SColor.White,
+                        Font = new SFontFamily("Consolas", 16f),
+                        Alignment = Alignment.LeftCenter
+                    };
+                    textElement.SetDesiredHeightFraction(0.2f);
+                    textElement.SetDesiredWidthFraction(0.2f);
+                    return textElement;
+                });
+            foreach (var textLine in textLines)
+            {
+                stack.AddChild(textLine, 1);
+            }
 
             var scene = new HeliumScene
             {
                 BackgroundColor = new SColor(8, 0, 130, 255),
-                Root = container0
+                Root = stack
             };
 
             return scene;

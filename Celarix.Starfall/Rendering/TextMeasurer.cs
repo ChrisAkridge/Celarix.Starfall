@@ -18,6 +18,14 @@ namespace Celarix.Starfall.Rendering
         public SSizeF MeasureText(string text, SFont font) => renderTarget.MeasureText(text, font);
         public float FontSizeForDesiredWidth(string text, SFont font, float width) => renderTarget.FitTextToWidth(text, font, width);
         public float FontSizeForDesiredHeight(string text, SFont font, float height) => renderTarget.FitTextToHeight(text, font, height);
+
+        public float FontSizeForDesiredSize(string text, SFont font, SSizeF availableSize)
+        {
+            return availableSize.Height >= availableSize.Width
+                ? FontSizeForDesiredWidth(text, font, (float)availableSize.Width)
+                : FontSizeForDesiredHeight(text, font, (float)availableSize.Height);
+        }
+
         public double AspectRatioForText(string text, SFont font)
         {
             var size = MeasureText(text, font);
