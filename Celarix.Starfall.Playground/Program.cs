@@ -82,8 +82,7 @@ namespace Celarix.Starfall.Playground
             var stack = new StackContainer(Direction.Vertical)
             {
                 Alignment = Alignment.LeftCenter,
-                // TODO: Padding here is in pixels but it should be in multiples of the container's size
-                Padding = new Padding(0.1d, 0.1d, 0.1d, 0.1d)
+                Padding = new Padding(0.025d, 0d, 0d, 0d)
             };
             stack.AddChild(element, 2);
 
