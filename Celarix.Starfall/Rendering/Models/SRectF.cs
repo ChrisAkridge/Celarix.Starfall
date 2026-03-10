@@ -46,5 +46,10 @@ namespace Celarix.Starfall.Rendering.Models
         {
             return a.Left < b.Right && a.Right > b.Left && a.Top < b.Bottom && a.Bottom > b.Top;
         }
+
+        public bool FitsWithin(SRectF outer)
+        {
+            return Left >= outer.Left && Right <= outer.Right && Top >= outer.Top && Bottom <= outer.Bottom;
+        }
     }
 }

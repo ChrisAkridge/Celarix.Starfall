@@ -38,7 +38,8 @@ namespace Celarix.Starfall.Layout.Helium.Elements
             {
                 Bounds = ActualBounds!.Value,
                 Color = Color,
-                Id = Id
+                Id = Id,
+                PaintStyle = SPaintStyle.Fill,
             }];
         }
     }

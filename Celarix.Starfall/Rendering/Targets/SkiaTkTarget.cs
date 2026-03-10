@@ -1,5 +1,6 @@
 ﻿using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Rendering.Models;
+using FastCache;
 using OpenTK.Graphics.ES11;
 using OpenTK.Windowing.Desktop;
 using SkiaSharp;
@@ -66,6 +67,8 @@ namespace Celarix.Starfall.Rendering.Targets
             };
             window.RenderFrame += args => Window_RenderFrame(window, args);
             RegisterEventHandlers();
+
+            SkiaTextRendering.SetShaperCacheDuration(30000);
         }
 
         private void Window_RenderFrame(object? sender, OpenTK.Windowing.Common.FrameEventArgs e)
@@ -111,7 +114,7 @@ namespace Celarix.Starfall.Rendering.Targets
             surface?.Canvas.Clear(color.ToSKColor());
         }
 
-        public void DrawRectangle(SRectF bounds, SColor color, SAngle rotation)
+        public void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation)
         {
             // TODO: Implement rotation
             if (surface == null) { return; }
@@ -119,7 +122,7 @@ namespace Celarix.Starfall.Rendering.Targets
             {
                 Color = color.ToSKColor(),
                 IsAntialias = true,
-                Style = SKPaintStyle.Fill
+                Style = paintStyle.ToSKPaintStyle()
             };
             surface.Canvas.DrawRect(bounds.ToSKRect(), paint);
         }
@@ -160,10 +163,10 @@ namespace Celarix.Starfall.Rendering.Targets
             }
 
             skFont = useFontSize
-                ? font.ToSKFont()
-                : font.WithSize(fittedSize).ToSKFont();
+                ? GetFont(font)
+                : GetFont(font.WithSize(fittedSize));
 
-            SSizeF measuredNewSize = new(skFont.MeasureText(text, paint), skFont.Metrics.Descent - skFont.Metrics.Ascent);
+            SSizeF measuredNewSize = skFont.MeasureShapedText(text);
             if (!useFontSize)
             {
                 bounds = AlignmentHelper.Align(alignment, bounds, measuredNewSize).WithSize(measuredNewSize);
@@ -179,13 +182,41 @@ namespace Celarix.Starfall.Rendering.Targets
                 skFont = font.WithSize(skFont.Size * (float)scale).ToSKFont();
             }
 
-            surface.Canvas.DrawText(text,
+            surface.Canvas.DrawShapedText(text,
                 (float)bounds.Left,
                 (float)bounds.Top - skFont.Metrics.Ascent,
                 skFont,
                 paint);
         }
 
+        public void DrawTextDirectly(string text, SFont font, SRectF bounds, SColor color, SAngle rotation)
+        {
+            // TODO: Implement rotation
+            if (surface == null) { return; }
+
+            using var paint = new SKPaint
+            {
+                Color = color.ToSKColor(),
+                IsAntialias = true
+            };
+
+            // Use the font size provided by the layout system as-is
+            var skFont = GetFont(font);
+
+            // Measure for alignment only; DO NOT rescale the font
+            var measured = skFont.MeasureShapedText(text);
+
+            var drawLeft = (float)bounds.Left;
+            var drawTop = (float)bounds.Top;
+
+            // Convert top-based coordinate to baseline for Skia
+            var baselineY = drawTop - skFont.Metrics.Ascent;
+
+            surface.Canvas.DrawShapedText(text, drawLeft, baselineY, skFont, paint);
+        }
+
+        // TODO: Cache these text/font measurements, as a lot of the time, the same text will be measured
+        // repeatedly, especially on animated scenes.
         public float FitTextToWidth(string text, SFont font, float width)
         {
             var skFont = font.ToSKFont();
@@ -193,14 +224,14 @@ namespace Celarix.Starfall.Rendering.Targets
             {
                 IsAntialias = true
             };
-            var measuredWidth = skFont.MeasureText(text, paint);
+            var measuredWidth = skFont.MeasureShapedText(text).Width;
             var scale = width / measuredWidth;
-            return (font.Size ?? 12f) * scale;
+            return (font.Size ?? 12f) * (float)scale;
         }
 
         public float FitTextToHeight(string text, SFont font, float height)
         {
-            var skFont = font.ToSKFont();
+            var skFont = GetFont(font);
             using var paint = new SKPaint
             {
                 IsAntialias = true
@@ -211,17 +242,24 @@ namespace Celarix.Starfall.Rendering.Targets
             return (font.Size ?? 12f) * scale;
         }
 
-        public SSizeF MeasureText(string text, SFont font)
+        public SSizeF MeasureText(string text, SFont font) => GetFont(font).MeasureShapedText(text);
+
+        #region Text Caching
+        private static readonly double DefaultCacheDurationMinutes = 60d;
+
+        private static SKFont GetFont(SFont font)
         {
-            var skFont = font.ToSKFont();
-            using var paint = new SKPaint
+            var cacheKey = font.ToCacheKey();
+            if (Cached<SKFont>.TryGet(cacheKey, out var cachedFont))
             {
-                IsAntialias = true
-            };
-            var width = skFont.MeasureText(text, paint);
-            var metrics = skFont.Metrics;
-            var height = metrics.Descent - metrics.Ascent;
-            return new SSizeF(width, height);
+                return cachedFont;
+            }
+            else
+            {
+                var skFont = font.ToSKFont();
+                return cachedFont.Save(skFont, TimeSpan.FromMinutes(DefaultCacheDurationMinutes));
+            }
         }
+        #endregion
     }
 }

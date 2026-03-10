@@ -71,6 +71,11 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             sizeRatios.Add(sizeRatio);
         }
 
+        public void AddEmpty(int sizeRatio = 1)
+        {
+            AddChild(null, sizeRatio);
+        }
+
         public void InsertChild(int index, HeliumElement? child, int sizeRatio = 1)
         {
             if (index < 0 || index > children.Count)
@@ -163,16 +168,55 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
                     }
 
                     child.ArrangeChildren(child.ActualBounds!.Value);
-                    currentOffset += sizePerPart * sizeRatios[i];
                 }
+                currentOffset += sizePerPart * sizeRatios[i];
             }
         }
 
         public override IReadOnlyList<IRenderable> GetRenderables()
         {
             var renderables = new List<IRenderable>();
-            foreach (var child in children)
+
+            var splitAxisSize = direction == Direction.Horizontal ? ActualBounds!.Value.Width : ActualBounds!.Value.Height;
+            var totalParts = sizeRatios.Sum();
+            var sizePerPart = splitAxisSize / totalParts;
+            var currentOffset = 0d;
+
+            for (int i = 0; i < children.Count; i++)
             {
+                var sizeRatio = sizeRatios[i];
+                var cellOuterBounds = direction == Direction.Horizontal
+                    ? new SRectF(
+                        ActualBounds!.Value.X + currentOffset,
+                        ActualBounds!.Value.Y,
+                        sizePerPart * sizeRatio,
+                        ActualBounds!.Value.Height)
+                    : new SRectF(
+                        ActualBounds!.Value.X,
+                        ActualBounds!.Value.Y + currentOffset,
+                        ActualBounds!.Value.Width,
+                        sizePerPart * sizeRatio);
+                currentOffset += sizePerPart * sizeRatio;
+
+                // Debug mode
+                renderables.Add(new RectangleRenderable
+                {
+                    Bounds = cellOuterBounds,
+                    Color = new SColor(255, 0, 0, 128),
+                    PaintStyle = SPaintStyle.Stroke
+                });
+                renderables.Add(new TextRenderable
+                {
+                    Bounds = cellOuterBounds,
+                    Color = new SColor(0, 255, 0, 255),
+                    Text = $"Size {sizeRatio}",
+                    Font = new SFontFamily("Arial", 12f),
+                    DrawDirectly = true,
+                    Alignment = Alignment.TopLeft,
+                    Rotation = SAngle.Zero
+                });
+
+                HeliumElement? child = children[i];
                 if (child != null)
                 {
                     renderables.AddRange(child.GetRenderables());

@@ -59,5 +59,16 @@ namespace Celarix.Starfall.Rendering.Converters
                 _ => throw new ArgumentOutOfRangeException(nameof(fontSlant), $"Unsupported font slant: {fontSlant}")
             };
         }
+
+        public static SKPaintStyle ToSKPaintStyle(this SPaintStyle paintStyle)
+        {
+            return paintStyle switch
+            {
+                SPaintStyle.Fill => SKPaintStyle.Fill,
+                SPaintStyle.Stroke => SKPaintStyle.Stroke,
+                SPaintStyle.StrokeAndFill => SKPaintStyle.StrokeAndFill,
+                _ => throw new ArgumentOutOfRangeException(nameof(paintStyle), $"Unsupported paint style: {paintStyle}")
+            };
+        }
     }
 }

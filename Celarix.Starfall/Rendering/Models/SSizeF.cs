@@ -17,5 +17,9 @@ namespace Celarix.Starfall.Rendering.Models
         }
 
         public override readonly string ToString() => $"(Width: {Width}d, Height: {Height}d)";
+        public SRectF At(SPointF point) => new(point, this);
+
+        public static bool operator ==(SSizeF left, SSizeF right) => left.Equals(right);
+        public static bool operator !=(SSizeF left, SSizeF right) => !(left == right);
     }
 }

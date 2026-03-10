@@ -314,7 +314,8 @@ namespace Celarix.Starfall.Playground.FloatingPoint
             {
                 Color = new SColor(255, 255, 0, 75),   // Semi-transparent yellow
                 Bounds = new SRectF(windowLeftX, windowTopY, windowActualWidth, windowHeight),
-                Id = "window"
+                Id = "window",
+                PaintStyle = SPaintStyle.Fill
             };
 
             return [windowRenderable, arrowRenderable, .. placeValueRenderables, .. digitRenderables];

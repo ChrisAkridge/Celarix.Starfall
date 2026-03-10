@@ -18,6 +18,7 @@ namespace Celarix.Starfall.Rendering.Models
 
         public abstract SKFont ToSKFont();
         public abstract SFont WithSize(float? newSize);
+        public abstract string ToCacheKey();
     }
 
     public sealed class SFontFamily : SFont
@@ -61,6 +62,8 @@ namespace Celarix.Starfall.Rendering.Models
         {
             return new SFontFamily(Family, newSize, FontWeight, FontWidth, FontSlant);
         }
+
+        public override string ToCacheKey() => $"{Family}|{Size}|{FontWeight}|{FontWidth}|{FontSlant}";
     }
 
     public sealed class SFontFile : SFont
@@ -88,5 +91,7 @@ namespace Celarix.Starfall.Rendering.Models
         {
             return new SFontFile(FilePath, newSize, Index);
         }
+
+        public override string ToCacheKey() => $"{FilePath}|{Size}|{Index}";
     }
 }

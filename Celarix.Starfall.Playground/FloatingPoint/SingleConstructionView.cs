@@ -127,10 +127,10 @@ namespace Celarix.Starfall.Playground.FloatingPoint
 
         public List<string> GetDisplayText()
         {
-            var targetValueLine = $"Target: {targetValue:R}";
+            var targetValueLine = $"• Target: {targetValue:R}";
             var currentValueLine = $"Current: {CurrentValue:R}";
-            var differenceLine = $"Difference: {targetValue - CurrentValue:R}";
-            var placeValueLine = $"Current place value: 2^{BinaryPointAfterIndex - currentBitIndex} = {CurrentPlaceValue:R}";
+            var differenceLine = $"• Difference: {targetValue - CurrentValue:R}";
+            var placeValueLine = $"• Current place value: 2^{BinaryPointAfterIndex - currentBitIndex} = {CurrentPlaceValue:R}";
 
             var currentFloatBits = BitConverter.SingleToInt32Bits(CurrentValue);
             var currentExponentPart = (currentFloatBits >> 23) & 0xFF;
@@ -149,7 +149,7 @@ namespace Celarix.Starfall.Playground.FloatingPoint
                 currentMantissaValue = currentMantissaPart / (double)(1 << 23);
             }
 
-            var scientificNotationLine = $"{currentValueLine} = {currentMantissaValue} x 2^{currentUnbiasedExponent}";
+            var scientificNotationLine = $"• {currentValueLine} = {currentMantissaValue} x 2^{currentUnbiasedExponent}";
 
             return [
                 targetValueLine,

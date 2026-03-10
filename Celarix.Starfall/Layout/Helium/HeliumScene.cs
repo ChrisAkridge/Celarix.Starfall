@@ -23,6 +23,9 @@ namespace Celarix.Starfall.Layout.Helium
             Root.MeasureSelf(maxSize);
             Root.ArrangeChildren(new SRectF(SPointF.Zero, maxSize));
 
+            // TODO: Okay, this is just another sign we need to rethink the whole layout system
+            Root.ActualPosition = SPointF.Zero;
+
             var renderables = Root.GetRenderables();
 
             foreach (var renderable in renderables)

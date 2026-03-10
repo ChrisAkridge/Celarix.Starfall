@@ -82,35 +82,24 @@ namespace Celarix.Starfall.Playground
             var stack = new StackContainer(Direction.Vertical)
             {
                 Alignment = Alignment.LeftCenter,
+                // TODO: Padding here is in pixels but it should be in multiples of the container's size
                 Padding = new Padding(0.1d, 0.1d, 0.1d, 0.1d)
             };
             stack.AddChild(element, 2);
 
-            var textLines = singleConstruction.GetDisplayText()
-                .Select(l =>
-                {
-                    var textElement = new TextElement
-                    {
-                        Text = l,
-                        Color = SColor.White,
-                        Font = new SFontFamily("Consolas", 20f),
-                        Alignment = Alignment.LeftCenter
-                    };
-                    //textElement.SetDesiredHeightFraction(0.3f);
-                    //textElement.SetDesiredWidthFraction(0.3f);
-                    return textElement;
-                });
-
-            foreach (var textLine in textLines)
+            var textLines = singleConstruction.GetDisplayText();
+            var advancedTextElement = new AdvancedTextElement(string.Join("\n", textLines))
             {
-                stack.AddChild(textLine, 1);
-            }
+                Font = new SFontFamily("Calibri", 24f),
+                Color = SColor.White,
+                Rotation = SAngle.Zero,
+                Alignment = Alignment.LeftCenter,
+                LineSpacingMultiplier = 0.2d
+            };
 
-            // Add a few empty spacers at the end to push everything up a bit
-            for (var i = 0; i < 5; i++)
-            {
-                stack.AddChild(null, 1);
-            }
+            stack.AddEmpty(1);
+            stack.AddChild(advancedTextElement, 2);
+            stack.AddEmpty(2);
 
             var scene = new HeliumScene
             {

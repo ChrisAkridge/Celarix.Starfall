@@ -10,10 +10,11 @@ namespace Celarix.Starfall.Layout.Helium.Renderables
     {
         public required SRectF Bounds { get; set; }
         public required SColor Color { get; set; }
+        public required SPaintStyle PaintStyle { get; set; }
 
         public override void Render(IRenderTarget target)
         {
-            target.DrawRectangle(Bounds, Color, SAngle.Zero);
+            target.DrawRectangle(Bounds, Color, PaintStyle, SAngle.Zero);
         }
     }
 }

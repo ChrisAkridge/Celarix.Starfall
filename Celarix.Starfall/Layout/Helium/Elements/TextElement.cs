@@ -9,8 +9,6 @@ namespace Celarix.Starfall.Layout.Helium.Elements
 {
     public sealed class TextElement : ResizableHeliumElement
     {
-        private float? fontSizeToFillDesiredSize;
-
         /// <summary>
         /// Gets or sets the text to be rendered by this element. Multiple lines can be specified by
         /// including newline characters in the string.
