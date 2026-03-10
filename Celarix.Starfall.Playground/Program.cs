@@ -107,7 +107,7 @@ namespace Celarix.Starfall.Playground
             }
 
             // Add a few empty spacers at the end to push everything up a bit
-            for (var i = 0; i < 3; i++)
+            for (var i = 0; i < 5; i++)
             {
                 stack.AddChild(null, 1);
             }

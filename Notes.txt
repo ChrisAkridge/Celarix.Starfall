@@ -1,6 +1,6 @@
 Starfall Notes 2026-02-26:
     - Working from an example slide which is a view of how a single-precision float is built, bit by bit
-    - Displayed as 254 0 bits with a binary point after 128 of them
+    - Displayed as ~~254~~ 277 0 bits with a binary point after 128 of them
     - Number is built one bit at a time, starting from its highest set bit over the range down to its least (maximum 24 bits)
     - A bit is shown as a bit with a place value above it in the form 2^k
     - The user would create this entire process with one method on a component they define: SingleConstructionSequence.SequenceFor(float). It would:
@@ -8,7 +8,7 @@ Starfall Notes 2026-02-26:
         2. Horizontal-split container into parts of heights 1 and 3
         3. In the lower leaf, horizontal-split container into parts of height 1 and 2 (now slide is a stack with heights 1, 1, 2)
         4. In the upper leaf of the lower leaf, add a FlexRowContainer and set the margin to, say, 0.1 container heights.
-        5. For each of the 254 bits:
+        5. For each of the 277 bits:
             1. Create a BinaryTreeContainer.
             2. Horizontal-split it into parts of height 1 and 3.
             3. Create a MathTypesettingElement and set font and color. Set id to "bit-k" for the kth bit and add the class "place-value". Set Alignment to Center.

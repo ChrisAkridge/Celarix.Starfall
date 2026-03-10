@@ -188,7 +188,7 @@ namespace Celarix.Starfall.Playground.FloatingPoint
             var marginWidth = slotWidth * MarginWidthRatio;
             var totalInternalWidth = (slotWidth + marginWidth) * digits.Length;
 
-            // The arrow is always somewhere visible in the window. It is either:
+            // The arrow is always somewhere visible in the container. It is either:
             //  - Somewhere left-of-center, indicating it's pointing at one of the highest digits
             //  - Somewhere right-of-center, indicating it's pointing at one of the lowest digits
             //  - Centered, indicating it's pointing at one of the digits in the middle
@@ -282,15 +282,24 @@ namespace Celarix.Starfall.Playground.FloatingPoint
                     Id = $"digit_{exponent}"
                 };
 
-                if (SRectF.Intersects(placeValueRenderable.Bounds, outerBounds))
+                // Draw one additional slot width on either side of the container, even if we can't
+                // see these slots. This lets transitions select slots just outside the container if
+                // they want to slide things over.
+                var outerMargin = slotWidth + marginWidth;
+                var extendedBounds = new SRectF(slotX - outerMargin,
+                    placeValueY,
+                    slotWidth + (2 * outerMargin),
+                    outerBounds.Height);
+
+                if (SRectF.Intersects(placeValueRenderable.Bounds, extendedBounds))
                 {
-                    // Don't worry about drawing anything fully outside the container.
+                    // Don't worry about drawing anything fully outside the extended bounds.
                     placeValueRenderables.Add(placeValueRenderable);
                 }
 
-                if (SRectF.Intersects(digitRenderable.Bounds, outerBounds))
+                if (SRectF.Intersects(digitRenderable.Bounds, extendedBounds))
                 {
-                    // Don't worry about drawing anything fully outside the container.
+                    // Don't worry about drawing anything fully outside the extended bounds.
                     digitRenderables.Add(digitRenderable);
                 }
             }
@@ -303,7 +312,7 @@ namespace Celarix.Starfall.Playground.FloatingPoint
             var windowHeight = placeValueHeight + digitHeight;
             var windowRenderable = new RectangleRenderable
             {
-                Color = new SColor(255, 255, 0, 50),   // Semi-transparent yellow
+                Color = new SColor(255, 255, 0, 75),   // Semi-transparent yellow
                 Bounds = new SRectF(windowLeftX, windowTopY, windowActualWidth, windowHeight),
                 Id = "window"
             };
