@@ -1,5 +1,6 @@
 ﻿using Celarix.Starfall.Layout.Helium.Components;
 using Celarix.Starfall.Layout.Helium.Renderables;
+using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
@@ -96,7 +97,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             sizeRatios.RemoveAt(index);
         }
 
-        public override void MeasureSelf(SSizeF availableSize)
+        public override void MeasureSelf(SSizeF availableSize, MeasurementService measurementService)
         {
             ActualSize = availableSize;
 
@@ -118,7 +119,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
                         ? new SSizeF(sizePerPart * sizeRatios[i], availableSize.Height)
                         : new SSizeF(availableSize.Width, sizePerPart * sizeRatios[i]);
                     var cellInnerSize = Padding.GetInnerSize(cellOuterSize);
-                    child.MeasureSelf(cellInnerSize);
+                    child.MeasureSelf(cellInnerSize, measurementService);
                 }
             }
         }

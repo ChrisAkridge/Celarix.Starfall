@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Rendering.Models;
+﻿using Celarix.Starfall.Rendering;
+using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,7 +15,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements
 
         public override double DesiredHeightFraction => desiredHeightFraction;
 
-        public override void MeasureSelf(SSizeF maxSize)
+        public override void MeasureSelf(SSizeF maxSize, MeasurementService measurementService)
         {
             var width = maxSize.Width * (double)DesiredWidthFraction;
             var height = maxSize.Height * (double)DesiredHeightFraction;

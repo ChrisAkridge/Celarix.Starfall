@@ -29,7 +29,6 @@ namespace Celarix.Starfall.Layout.Helium.Elements
         }
 
         private readonly string[] textLines;
-        private TextMeasurer? textMeasurer;
         private PositionedTextSpan[]? positionedTextSpans;
 
         public SFont Font { get; set; } = new SFontFamily("Arial");
@@ -46,12 +45,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements
             textLines = text.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
         }
 
-        public override void MeasureText(TextMeasurer textMeasurer, SSizeF? availableSize = null)
-        {
-            this.textMeasurer = textMeasurer;
-        }
-
-        public override void MeasureSelf(SSizeF maxSize)
+        public override void MeasureSelf(SSizeF maxSize, MeasurementService measurementService)
         {
             // Alright.
             // So.
@@ -59,9 +53,6 @@ namespace Celarix.Starfall.Layout.Helium.Elements
             // wrapping if we know the width of the element, but we can't know the width of the element
             // until we're told here in MeasureSelf. So we can't do it until now and have to hackishly
             // store the TextMeasurer until we get here.
-
-            if (textMeasurer == null) { throw new ArgumentNullException(nameof(textMeasurer), "MeasureText must be called before MeasureSelf."); }
-
             if (positionedTextSpans != null
                 && ActualSize.HasValue
                 && ActualSize.Value == maxSize)  { return; }
@@ -78,7 +69,11 @@ namespace Celarix.Starfall.Layout.Helium.Elements
 
             var fontSizeSpecified = Font.Size != null;
             var fontSize = Font.Size ?? 12f;
-            var initialPositioning = PositionTextForFontSize(separatedLines, maxSize, fontSize, out var positionedBounds);
+            var initialPositioning = PositionTextForFontSize(separatedLines,
+                maxSize,
+                fontSize,
+                measurementService,
+                out var positionedBounds);
 
             var positionedTextFits = positionedBounds.FitsWithin(maxSize.At(SPointF.Zero));
             if (!positionedTextFits || !fontSizeSpecified)
@@ -90,7 +85,11 @@ namespace Celarix.Starfall.Layout.Helium.Elements
                 var scale = Math.Min(hScale, vScale);
                 var scaledFontSize = fontSize * (float)scale;
                 Font = Font.WithSize(scaledFontSize);
-                initialPositioning = PositionTextForFontSize(separatedLines, maxSize, scaledFontSize, out positionedBounds);
+                initialPositioning = PositionTextForFontSize(separatedLines,
+                    maxSize,
+                    scaledFontSize,
+                    measurementService,
+                    out positionedBounds);
             }
 
             var alignmentOffset = AlignmentHelper.Align(Alignment, maxSize.At(SPointF.Zero), positionedBounds.Size);
@@ -108,6 +107,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements
         private List<PositionedTextSpan> PositionTextForFontSize(string[][] separatedLines,
             SSizeF maxSize,
             float fontSize,
+            MeasurementService measurementService,
             out SRectF positionedBounds)
         {
             var lineSpacing = fontSize * LineSpacingMultiplier;
@@ -121,7 +121,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements
             {
                 foreach (var word in separatedLine)
                 {
-                    var wordSize = textMeasurer!.MeasureText(word, Font);
+                    var wordSize = measurementService.MeasureText(word, Font);
                     if (currentX + wordSize.Width > maxSize.Width)
                     {
                         // Move to the next line

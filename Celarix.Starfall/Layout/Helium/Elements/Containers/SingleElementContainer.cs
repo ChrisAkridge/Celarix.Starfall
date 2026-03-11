@@ -1,5 +1,6 @@
 ﻿using Celarix.Starfall.Layout.Helium.Components;
 using Celarix.Starfall.Layout.Helium.Renderables;
+using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
         public override double DesiredWidthFraction => Constants.FullSize;
         public override double DesiredHeightFraction => Constants.FullSize;
 
-        public override void MeasureSelf(SSizeF availableSize)
+        public override void MeasureSelf(SSizeF availableSize, MeasurementService measurementService)
         {
             // The container itself always fills the available space.
             ActualSize = availableSize;
@@ -28,7 +29,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             }
 
             // Calculate the available size for the child by subtracting padding.
-            Child.MeasureSelf(Padding.GetInnerSize(ActualSize.Value));
+            Child.MeasureSelf(Padding.GetInnerSize(ActualSize.Value), measurementService);
         }
 
         public override void ArrangeChildren(SRectF thisBounds)

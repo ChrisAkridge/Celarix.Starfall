@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Layout.Helium.Renderables;
+using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
@@ -62,7 +63,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             children.Clear();
         }
 
-        public override void MeasureSelf(SSizeF availableSize)
+        public override void MeasureSelf(SSizeF availableSize, MeasurementService measurementService)
         {
             // Containers are always as large as they can be.
             ActualSize = availableSize;
@@ -78,10 +79,10 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             var falseSize = new SSizeF(1000, 1000);
             foreach (var child in children)
             {
-                child.MeasureSelf(falseSize);
+                child.MeasureSelf(falseSize, measurementService);
                 var aspectRatio = child.ActualSize!.Value.Width / child.ActualSize!.Value.Height;
                 var desiredWidth = aspectRatio * availableSize.Height;
-                child.MeasureSelf(new SSizeF(desiredWidth, availableSize.Height));
+                child.MeasureSelf(new SSizeF(desiredWidth, availableSize.Height), measurementService);
             }
         }
 

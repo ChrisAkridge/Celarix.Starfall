@@ -25,17 +25,21 @@ namespace Celarix.Starfall.Layout.Helium.Elements
         // and that's what will ask the render target how big it can be. The TextRenderable will try to
         // fill the width or the height, depending on which is the shorter dimension, and then scale the
         // other dimension to maintain the aspect ratio of the text.
+        //
+        // If the user sets Font.Size to a non-null value, that font size will be used; otherwise, the 
+        // TextRenderable will compute a font size that allows the text to fit within the bounds, and use that.
+        // If the specified font size is too large to fit within the bounds, it will be scaled down to fit.
 
         public override void ArrangeChildren(SRectF thisBounds)
         {
             // No children, so nothing to arrange.
         }
 
-        public override void MeasureSelf(SSizeF maxSize)
+        public override void MeasureSelf(SSizeF maxSize, MeasurementService measurementService)
         {
             if (Font.Size == null)
             {
-                base.MeasureSelf(maxSize);
+                base.MeasureSelf(maxSize, measurementService);
                 return;
             }
 

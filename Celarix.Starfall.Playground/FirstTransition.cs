@@ -5,6 +5,7 @@ using Celarix.Starfall.Layout.Helium.Renderables;
 using Celarix.Starfall.Layout.Helium.Selection;
 using Celarix.Starfall.Layout.Helium.Transitions;
 using Celarix.Starfall.Mathematics;
+using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using OpenTK.Mathematics;
@@ -23,13 +24,13 @@ namespace Celarix.Starfall.Playground
 
         public double Duration { get; }
 
-        public FirstTransition(HeliumScene from, HeliumScene to, double duration, SSizeF maxSize)
+        public FirstTransition(HeliumScene from, HeliumScene to, double duration, SSizeF maxSize, MeasurementService measurementService)
         {
             // This is a very very bad first transition, but it is helping me map out how the
             // interface should become, so hopefully future iterations will be less dumb.
             Duration = duration;
-            renderables = [.. from.GetRenderables(maxSize).Cast<HeliumRenderable>()];
-            HeliumRenderable[] toRenderables = [.. to.GetRenderables(maxSize).Cast<HeliumRenderable>()];
+            renderables = [.. from.GetRenderables(maxSize, measurementService).Cast<HeliumRenderable>()];
+            HeliumRenderable[] toRenderables = [.. to.GetRenderables(maxSize, measurementService).Cast<HeliumRenderable>()];
             var query = SelectionQuery<HeliumRenderable>.StartById("blue-rect");
             var fromBlueRect = query.Query(renderables).Single();
             var toBlueRect = query.Query(toRenderables).Single();

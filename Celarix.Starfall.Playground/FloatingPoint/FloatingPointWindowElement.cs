@@ -77,7 +77,7 @@ namespace Celarix.Starfall.Playground.FloatingPoint
                     windowWidth = normalWindowWidth;
                 }
 
-                windowLeftIndex = value;
+                windowLeftIndex = Math.Clamp(value, 0, maxWindowLeftIndex);
             }
         }
 
@@ -125,23 +125,6 @@ namespace Celarix.Starfall.Playground.FloatingPoint
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
             digits[index] = digit;
-        }
-
-        public override void MeasureText(TextMeasurer textMeasurer, SSizeF? availableSize = null)
-        {
-            if (digitAspectRatio != 0 && widestPlaceValueAspectRatio != 0)
-            {
-                // We've already measured the text, so we can skip this step.
-                return;
-            }
-
-            digitAspectRatio = textMeasurer.AspectRatioForText("0", digitFont);
-
-            // The largest place value position is the rightmost one, with the lowest exponent, so we measure that one to get the widest place value.
-            var lowestExponent = highestBitPlaceValueExponent - (digits.Length - 1);
-            var exponentString = lowestExponent.ToString();
-            var superscriptedExponent = new string(exponentString.Select(ToUnicodeSuperscript).ToArray());
-            widestPlaceValueAspectRatio = textMeasurer.AspectRatioForText($"{placeValueExponentBase}{superscriptedExponent}", placeValueFont);
         }
 
         public override void ArrangeChildren(SRectF thisBounds)
@@ -321,10 +304,24 @@ namespace Celarix.Starfall.Playground.FloatingPoint
             return [windowRenderable, arrowRenderable, .. placeValueRenderables, .. digitRenderables];
         }
 
-        public override void MeasureSelf(SSizeF availableSize)
+        public override void MeasureSelf(SSizeF availableSize, MeasurementService measurementService)
         {
             // This element always fills its available space, so we don't need to do any measuring here.
             ActualSize = availableSize;
+
+            if (digitAspectRatio != 0 && widestPlaceValueAspectRatio != 0)
+            {
+                // We've already measured the text, so we can skip this step.
+                return;
+            }
+
+            digitAspectRatio = measurementService.AspectRatioForText("0", digitFont);
+
+            // The largest place value position is the rightmost one, with the lowest exponent, so we measure that one to get the widest place value.
+            var lowestExponent = highestBitPlaceValueExponent - (digits.Length - 1);
+            var exponentString = lowestExponent.ToString();
+            var superscriptedExponent = new string(exponentString.Select(ToUnicodeSuperscript).ToArray());
+            widestPlaceValueAspectRatio = measurementService.AspectRatioForText($"{placeValueExponentBase}{superscriptedExponent}", placeValueFont);
         }
 
         public static char ToUnicodeSuperscript(char digit)

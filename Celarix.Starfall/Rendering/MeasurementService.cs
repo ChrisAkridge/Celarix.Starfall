@@ -6,11 +6,11 @@ using System.Text;
 
 namespace Celarix.Starfall.Rendering
 {
-    public sealed class TextMeasurer
+    public sealed class MeasurementService
     {
         private readonly IRenderTarget renderTarget;
 
-        public TextMeasurer(IRenderTarget renderTarget)
+        public MeasurementService(IRenderTarget renderTarget)
         {
             this.renderTarget = renderTarget;
         }

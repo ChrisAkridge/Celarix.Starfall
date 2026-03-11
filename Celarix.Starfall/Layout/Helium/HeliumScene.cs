@@ -1,5 +1,6 @@
 ﻿using Celarix.Starfall.Layout.Helium.Elements;
 using Celarix.Starfall.Layout.Helium.Renderables;
+using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using System;
@@ -19,11 +20,10 @@ namespace Celarix.Starfall.Layout.Helium
 
             if (Root == null) { return; }
 
-            Root.MeasureText(new Rendering.TextMeasurer(target), maxSize);
-            Root.MeasureSelf(maxSize);
+            Root.MeasureSelf(maxSize, new Rendering.MeasurementService(target));
             Root.ArrangeChildren(new SRectF(SPointF.Zero, maxSize));
 
-            // TODO: Okay, this is just another sign we need to rethink the whole layout system
+            // Children never set their own position, so we must set the root's position to (0,0) before rendering.
             Root.ActualPosition = SPointF.Zero;
 
             var renderables = Root.GetRenderables();
@@ -47,11 +47,11 @@ namespace Celarix.Starfall.Layout.Helium
             };
         }
 
-        public IEnumerable<IRenderable> GetRenderables(SSizeF maxSize)
+        public IEnumerable<IRenderable> GetRenderables(SSizeF maxSize, MeasurementService measurementService)
         {
             if (Root == null) { return []; }
 
-            Root.MeasureSelf(maxSize);
+            Root.MeasureSelf(maxSize, measurementService);
             Root.ArrangeChildren(new SRectF(SPointF.Zero, maxSize));
             var renderables = Root.GetRenderables();
             ClearLayoutData(Root);
