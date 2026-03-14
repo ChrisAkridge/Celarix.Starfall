@@ -103,4 +103,10 @@ namespace Celarix.Starfall
         Italic = 1,
         Oblique = 2
     }
+
+    public enum FadeDirection
+    {
+        In,
+        Out
+    }
 }

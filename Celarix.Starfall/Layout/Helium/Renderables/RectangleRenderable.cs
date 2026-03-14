@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Rendering.Models;
+﻿using Celarix.Starfall.Layout.Helium.Renderables.Interfaces;
+using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,9 @@ using System.Text;
 
 namespace Celarix.Starfall.Layout.Helium.Renderables
 {
-    public sealed class RectangleRenderable : HeliumRenderable
+    public sealed class RectangleRenderable : HeliumRenderable,
+        IBoundedRenderable,
+        IColoredRenderable
     {
         public required SRectF Bounds { get; set; }
         public required SColor Color { get; set; }

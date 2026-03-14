@@ -36,7 +36,14 @@ namespace Celarix.Starfall.Playground
             layoutEngine.SetRenderTarget(tkTarget);
 
             var singleConstruction = new SingleConstructionView((float)Math.PI);
-            var scenes = new List<HeliumScene>();
+            var emptyFirstScene = new HeliumScene
+            {
+                BackgroundColor = new SColor(8, 0, 130, 255)
+            };
+            var scenes = new List<HeliumScene>
+            {
+                emptyFirstScene
+            };
             
             do
             {
@@ -50,6 +57,11 @@ namespace Celarix.Starfall.Playground
             for (var i = 0; i < scenes.Count - 1; i++)
             {
                 presentationEngine.AddScene($"scene{i}", scenes[i]);
+                if (i > 0)
+                {
+                    var transition = new FloatingPointConstructionTransition(0.5d, scenes[i - 1], scenes[i], new SSizeF(1280, 720), new Rendering.MeasurementService(tkTarget));
+                    presentationEngine.AddTransition($"scene{i - 1}", $"scene{i}", transition);
+                }
             }
             slideCount = scenes.Count;
 
@@ -93,7 +105,8 @@ namespace Celarix.Starfall.Playground
                 Color = SColor.White,
                 Rotation = SAngle.Zero,
                 Alignment = Alignment.LeftCenter,
-                LineSpacingMultiplier = 0.2d
+                LineSpacingMultiplier = 0.2d,
+                Id = "details"
             };
 
             stack.AddEmpty(1);

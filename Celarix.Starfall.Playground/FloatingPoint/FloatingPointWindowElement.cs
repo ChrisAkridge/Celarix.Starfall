@@ -253,6 +253,7 @@ namespace Celarix.Starfall.Playground.FloatingPoint
                     Rotation = SAngle.Zero,
                     Id = $"placeValue_{exponent}"
                 };
+                placeValueRenderable.AddClass("placeValue");
 
                 var digit = digits[i];
                 var digitRenderable = new TextRenderable
@@ -264,6 +265,7 @@ namespace Celarix.Starfall.Playground.FloatingPoint
                     Rotation = SAngle.Zero,
                     Id = $"digit_{exponent}"
                 };
+                digitRenderable.AddClass("digit");
 
                 // Draw one additional slot width on either side of the container, even if we can't
                 // see these slots. This lets transitions select slots just outside the container if

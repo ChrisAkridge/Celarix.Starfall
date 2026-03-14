@@ -12,7 +12,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements
     {
         private readonly List<string> classes = [];
 
-        public string? Id { get; protected set; }
+        public string? Id { get; set; }
         public IReadOnlyList<string> Classes => classes;
         public abstract IReadOnlyList<HeliumElement> Children { get; }
         public abstract double DesiredWidthFraction { get; }

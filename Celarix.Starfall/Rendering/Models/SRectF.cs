@@ -47,6 +47,15 @@ namespace Celarix.Starfall.Rendering.Models
             return a.Left < b.Right && a.Right > b.Left && a.Top < b.Bottom && a.Bottom > b.Top;
         }
 
+        public static SRectF Lerp(SRectF from, SRectF to, double progress)
+        {
+            var newX = from.X + (to.X - from.X) * progress;
+            var newY = from.Y + (to.Y - from.Y) * progress;
+            var newWidth = from.Width + (to.Width - from.Width) * progress;
+            var newHeight = from.Height + (to.Height - from.Height) * progress;
+            return new SRectF(newX, newY, newWidth, newHeight);
+        }
+
         public bool FitsWithin(SRectF outer)
         {
             return Left >= outer.Left && Right <= outer.Right && Top >= outer.Top && Bottom <= outer.Bottom;

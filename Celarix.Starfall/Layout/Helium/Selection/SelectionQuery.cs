@@ -73,5 +73,18 @@ namespace Celarix.Starfall.Layout.Helium.Selection
             }
             return results;
         }
+
+        public bool Matches(ISelectable<T> item)
+        {
+            if (Id != null && item.Id == Id)
+            {
+                return true;
+            }
+            if (ClassNames.Any(c => item.Classes.Contains(c)))
+            {
+                return true;
+            }
+            return false;
+        }
     }
 }

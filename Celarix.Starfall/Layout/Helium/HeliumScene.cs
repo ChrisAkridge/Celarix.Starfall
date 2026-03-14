@@ -20,7 +20,7 @@ namespace Celarix.Starfall.Layout.Helium
 
             if (Root == null) { return; }
 
-            Root.MeasureSelf(maxSize, new Rendering.MeasurementService(target));
+            Root.MeasureSelf(maxSize, new MeasurementService(target));
             Root.ArrangeChildren(new SRectF(SPointF.Zero, maxSize));
 
             // Children never set their own position, so we must set the root's position to (0,0) before rendering.
@@ -52,6 +52,7 @@ namespace Celarix.Starfall.Layout.Helium
             if (Root == null) { return []; }
 
             Root.MeasureSelf(maxSize, measurementService);
+            Root.ActualPosition = SPointF.Zero;
             Root.ArrangeChildren(new SRectF(SPointF.Zero, maxSize));
             var renderables = Root.GetRenderables();
             ClearLayoutData(Root);
