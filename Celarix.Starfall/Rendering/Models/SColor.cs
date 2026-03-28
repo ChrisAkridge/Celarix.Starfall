@@ -127,6 +127,72 @@ namespace Celarix.Starfall.Rendering.Models
             return FromHSV(hsv.H, hsv.S, hsv.V);
         }
 
+        public static SColor FromHtmlAttribute(string value, SColor fallback)
+        {
+            // Trim the leading # if any
+            if (value.StartsWith("#"))
+            {
+                value = value[1..];
+            }
+
+            // Check all remaining characters are valid hex digits
+            if (!value.All(Uri.IsHexDigit))
+            {
+                return fallback;
+            }
+
+            // No "chucknorris" parsing here, just a simple hex code
+            var hexLength = value.Length;
+            var hasAlpha = hexLength is 4 or 8;
+            var isWebSafe = hexLength <= 4;
+
+            if (isWebSafe)
+            {
+                // Interleave characters with '0'
+                var webSafeValue = new StringBuilder();
+                foreach (var c in value)
+                {
+                    webSafeValue.Append(c);
+                    webSafeValue.Append('0');
+                }
+                value = webSafeValue.ToString();
+            }
+
+            if (!hasAlpha)
+            {
+                // Assume full opacity if alpha is not provided
+                value += "FF";
+            }
+
+            // Parse order is RGBA
+            var redPart = value[0..2];
+            var greenPart = value[2..4];
+            var bluePart = value[4..6];
+            var alphaPart = value[6..8];
+            
+            var red = byte.Parse(redPart, System.Globalization.NumberStyles.HexNumber);
+            var green = byte.Parse(greenPart, System.Globalization.NumberStyles.HexNumber);
+            var blue = byte.Parse(bluePart, System.Globalization.NumberStyles.HexNumber);
+            var alpha = byte.Parse(alphaPart, System.Globalization.NumberStyles.HexNumber);
+            
+            return new SColor(red, green, blue, alpha);
+        }
+
+        public static SColor FromName(string name, SColor fallback)
+        {
+            return name.ToLowerInvariant() switch
+            {
+                "transparent" => Transparent,
+                "black" => Black,
+                "white" => White,
+                "red" => Red,
+                "green" => Green,
+                "blue" => Blue,
+                "rebeccapurple" => RebeccaPurple,
+                _ => throw new ArgumentException($"Unknown color name: {name}"),
+            };
+        }
+
         #region Defined Colors
         public static readonly SColor Transparent = new(0, 0, 0, 0);
         public static readonly SColor Black = new(0, 0, 0, 255);

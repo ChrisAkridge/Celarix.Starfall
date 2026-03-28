@@ -109,4 +109,12 @@ namespace Celarix.Starfall
         In,
         Out
     }
+
+    public enum LargeOperatorKind
+    {
+        Sum,
+        Product,
+        Integral,
+        Limit
+    }
 }
