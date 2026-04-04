@@ -5,6 +5,7 @@ using Celarix.Starfall.Layout.Helium.Elements;
 using Celarix.Starfall.Layout.Helium.Elements.Containers;
 using Celarix.Starfall.Layout.Helium.Transitions;
 using Celarix.Starfall.Playground.FloatingPoint;
+using Celarix.Starfall.Playground.Starsong;
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
@@ -35,32 +36,16 @@ namespace Celarix.Starfall.Playground
 
             layoutEngine.SetRenderTarget(tkTarget);
 
-            var singleConstruction = new SingleConstructionView((float)Math.PI);
-            var emptyFirstScene = new HeliumScene
-            {
-                BackgroundColor = new SColor(8, 0, 130, 255)
-            };
-            var scenes = new List<HeliumScene>
-            {
-                emptyFirstScene
-            };
-            
-            do
-            {
-                var scene = CreateFPScene(singleConstruction);
-                scenes.Add(scene);
-            } while (singleConstruction.MoveNext());
+            var measurementService = new Rendering.MeasurementService(tkTarget);
+            var scenes = StarsongPresentationBuilder.BuildSlides();
 
-            // brain kinda mush, very hackish
-            scenes.Add(CreateFPScene(singleConstruction)); // add the final scene again so that the "next" button works on the last slide
-
-            for (var i = 0; i < scenes.Count - 1; i++)
+            for (var i = 0; i < scenes.Count; i++)
             {
                 presentationEngine.AddScene($"scene{i}", scenes[i]);
                 if (i > 0)
                 {
-                    var transition = new FloatingPointConstructionTransition(0.5d, scenes[i - 1], scenes[i], new SSizeF(1280, 720), new Rendering.MeasurementService(tkTarget));
-                    presentationEngine.AddTransition($"scene{i - 1}", $"scene{i}", transition);
+                    presentationEngine.AddTransition($"scene{i - 1}", $"scene{i}", StarsongPresentationBuilder.BuildSlideToSlideTransition(
+                        scenes[i - 1], scenes[i], new SSizeF(1280, 720), measurementService));
                 }
             }
             slideCount = scenes.Count;

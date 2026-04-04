@@ -111,155 +111,38 @@ namespace Celarix.Starfall.Rendering.Targets
 
         public void Clear(SColor color)
         {
-            surface?.Canvas.Clear(color.ToSKColor());
+            if (surface?.Canvas == null) { return; }
+
+            SkiaCommon.Clear(surface.Canvas, color);
         }
 
         public void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation)
         {
             // TODO: Implement rotation
-            if (surface == null) { return; }
-            using var paint = new SKPaint
-            {
-                Color = color.ToSKColor(),
-                IsAntialias = true,
-                Style = paintStyle.ToSKPaintStyle()
-            };
-            surface.Canvas.DrawRect(bounds.ToSKRect(), paint);
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.DrawRectangle(surface.Canvas, bounds, color, paintStyle);
         }
 
         public void DrawText(string text, SFont font, SRectF bounds, SColor color, SAngle rotation, Alignment alignment = Alignment.Center)
         {
             // TODO: Implement rotation
-            if (surface == null) { return; }
-
-            SKFont skFont;
-            var useFontSize = font.Size != null;
-            var skColor = color.ToSKColor();
-
-            using var paint = new SKPaint
-            {
-                Color = skColor,
-                IsAntialias = true
-            };
-
-            // Expand the text to fit the widest dimension it can. We then want to center the text in
-            // the bounds, which could mean quite a big offset on the other dimension (i.e. if the bounds
-            // were 1000x100000 or something).
-            float fittedSize;
-            if (bounds.Height >= bounds.Width)
-            {
-                // ###
-                // ###
-                // ###
-                // ###
-                // ###, so the text can't be very wide
-                fittedSize = FitTextToWidth(text, font, (float)bounds.Width);
-            }
-            else
-            {
-                // #####
-                // #####, so the text can't be very tall
-                fittedSize = FitTextToHeight(text, font, (float)bounds.Height);
-            }
-
-            skFont = useFontSize
-                ? GetFont(font)
-                : GetFont(font.WithSize(fittedSize));
-
-            SSizeF measuredNewSize = skFont.MeasureShapedText(text);
-            if (!useFontSize)
-            {
-                bounds = AlignmentHelper.Align(alignment, bounds, measuredNewSize).WithSize(measuredNewSize);
-            }
-            else if (measuredNewSize.Width > bounds.Width || measuredNewSize.Height > bounds.Height)
-            {
-                // Too big! Reduce the font size until it fits. We can do this by finding the longest
-                // axis of the measured size and computing the scale factor between that and the corresponding
-                // axis of the bounds, then applying that scale factor to the font size.
-                var widthScale = (float)bounds.Width / measuredNewSize.Width;
-                var heightScale = (float)bounds.Height / measuredNewSize.Height;
-                var scale = Math.Min(widthScale, heightScale);
-                skFont = font.WithSize(skFont.Size * (float)scale).ToSKFont();
-            }
-
-            surface.Canvas.DrawShapedText(text,
-                (float)bounds.Left,
-                (float)bounds.Top - skFont.Metrics.Ascent,
-                skFont,
-                paint);
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.DrawText(surface.Canvas, text, font, bounds, color, rotation, alignment);
         }
 
         public void DrawTextDirectly(string text, SFont font, SRectF bounds, SColor color, SAngle rotation)
         {
             // TODO: Implement rotation
-            if (surface == null) { return; }
-
-            using var paint = new SKPaint
-            {
-                Color = color.ToSKColor(),
-                IsAntialias = true
-            };
-
-            // Use the font size provided by the layout system as-is
-            var skFont = GetFont(font);
-
-            // Measure for alignment only; DO NOT rescale the font
-            var measured = skFont.MeasureShapedText(text);
-
-            var drawLeft = (float)bounds.Left;
-            var drawTop = (float)bounds.Top;
-
-            // Convert top-based coordinate to baseline for Skia
-            var baselineY = drawTop - skFont.Metrics.Ascent;
-
-            surface.Canvas.DrawShapedText(text, drawLeft, baselineY, skFont, paint);
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.DrawTextDirectly(surface.Canvas, text, font, bounds, color, rotation);
         }
 
         // TODO: Cache these text/font measurements, as a lot of the time, the same text will be measured
         // repeatedly, especially on animated scenes.
-        public float FitTextToWidth(string text, SFont font, float width)
-        {
-            var skFont = font.ToSKFont();
-            using var paint = new SKPaint
-            {
-                IsAntialias = true
-            };
-            var measuredWidth = skFont.MeasureShapedText(text).Width;
-            var scale = width / measuredWidth;
-            return (font.Size ?? 12f) * (float)scale;
-        }
+        public float FitTextToWidth(string text, SFont font, float width) => SkiaTextRendering.FitTextToWidth(text, font, width);
 
-        public float FitTextToHeight(string text, SFont font, float height)
-        {
-            var skFont = GetFont(font);
-            using var paint = new SKPaint
-            {
-                IsAntialias = true
-            };
-            var metrics = skFont.Metrics;
-            var measuredHeight = metrics.Descent - metrics.Ascent;
-            var scale = height / measuredHeight;
-            return (font.Size ?? 12f) * scale;
-        }
+        public float FitTextToHeight(string text, SFont font, float height) => SkiaTextRendering.FitTextToHeight(text, font, height);
 
-        public SSizeF MeasureText(string text, SFont font) => GetFont(font).MeasureShapedText(text);
-
-        #region Text Caching
-        private static readonly double DefaultCacheDurationMinutes = 60d;
-
-        private static SKFont GetFont(SFont font)
-        {
-            var cacheKey = font.ToCacheKey();
-            if (Cached<SKFont>.TryGet(cacheKey, out var cachedFont))
-            {
-                return cachedFont;
-            }
-            else
-            {
-                var skFont = font.ToSKFont();
-                return cachedFont.Save(skFont, TimeSpan.FromMinutes(DefaultCacheDurationMinutes));
-            }
-        }
-        #endregion
+        public SSizeF MeasureText(string text, SFont font) => SkiaTextRendering.GetFont(font).MeasureShapedText(text);
     }
 }

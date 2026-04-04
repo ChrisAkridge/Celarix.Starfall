@@ -1,4 +1,6 @@
 ﻿using Celarix.Starfall.Mathematics;
+using Celarix.Starfall.Rendering.Converters;
+using Celarix.Starfall.Rendering.Models;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
@@ -6,75 +8,71 @@ using System.Text;
 
 namespace Celarix.Starfall.Rendering.Targets
 {
-    public sealed class SkiaPngTarget
+    public sealed class SkiaPngTarget : IRenderTarget
     {
         // Just.
         // Code.
         // We can expand what we need to, as we need to.
-        public void Render()
+        private const string FileNameFormat = "frame_{0:D8}.png";
+
+        private SKBitmap _bitmap;
+        private SKCanvas _canvas;
+        private SkiaPngTargetOptions _options;
+        private int _lastFrameIndex = -1;
+
+        public SkiaPngTarget(SkiaPngTargetOptions options)
         {
-            const int width = 1920;
-            const int height = 1080;
-            var outputPath = $"E:\\Documents\\Files\\Programming\\Starfall\\rect_{DateTime.Now:yyyyMMdd_hhmmss}.png";
+            _options = options;
+            _bitmap = new SKBitmap(options.Width, options.Height);
+            _canvas = new SKCanvas(_bitmap);
 
-            using var bitmap = new SKBitmap(width, height);
-            var canvas = new SKCanvas(bitmap);
+            Directory.CreateDirectory(options.OutputPath);
+        }
 
-            // Clear the canvas
-            canvas.Clear(SKColors.CornflowerBlue);
+        public bool CanAnimate => true;
 
-            // Pick the circle color
-            SKColors.CornflowerBlue.ToHsl(out var h, out var s, out var l);
-            s *= 0.7f;
-            var newColor = SKColor.FromHsl(h, s, l);
+        public bool IsAnimating { get; set; }
 
-            // Pick a radius
-            const int outerRadius = 20;
-            const int innerRadius = 15;
+        public void Clear(SColor color) => SkiaCommon.Clear(_canvas, color);
 
-            var points = GetPointsForCircleLattice(width, height, outerRadius);
-            foreach (var point in points)
-            {
-                // Draw a circle at the point
-                canvas.DrawCircle(point, innerRadius, new SKPaint
-                {
-                    Color = newColor,
-                    IsAntialias = true,
-                    Style = SKPaintStyle.Fill
-                });
-            }
+        public void Complete()
+        {
+            var image = SKImage.FromBitmap(_bitmap);
+            var data = image.Encode(SKEncodedImageFormat.Png, 100);
 
-            // Save the bitmap as a PNG file
-            using var image = SKImage.FromBitmap(bitmap);
-            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-            using var stream = File.OpenWrite(outputPath);
+            _lastFrameIndex += 1;
+            var filePath = Path.Combine(_options.OutputPath, string.Format(FileNameFormat, _lastFrameIndex));
+            var stream = File.OpenWrite(filePath);
             data.SaveTo(stream);
+
+            stream.Close();
+            stream.Dispose();
+            data.Dispose();
+            image.Dispose();
+            _canvas.Dispose();
+            _bitmap.Dispose();
+
+            _bitmap = new SKBitmap(_options.Width, _options.Height);
+            _canvas = new SKCanvas(_bitmap);
         }
 
-        private static List<SKPoint> GetPointsForCircleLattice(int width, int height, int circleRadius)
-        {
-            // The first circle is centered at (radius, radius).
-            // We build the first row via adding 2 * radius to the x coordinate until we reach the end of the row.
-            // The row may have a partial circle at the end, which is allowed.
-            // The next row is a copy of the first, but shifted to the right by radius and down by 2 * radius.
-            int diameter = circleRadius * 2;
-            var evenRowXCenters = SpacedSequence<int>.AllBetween(circleRadius, circleRadius * 2, -diameter, width + diameter);
-            var oddRowXCenters = SpacedSequence<int>.AllBetween(diameter, circleRadius * 2, -diameter, width + diameter);
-            var yCenters = SpacedSequence<int>.AllBetween(circleRadius, circleRadius * 2, -diameter, height + diameter);
+        public void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation) =>
+            SkiaCommon.DrawRectangle(_canvas, bounds, color, paintStyle);
 
-            var points = new List<SKPoint>();
-            var y = circleRadius;
-            for (int row = 0; y < height + diameter; row++)
-            {
-                var xCenters = row % 2 == 0 ? evenRowXCenters : oddRowXCenters;
-                foreach (int x in xCenters)
-                {
-                    points.Add(new SKPoint(x, y));
-                }
-                y += circleRadius * 2;
-            }
+        public void DrawText(string text, SFont font, SRectF bounds, SColor color, SAngle rotation, Alignment alignment = Alignment.Center) =>
+            SkiaCommon.DrawText(_canvas, text, font, bounds, color, rotation, alignment);
 
-            return points;
-        }
+        public void DrawTextDirectly(string text, SFont font, SRectF bounds, SColor color, SAngle rotation) =>
+            SkiaCommon.DrawTextDirectly(_canvas, text, font, bounds, color, rotation);
+
+        public float FitTextToHeight(string text, SFont font, float height) =>
+            SkiaTextRendering.FitTextToHeight(text, font, height);
+
+        public float FitTextToWidth(string text, SFont font, float width) =>
+            SkiaTextRendering.FitTextToWidth(text, font, width);
+
+        public SSizeF MeasureText(string text, SFont font) => SkiaTextRendering.GetFont(font).MeasureShapedText(text);
+
+        public void Start() { }
     }
 }

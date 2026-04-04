@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Rendering.Models;
+using FastCache;
 using SkiaSharp;
 using SkiaSharp.HarfBuzz;
 using System;
@@ -12,6 +13,7 @@ namespace Celarix.Starfall.Rendering.Targets
     {
         // Source taken from https://github.com/MichaelRumpler/SkiaTextRendering/blob/main/SkiaTextRendering/Extensions/CanvasExtensions.cs
         // MIT licensed, see https://github.com/MichaelRumpler/SkiaTextRendering/blob/main/LICENSE
+        private static readonly double DefaultCacheDurationMinutes = 60d;
 
         public static void DrawShapedText(this SKCanvas canvas, string text, float x, float y, SKFont font, SKPaint paint) =>
             DrawShapedText(canvas, text, x, y, SKTextAlign.Left, font, paint);
@@ -185,6 +187,47 @@ namespace Celarix.Starfall.Rendering.Targets
             {
                 clearCacheTimer?.Dispose();
                 clearCacheTimer = null;
+            }
+        }
+
+        // TODO: Cache these text/font measurements, as a lot of the time, the same text will be measured
+        // repeatedly, especially on animated scenes.
+        public static float FitTextToWidth(string text, SFont font, float width)
+        {
+            var skFont = font.ToSKFont();
+            using var paint = new SKPaint
+            {
+                IsAntialias = true
+            };
+            var measuredWidth = skFont.MeasureShapedText(text).Width;
+            var scale = width / measuredWidth;
+            return (font.Size ?? 12f) * (float)scale;
+        }
+
+        public static float FitTextToHeight(string text, SFont font, float height)
+        {
+            var skFont = GetFont(font);
+            using var paint = new SKPaint
+            {
+                IsAntialias = true
+            };
+            var metrics = skFont.Metrics;
+            var measuredHeight = metrics.Descent - metrics.Ascent;
+            var scale = height / measuredHeight;
+            return (font.Size ?? 12f) * scale;
+        }
+
+        public static SKFont GetFont(SFont font)
+        {
+            var cacheKey = font.ToCacheKey();
+            if (Cached<SKFont>.TryGet(cacheKey, out var cachedFont))
+            {
+                return cachedFont;
+            }
+            else
+            {
+                var skFont = font.ToSKFont();
+                return cachedFont.Save(skFont, TimeSpan.FromMinutes(DefaultCacheDurationMinutes));
             }
         }
     }

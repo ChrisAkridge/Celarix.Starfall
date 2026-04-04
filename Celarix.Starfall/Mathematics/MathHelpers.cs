@@ -29,5 +29,15 @@ namespace Celarix.Starfall.Mathematics
             double size = Math.Min(rectangle.Width, rectangle.Height);
             return new SSizeF(size, size);
         }
+
+        public static SColor InterpolateColor(SColor from, SColor to, double progress)
+        {
+            // TODO: make gamma aware
+            byte r = (byte)(from.R + (to.R - from.R) * progress);
+            byte g = (byte)(from.G + (to.G - from.G) * progress);
+            byte b = (byte)(from.B + (to.B - from.B) * progress);
+            byte a = (byte)(from.A + (to.A - from.A) * progress);
+            return new SColor(r, g, b, a);
+        }
     }
 }

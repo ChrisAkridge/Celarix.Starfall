@@ -78,47 +78,45 @@ namespace Celarix.Starfall.Rendering.Models
         public static SColor FromHSV(double h, double s, double v)
         {
             h = h % 360;
-            if (h < 0) { h += 360; };
+            if (h < 0) { h += 360; }
             s = Math.Clamp(s, 0, 1);
             v = Math.Clamp(v, 0, 1);
+
             double c = v * s;
-            double x = c * (1 - Math.Abs((h / 60) % 2 - 1));
+            double x = c * (1 - Math.Abs((h / 60.0) % 2 - 1));
             double m = v - c;
-            double rPrime;
-            double bPrime;
+
+            double rPrime, gPrime, bPrime;
+
             if (h < 60)
             {
-                rPrime = c;
-                bPrime = 0;
+                rPrime = c; gPrime = x; bPrime = 0;
             }
             else if (h < 120)
             {
-                rPrime = x;
-                bPrime = 0;
+                rPrime = x; gPrime = c; bPrime = 0;
             }
             else if (h < 180)
             {
-                rPrime = 0;
-                bPrime = x;
+                rPrime = 0; gPrime = c; bPrime = x;
             }
             else if (h < 240)
             {
-                rPrime = 0;
-                bPrime = c;
+                rPrime = 0; gPrime = x; bPrime = c;
             }
             else if (h < 300)
             {
-                rPrime = x;
-                bPrime = c;
+                rPrime = x; gPrime = 0; bPrime = c;
             }
             else
             {
-                rPrime = c;
-                bPrime = x;
+                rPrime = c; gPrime = 0; bPrime = x;
             }
-            byte red = (byte)((rPrime + m) * 255);
-            byte green = (byte)((0 + m) * 255);
-            byte blue = (byte)((bPrime + m) * 255);
+
+            byte red   = (byte)Math.Round((rPrime + m) * 255);
+            byte green = (byte)Math.Round((gPrime + m) * 255);
+            byte blue  = (byte)Math.Round((bPrime + m) * 255);
+
             return new SColor(red, green, blue, 255);
         }
         
