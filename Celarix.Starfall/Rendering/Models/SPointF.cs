@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SkiaSharp;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -16,6 +17,8 @@ namespace Celarix.Starfall.Rendering.Models
             Y = y;
         }
 
+        public SKPoint ToSKPoint() => new((float)X, (float)Y);
+
         public override readonly string ToString() => $"({X}d, {Y}d)";
 
         public SRectF WithSize(SSizeF size)
@@ -28,9 +31,19 @@ namespace Celarix.Starfall.Rendering.Models
             return new SPointF(a.X + b.X, a.Y + b.Y);
         }
 
+        public static SPointF operator +(SPointF point, SSizeF size)
+        {
+            return new SPointF(point.X + size.Width, point.Y + size.Height);
+        }
+
         public static SPointF operator -(SPointF a, SPointF b)
         {
             return new SPointF(a.X - b.X, a.Y - b.Y);
+        }
+
+        public static SPointF operator -(SPointF point, SSizeF size)
+        {
+            return new SPointF(point.X - size.Width, point.Y - size.Height);
         }
 
         public static SPointF operator *(SPointF point, double scalar)

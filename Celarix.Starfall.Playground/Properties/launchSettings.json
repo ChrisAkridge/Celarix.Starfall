@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Celarix.Starfall.Playground": {
+      "commandName": "Project",
+      "commandLineArgs": "skiatk"
+    }
+  }
+}

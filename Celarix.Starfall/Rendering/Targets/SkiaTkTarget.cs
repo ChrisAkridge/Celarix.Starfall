@@ -137,6 +137,12 @@ namespace Celarix.Starfall.Rendering.Targets
             SkiaCommon.DrawTextDirectly(surface.Canvas, text, font, bounds, color, rotation);
         }
 
+        public void DrawLine(SPointF start, SPointF end, SColor color, float thickness)
+        {
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.DrawLine(surface.Canvas, start, end, color, thickness);
+        }
+
         // TODO: Cache these text/font measurements, as a lot of the time, the same text will be measured
         // repeatedly, especially on animated scenes.
         public float FitTextToWidth(string text, SFont font, float width) => SkiaTextRendering.FitTextToWidth(text, font, width);

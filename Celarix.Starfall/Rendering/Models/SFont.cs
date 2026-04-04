@@ -60,6 +60,8 @@ namespace Celarix.Starfall.Rendering.Models
 
         public override SFont WithSize(float? newSize)
         {
+            if (newSize == Size) { return this; }
+
             return new SFontFamily(Family, newSize, FontWeight, FontWidth, FontSlant);
         }
 
@@ -89,6 +91,7 @@ namespace Celarix.Starfall.Rendering.Models
 
         public override SFont WithSize(float? newSize)
         {
+            if (newSize == Size) { return this; }
             return new SFontFile(FilePath, newSize, Index);
         }
 

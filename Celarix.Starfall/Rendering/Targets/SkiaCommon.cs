@@ -126,5 +126,17 @@ namespace Celarix.Starfall.Rendering.Targets
 
             canvas.DrawShapedText(text, drawLeft, baselineY, skFont, paint);
         }
+
+        public static void DrawLine(SKCanvas canvas, SPointF start, SPointF end, SColor color, float thickness)
+        {
+            using var paint = new SKPaint
+            {
+                Color = color.ToSKColor(),
+                StrokeWidth = thickness,
+                Style = SKPaintStyle.Stroke,
+                IsAntialias = true
+            };
+            canvas.DrawLine(start.ToSKPoint(), end.ToSKPoint(), paint);
+        }
     }
 }

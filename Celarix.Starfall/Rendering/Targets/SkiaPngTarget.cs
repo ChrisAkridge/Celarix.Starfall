@@ -65,6 +65,9 @@ namespace Celarix.Starfall.Rendering.Targets
         public void DrawTextDirectly(string text, SFont font, SRectF bounds, SColor color, SAngle rotation) =>
             SkiaCommon.DrawTextDirectly(_canvas, text, font, bounds, color, rotation);
 
+        public void DrawLine(SPointF start, SPointF end, SColor color, float thickness) =>
+            SkiaCommon.DrawLine(_canvas, start, end, color, thickness);
+
         public float FitTextToHeight(string text, SFont font, float height) =>
             SkiaTextRendering.FitTextToHeight(text, font, height);
 
