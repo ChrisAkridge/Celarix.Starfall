@@ -138,5 +138,20 @@ namespace Celarix.Starfall.Rendering.Targets
             };
             canvas.DrawLine(start.ToSKPoint(), end.ToSKPoint(), paint);
         }
+
+        public static void DrawImageFromFile(SKCanvas canvas, string filePath, SRectF bounds, double opacity, SAngle rotation)
+        {
+            // TODO: Implement rotation
+            using var bitmap = SkiaImageCache.GetImage(filePath);
+            using var paint = new SKPaint
+            {
+                Color = SKColors.White.WithAlpha((byte)(opacity * 255)),
+                IsAntialias = true
+            };
+            if (bitmap != null)
+            {
+                canvas.DrawBitmap(bitmap, bounds.ToSKRect(), paint);
+            }
+        }
     }
 }

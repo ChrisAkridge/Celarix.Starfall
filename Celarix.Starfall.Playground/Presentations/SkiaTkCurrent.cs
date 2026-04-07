@@ -3,6 +3,7 @@ using Celarix.Starfall.Layout.Helium.Components;
 using Celarix.Starfall.Layout.Helium.Elements;
 using Celarix.Starfall.Layout.Helium.Elements.Containers;
 using Celarix.Starfall.Layout.Helium.Transitions;
+using Celarix.Starfall.Playground.CustomElements;
 using Celarix.Starfall.Playground.FloatingPoint;
 using Celarix.Starfall.Playground.Starsong;
 using Celarix.Starfall.Presentation;
@@ -36,9 +37,10 @@ namespace Celarix.Starfall.Playground.Presentations
             layoutEngine.SetRenderTarget(tkTarget);
 
             var measurementService = new Rendering.MeasurementService(tkTarget);
-            var scenes = StarsongPresentationBuilder.BuildSlides();
+            //var scenes = StarsongPresentationBuilder.BuildSlides();
+            var scenes = GeneralBuildScenes();
 
-            for (var i = 0; i < scenes.Count; i++)
+            for (var i = 0; i < scenes.Length; i++)
             {
                 presentationEngine.AddScene($"scene{i}", scenes[i]);
                 if (i > 0)
@@ -47,10 +49,32 @@ namespace Celarix.Starfall.Playground.Presentations
                         scenes[i - 1], scenes[i], new SSizeF(1280, 720), measurementService));
                 }
             }
-            slideCount = scenes.Count;
+            slideCount = scenes.Length;
 
             presentationEngine.SetCurrentScene("scene0");
             presentationEngine.Start();
+        }
+
+        private static HeliumScene[] GeneralBuildScenes()
+        {
+            var scene = new HeliumScene
+            {
+                BackgroundColor = new SColor(8, 0, 130, 255)
+            };
+            SingleElementContainer container = new();
+            scene.Root = container;
+            container.Padding = new Padding(0.025d, 0.025d, 0.025d, 0.025d);
+            container.Child = new ProgressBarElement(
+                0d,
+                100d,
+                25d,
+                new SColor(0, 255, 0, 255),
+                new SColor(127, 127, 127, 255),
+                SColor.White,
+                new SFontFamily("Calibri", 24f),
+                totalTicks: 10,
+                tickTextFunc: v => $"{v:0}%");
+            return [scene];
         }
 
         private static void TkTarget_KeyUp(object? sender, KeyboardKeyEventArgs e)

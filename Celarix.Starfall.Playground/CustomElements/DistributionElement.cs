@@ -1,29 +1,24 @@
-﻿using Celarix.Starfall.Layout.Helium.Renderables;
+﻿using Celarix.Starfall.Layout.Helium.Elements;
+using Celarix.Starfall.Layout.Helium.Renderables;
 using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Layout.Helium.Elements
+namespace Celarix.Starfall.Playground.CustomElements
 {
-    public sealed class XmlTextElement : HeliumElement
+    internal sealed class DistributionElement : HeliumElement
     {
-        public string Xml { get; set; } = string.Empty;
-        public SFont BaseFont { get; set; } = new SFontFamily("Arial");
-        public SColor BaseColor { get; set; } = SColor.Black;
-        public SAngle Rotation { get; set; } = SAngle.Zero;
+        public override IReadOnlyList<HeliumElement> Children => throw new NotImplementedException();
 
-        public override IReadOnlyList<HeliumElement> Children => Array.Empty<HeliumElement>();
+        public override double DesiredWidthFraction => throw new NotImplementedException();
 
-        public override double DesiredWidthFraction => Constants.FullSize;
-
-        public override double DesiredHeightFraction => Constants.FullSize;
-
+        public override double DesiredHeightFraction => throw new NotImplementedException();
 
         public override void ArrangeChildren(SRectF thisBounds)
         {
-            // No children, so nothing to arrange.
+            throw new NotImplementedException();
         }
 
         public override HeliumElement Clone()

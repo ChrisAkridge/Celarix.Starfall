@@ -174,7 +174,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             }
         }
 
-        public override IReadOnlyList<IRenderable> GetRenderables()
+        public override IReadOnlyList<IRenderable> GetRenderables(MeasurementService measurementService)
         {
             var renderables = new List<IRenderable>();
 
@@ -200,12 +200,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
                 currentOffset += sizePerPart * sizeRatio;
 
                 // Debug mode
-                renderables.Add(new RectangleRenderable
-                {
-                    Bounds = cellOuterBounds,
-                    Color = new SColor(255, 0, 0, 128),
-                    PaintStyle = SPaintStyle.Stroke
-                });
+                renderables.Add(new RectangleRenderable(cellOuterBounds, new SColor(255, 0, 0, 128), SPaintStyle.Stroke));
                 renderables.Add(new TextRenderable
                 {
                     Bounds = cellOuterBounds,
@@ -220,7 +215,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
                 HeliumElement? child = children[i];
                 if (child != null)
                 {
-                    renderables.AddRange(child.GetRenderables());
+                    renderables.AddRange(child.GetRenderables(measurementService));
                 }
             }
             return renderables;

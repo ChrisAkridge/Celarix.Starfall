@@ -144,7 +144,7 @@ namespace Celarix.Starfall.Playground.FloatingPoint
             };
         }
 
-        public override IReadOnlyList<IRenderable> GetRenderables()
+        public override IReadOnlyList<IRenderable> GetRenderables(MeasurementService measurementService)
         {
             // Alright. This is where the fun stuff happens. Let's describe the layout.
             // This element is meant to be a row of digits with place values above them and
@@ -295,12 +295,11 @@ namespace Celarix.Starfall.Playground.FloatingPoint
             var windowActualWidth = windowWidth * (slotWidth + marginWidth) - marginWidth;
             var windowTopY = outerPosition.Y + (0.2d * outerSize.Height);
             var windowHeight = placeValueHeight + digitHeight;
-            var windowRenderable = new RectangleRenderable
+            var windowRenderable = new RectangleRenderable(new SRectF(windowLeftX, windowTopY, windowActualWidth, windowHeight),
+                new SColor(255, 255, 0, 75),   // Semi-transparent yellow
+                SPaintStyle.Fill)
             {
-                Color = new SColor(255, 255, 0, 75),   // Semi-transparent yellow
-                Bounds = new SRectF(windowLeftX, windowTopY, windowActualWidth, windowHeight),
-                Id = "window",
-                PaintStyle = SPaintStyle.Fill
+                Id = "window"
             };
 
             return [windowRenderable, arrowRenderable, .. placeValueRenderables, .. digitRenderables];

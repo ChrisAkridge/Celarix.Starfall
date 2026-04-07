@@ -157,7 +157,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             return clone;
         }
 
-        public override IReadOnlyList<IRenderable> GetRenderables()
+        public override IReadOnlyList<IRenderable> GetRenderables(MeasurementService measurementService)
         {
             // We don't need to show anything fully outside of the container's actual bounds.
             var renderables = new List<IRenderable>();
@@ -166,7 +166,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
                 var bounds = child.ActualBounds;
                 if (SRectF.Intersects(bounds!.Value, ActualBounds!.Value))
                 {
-                    renderables.AddRange(child.GetRenderables());
+                    renderables.AddRange(child.GetRenderables(measurementService));
                 }
             }
 

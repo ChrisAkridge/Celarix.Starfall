@@ -25,11 +25,22 @@ namespace Celarix.Starfall.Layout.Helium.Elements
             ? new SRectF(ActualPosition.Value, ActualSize.Value)
             : null;
 
+        // Animation properties.
+        public bool IsAnimating { get; protected set; }
+
         public abstract void MeasureSelf(SSizeF availableSize, MeasurementService measurementService);
         public abstract void ArrangeChildren(SRectF thisBounds);
-        public abstract IReadOnlyList<IRenderable> GetRenderables();
+        public abstract IReadOnlyList<IRenderable> GetRenderables(MeasurementService measurementService);
 
         public abstract HeliumElement Clone();
+
+        public virtual void Update(double deltaTime)
+        {
+            foreach (var child in Children)
+            {
+                child.Update(deltaTime);
+            }
+        }
 
         public bool HasClass(string className) => classes.Contains(className);
 

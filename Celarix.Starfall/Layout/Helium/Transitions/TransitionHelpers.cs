@@ -20,7 +20,7 @@ namespace Celarix.Starfall.Layout.Helium.Transitions
                 fromScene.Root.MeasureSelf(maxSize, measurementService);
                 fromScene.Root.ArrangeChildren(new SRectF(SPointF.Zero, maxSize));
                 fromRenderables = fromScene.Root
-                    .GetRenderables()
+                    .GetRenderables(measurementService)
                     .Cast<HeliumRenderable>()
                     .ToList();
             }
@@ -30,7 +30,7 @@ namespace Celarix.Starfall.Layout.Helium.Transitions
                 toScene.Root.MeasureSelf(maxSize, measurementService);
                 toScene.Root.ArrangeChildren(new SRectF(SPointF.Zero, maxSize));
                 toRenderables = toScene.Root
-                    .GetRenderables()
+                    .GetRenderables(measurementService)
                     .Cast<HeliumRenderable>()
                     .ToList();
             }

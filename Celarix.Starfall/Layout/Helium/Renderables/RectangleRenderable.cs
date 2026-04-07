@@ -11,9 +11,16 @@ namespace Celarix.Starfall.Layout.Helium.Renderables
         IBoundedRenderable,
         IColoredRenderable
     {
-        public required SRectF Bounds { get; set; }
-        public required SColor Color { get; set; }
-        public required SPaintStyle PaintStyle { get; set; }
+        public SRectF Bounds { get; set; }
+        public SColor Color { get; set; }
+        public SPaintStyle PaintStyle { get; set; }
+
+        public RectangleRenderable(SRectF bounds, SColor color, SPaintStyle paintStyle)
+        {
+            Bounds = bounds;
+            Color = color;
+            PaintStyle = paintStyle;
+        }
 
         public override void Render(IRenderTarget target)
         {

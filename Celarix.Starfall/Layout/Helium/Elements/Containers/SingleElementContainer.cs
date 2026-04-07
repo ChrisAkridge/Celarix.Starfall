@@ -42,9 +42,9 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             Child.ArrangeChildren(Child.ActualBounds!.Value);
         }
 
-        public override IReadOnlyList<IRenderable> GetRenderables()
+        public override IReadOnlyList<IRenderable> GetRenderables(MeasurementService measurementService)
         {
-            return Child != null ? Child.GetRenderables() : Array.Empty<IRenderable>();
+            return Child != null ? Child.GetRenderables(measurementService) : Array.Empty<IRenderable>();
         }
 
         public override HeliumElement Clone()

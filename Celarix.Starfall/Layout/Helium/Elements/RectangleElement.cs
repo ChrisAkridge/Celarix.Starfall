@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Layout.Helium.Renderables;
+using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
@@ -32,14 +33,11 @@ namespace Celarix.Starfall.Layout.Helium.Elements
             };
         }
 
-        public override IReadOnlyList<IRenderable> GetRenderables()
+        public override IReadOnlyList<IRenderable> GetRenderables(MeasurementService measurementService)
         {
-            return [new RectangleRenderable
+            return [new RectangleRenderable(ActualBounds!.Value, Color, SPaintStyle.Fill)
             {
-                Bounds = ActualBounds!.Value,
-                Color = Color,
-                Id = Id,
-                PaintStyle = SPaintStyle.Fill,
+                Id = Id
             }];
         }
     }

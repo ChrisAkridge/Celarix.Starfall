@@ -159,7 +159,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             }
         }
 
-        public override IReadOnlyList<IRenderable> GetRenderables()
+        public override IReadOnlyList<IRenderable> GetRenderables(MeasurementService measurementService)
         {
             if (CurrentMode == SplitMode.Empty)
             {
@@ -168,13 +168,13 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
 
             if (CurrentMode == SplitMode.SingleChild)
             {
-                return singleChild!.GetRenderables();
+                return singleChild!.GetRenderables(measurementService);
             }
             else
             {
                 var renderables = new List<IRenderable>();
-                renderables.AddRange(firstChild!.GetRenderables());
-                renderables.AddRange(secondChild!.GetRenderables());
+                renderables.AddRange(firstChild!.GetRenderables(measurementService));
+                renderables.AddRange(secondChild!.GetRenderables(measurementService));
                 return renderables;
             }
         }

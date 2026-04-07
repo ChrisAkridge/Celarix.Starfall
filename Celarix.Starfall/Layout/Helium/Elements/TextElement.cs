@@ -60,7 +60,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements
             };
         }
 
-        public override IReadOnlyList<IRenderable> GetRenderables()
+        public override IReadOnlyList<IRenderable> GetRenderables(MeasurementService measurementService)
         {
             return [new TextRenderable
             {

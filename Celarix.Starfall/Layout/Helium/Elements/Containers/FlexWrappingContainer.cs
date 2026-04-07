@@ -48,7 +48,7 @@ namespace Celarix.Starfall.Layout.Helium.Elements.Containers
             throw new NotImplementedException();
         }
 
-        public override IReadOnlyList<IRenderable> GetRenderables()
+        public override IReadOnlyList<IRenderable> GetRenderables(MeasurementService measurementService)
         {
             throw new NotImplementedException();
         }
