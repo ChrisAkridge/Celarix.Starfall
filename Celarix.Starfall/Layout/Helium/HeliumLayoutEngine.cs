@@ -27,6 +27,11 @@ namespace Celarix.Starfall.Layout.Helium
             renderTarget!.Start();
         }
 
+        public void Update(HeliumScene scene, double deltaTime)
+        {
+            scene.Update(deltaTime);
+        }
+
         public void Render(HeliumScene scene)
         {
             ThrowIfNoRenderTarget();

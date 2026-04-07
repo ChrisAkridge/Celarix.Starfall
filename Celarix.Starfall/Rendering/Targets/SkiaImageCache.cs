@@ -19,11 +19,7 @@ namespace Celarix.Starfall.Rendering.Targets
 
             // TODO: have some sort of error fallback image if we can't load it
             // for now just fail loudly
-            using var stream = File.OpenRead(filePath);
-            using var memoryStream = new MemoryStream();
-            stream.CopyTo(memoryStream);
-            memoryStream.Seek(0, SeekOrigin.Begin);
-            var skBitmap = SKBitmap.Decode(memoryStream);
+            var skBitmap = SKBitmap.Decode(filePath);
             return cachedBitmap.Save(skBitmap, TimeSpan.FromMinutes(DefaultCacheDurationMinutes));
         }
     }

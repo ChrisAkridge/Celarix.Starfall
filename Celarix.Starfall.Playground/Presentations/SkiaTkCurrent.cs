@@ -64,16 +64,17 @@ namespace Celarix.Starfall.Playground.Presentations
             SingleElementContainer container = new();
             scene.Root = container;
             container.Padding = new Padding(0.025d, 0.025d, 0.025d, 0.025d);
-            container.Child = new ProgressBarElement(
-                0d,
-                100d,
-                25d,
-                new SColor(0, 255, 0, 255),
-                new SColor(127, 127, 127, 255),
-                SColor.White,
-                new SFontFamily("Calibri", 24f),
-                totalTicks: 10,
-                tickTextFunc: v => $"{v:0}%");
+            //container.Child = new ProgressBarElement(
+            //    0d,
+            //    100d,
+            //    25d,
+            //    new SColor(0, 255, 0, 255),
+            //    new SColor(127, 127, 127, 255),
+            //    SColor.White,
+            //    new SFontFamily("Calibri", 24f),
+            //    totalTicks: 10,
+            //    tickTextFunc: v => $"{v:0}%");
+            container.Child = new LowerThirdsElement();
             return [scene];
         }
 

@@ -14,6 +14,11 @@ namespace Celarix.Starfall.Layout.Helium
         public HeliumElement? Root { get; set; }
         public SColor BackgroundColor { get; set; }
 
+        public void Update(double deltaTime)
+        {
+            Root?.Update(deltaTime);
+        }
+
         public void Render(IRenderTarget target, SSizeF maxSize)
         {
             target.Clear(BackgroundColor);

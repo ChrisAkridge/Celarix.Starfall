@@ -142,7 +142,7 @@ namespace Celarix.Starfall.Rendering.Targets
         public static void DrawImageFromFile(SKCanvas canvas, string filePath, SRectF bounds, double opacity, SAngle rotation)
         {
             // TODO: Implement rotation
-            using var bitmap = SkiaImageCache.GetImage(filePath);
+            var bitmap = SkiaImageCache.GetImage(filePath);
             using var paint = new SKPaint
             {
                 Color = SKColors.White.WithAlpha((byte)(opacity * 255)),
@@ -152,6 +152,11 @@ namespace Celarix.Starfall.Rendering.Targets
             {
                 canvas.DrawBitmap(bitmap, bounds.ToSKRect(), paint);
             }
+        }
+
+        public static void DrawImage(SKCanvas canvas, SImage image, SRectF bounds)
+        {
+            canvas.DrawImage(image.ToSKImage(), bounds.ToSKRect());
         }
     }
 }

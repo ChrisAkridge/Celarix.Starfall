@@ -49,6 +49,7 @@ namespace Celarix.Starfall.Presentation
             if (currentNode != null)
             {
                 // Update the layout engine with the current scene
+                _layoutEngine.Update(currentNode.Scene, deltaTime);
                 _layoutEngine.Render(currentNode.Scene);
             }
         }

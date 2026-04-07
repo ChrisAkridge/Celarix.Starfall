@@ -71,6 +71,9 @@ namespace Celarix.Starfall.Rendering.Targets
         public void DrawImageFromFile(string filePath, SRectF bounds, double opacity, SAngle rotation) =>
             SkiaCommon.DrawImageFromFile(_canvas, filePath, bounds, opacity, rotation);
 
+        public void DrawImage(SImage image, SRectF bounds) =>
+            SkiaCommon.DrawImage(_canvas, image, bounds);
+
         public float FitTextToHeight(string text, SFont font, float height) =>
             SkiaTextRendering.FitTextToHeight(text, font, height);
 
@@ -78,6 +81,8 @@ namespace Celarix.Starfall.Rendering.Targets
             SkiaTextRendering.FitTextToWidth(text, font, width);
 
         public SSizeF MeasureText(string text, SFont font) => SkiaTextRendering.GetFont(font).MeasureShapedText(text);
+
+        public IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size) => new SkiaOffscreenTarget((int)size.Width, (int)size.Height);
 
         public void Start() { }
     }

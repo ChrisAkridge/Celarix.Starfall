@@ -15,7 +15,7 @@ namespace Celarix.Starfall.Playground.CustomElements
         // to hardcode so much animation logic.
         private const string CelarixLogoPath = @"E:\Documents\Files\Pictures\Miscellaneous\Avatar\Large Square.png";
         private const int LogoEdgeLength = 581;
-        private const double LogoAppearDuration = 0.75d;
+        private const double LogoAppearDuration = 0.4d;
         private const double LogoHoldDuration = 1.0d;
         private const double LogoFadeOutDuration = 0.25d;
         private const double PanelAppearDelay = LogoHoldDuration;
@@ -24,7 +24,7 @@ namespace Celarix.Starfall.Playground.CustomElements
         private const double PanelSlideUpDuration = 0.25d;
 
         private SSizeF targetLogoSize = SSizeF.Zero;
-        private double logoInitialScale = 1.5d;
+        private double logoInitialScale = 2.5d;
         private double logoFinalScale = 1.0d;
         private double panelHeightFraction = 0.9d;
         private double panelWidthFraction = 0.9d;
@@ -80,6 +80,43 @@ namespace Celarix.Starfall.Playground.CustomElements
                     logoSize
                 );
             }
+
+            // ugly hack
+            // we really need to figure out this lifecycle thing
+            // and animation keyframing
+            if (ActualSize == null || ActualPosition == null) { return; }
+
+            SSizeF actualSize = ActualSize!.Value;
+            SPointF actualPosition = ActualPosition!.Value;
+            if (elapsedTime > PanelAppearDelay && elapsedTime < PanelAppearDelay + PanelAppearDuration)
+            {
+                var progress = (elapsedTime - PanelAppearDelay) / PanelAppearDuration;
+                var smoothstep = Easings.Smoothstep(progress);
+                var panelWidth = actualSize.Width * panelWidthFraction * smoothstep;
+                var panelHeight = actualSize.Height * panelHeightFraction;
+                panelBounds = new SRectF(
+                    new SPointF(ActualCenter.X - panelWidth / 2, actualPosition.Y + actualSize.Height - panelHeight),
+                    new SSizeF(panelWidth, panelHeight)
+                );
+            }
+            else if (elapsedTime > PanelAppearDelay + PanelAppearDuration && elapsedTime < PanelAppearDelay + PanelAppearDuration + PanelHoldDuration)
+            {
+                var panelWidth = ActualSize.Value.Width * panelWidthFraction;
+                var panelHeight = ActualSize.Value.Height * panelHeightFraction;
+                panelBounds = new SRectF(
+                    new SPointF(ActualCenter.X - panelWidth / 2, ActualPosition.Value.Y + ActualSize.Value.Height - panelHeight),
+                    new SSizeF(panelWidth, panelHeight)
+                );
+            }
+            else if (elapsedTime > PanelAppearDelay + PanelAppearDuration + PanelHoldDuration)
+            {
+                var panelWidth = ActualSize.Value.Width * panelWidthFraction;
+                var panelHeight = ActualSize.Value.Height * panelHeightFraction;
+                panelBounds = new SRectF(
+                    new SPointF(ActualCenter.X - panelWidth / 2, ActualPosition.Value.Y + ActualSize.Value.Height - panelHeight),
+                    new SSizeF(panelWidth, panelHeight)
+                );
+            }
         }
 
         public override void ArrangeChildren(SRectF thisBounds)
@@ -98,6 +135,14 @@ namespace Celarix.Starfall.Playground.CustomElements
             if (logoOpacity != 0)
             {
                 renderables.Add(new ImageFileRenderable(CelarixLogoPath, logoBounds, logoOpacity));
+            }
+
+            if (panelBounds.Size != SSizeF.Zero)
+            {
+                SColor frameColor = new(200, 200, 200, 255);
+                renderables.Add(RectangleRenderable.CreateFrame(panelBounds.RoundStandard(), frameColor, 2d));  // Outer frame
+                renderables.Add(RectangleRenderable.CreateFrame(panelBounds.Shrink(2d, 2d).RoundStandard(), SColor.White, 10d));    // Inner frame
+                renderables.Add(RectangleRenderable.CreateFrame(panelBounds.Shrink(12d, 12d).RoundStandard(), frameColor, 2d));  // Inner frame 3D effect
             }
             return renderables;
         }

@@ -7,6 +7,7 @@ namespace Celarix.Starfall.Layout
     public interface ILayoutEngine<TScene, TTransition>
         where TTransition : ITransition
     {
+        void Update(TScene scene, double deltaTime);
         void Render(TScene scene);
         void Render(TTransition scene, double progress);
         void Transition(TScene from, TScene to, TTransition transition);

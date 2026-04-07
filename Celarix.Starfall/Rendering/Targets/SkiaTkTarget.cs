@@ -149,6 +149,14 @@ namespace Celarix.Starfall.Rendering.Targets
             SkiaCommon.DrawImageFromFile(surface.Canvas, filePath, bounds, opacity, rotation);
         }
 
+        public void DrawImage(SImage image, SRectF bounds)
+        {
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.DrawImage(surface.Canvas, image, bounds);
+        }
+
+        public IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size) => new SkiaOffscreenTarget((int)size.Width, (int)size.Height, grContext);
+
         // TODO: Cache these text/font measurements, as a lot of the time, the same text will be measured
         // repeatedly, especially on animated scenes.
         public float FitTextToWidth(string text, SFont font, float width) => SkiaTextRendering.FitTextToWidth(text, font, width);

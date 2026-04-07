@@ -72,6 +72,27 @@ namespace Celarix.Starfall.Rendering.Models
             return new SRectF(left, top, width, height);
         }
 
+        public SRectF Shrink(double horizontalAmount, double verticalAmount)
+        {
+            var newX = X + horizontalAmount;
+            var newY = Y + verticalAmount;
+            var newWidth = Math.Max(0, Width - 2 * horizontalAmount);
+            var newHeight = Math.Max(0, Height - 2 * verticalAmount);
+            return new SRectF(newX, newY, newWidth, newHeight);
+        }
+
+        public SRectF RoundStandard()
+        {
+            // Position rounds to the nearest integer. If the fractional part is < 0.5, round down;
+            // if it's >= 0.5, round up. Size always rounds up, so that the rounded rect fully contains
+            // the original rect.
+            var newX = Math.Round(X, MidpointRounding.AwayFromZero);
+            var newY = Math.Round(Y, MidpointRounding.AwayFromZero);
+            var newWidth = Math.Ceiling(X + Width) - Math.Floor(X);
+            var newHeight = Math.Ceiling(Y + Height) - Math.Floor(Y);
+            return new SRectF(newX, newY, newWidth, newHeight);
+        }
+
         public bool FitsWithin(SRectF outer)
         {
             return Left >= outer.Left && Right <= outer.Right && Top >= outer.Top && Bottom <= outer.Bottom;
