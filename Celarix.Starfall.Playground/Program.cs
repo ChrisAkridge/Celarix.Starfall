@@ -34,6 +34,10 @@ namespace Celarix.Starfall.Playground
             {
                 SkiaTkCurrent.Run();
             }
+            else if (presentationName == "atria")
+            {
+                AtriaCurrent.Run();
+            }
             else
             {
                 Console.WriteLine("Unknown presentation name.");

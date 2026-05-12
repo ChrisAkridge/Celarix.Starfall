@@ -15,6 +15,7 @@ namespace Celarix.Starfall.Rendering.Targets
 
         void Clear(SColor color);
         void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation);
+        void DrawEllipse(SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle);
         void DrawText(string text, SFont font, SRectF bounds, SColor color, SAngle rotation, Alignment alignment = Alignment.Center);
         void DrawTextDirectly(string text, SFont font, SRectF bounds, SColor color, SAngle rotation);
         void DrawLine(SPointF start, SPointF end, SColor color, float thickness);

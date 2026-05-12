@@ -6,6 +6,8 @@ namespace Celarix.Starfall.Rendering.Models
 {
     public readonly struct SRectF
     {
+        public static readonly SRectF Empty = new(0, 0, 0, 0);
+
         public double X { get; }
         public double Y { get; }
         public double Width { get; }
@@ -15,6 +17,7 @@ namespace Celarix.Starfall.Rendering.Models
         public double Top => Y;
         public double Right => X + Width;
         public double Bottom => Y + Height;
+        public SPointF Center => new SPointF(X + Width / 2, Y + Height / 2);
 
         public SPointF Position => new SPointF(X, Y);
         public SSizeF Size => new SSizeF(Width, Height);
@@ -40,6 +43,16 @@ namespace Celarix.Starfall.Rendering.Models
         public static SRectF operator +(SRectF rect, SPointF point)
         {
             return new SRectF(rect.X + point.X, rect.Y + point.Y, rect.Width, rect.Height);
+        }
+
+        public static bool operator ==(SRectF a, SRectF b)
+        {
+            return a.X == b.X && a.Y == b.Y && a.Width == b.Width && a.Height == b.Height;
+        }
+
+        public static bool operator !=(SRectF a, SRectF b)
+        {
+            return !(a == b);
         }
 
         public static bool Intersects(SRectF a, SRectF b)
@@ -78,6 +91,15 @@ namespace Celarix.Starfall.Rendering.Models
             var newY = Y + verticalAmount;
             var newWidth = Math.Max(0, Width - 2 * horizontalAmount);
             var newHeight = Math.Max(0, Height - 2 * verticalAmount);
+            return new SRectF(newX, newY, newWidth, newHeight);
+        }
+
+        public SRectF Expand(double horizontalAmount, double verticalAmount)
+        {
+            var newX = X - horizontalAmount;
+            var newY = Y - verticalAmount;
+            var newWidth = Width + 2 * horizontalAmount;
+            var newHeight = Height + 2 * verticalAmount;
             return new SRectF(newX, newY, newWidth, newHeight);
         }
 

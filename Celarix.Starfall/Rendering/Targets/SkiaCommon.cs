@@ -29,6 +29,22 @@ namespace Celarix.Starfall.Rendering.Targets
             canvas.DrawRect(bounds.ToSKRect(), paint);
         }
 
+        public static void DrawEllipse(SKCanvas canvas, SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle)
+        {
+            using var paint = new SKPaint
+            {
+                Color = color.ToSKColor(),
+                Style = paintStyle.ToSKPaintStyle(),
+                IsAntialias = true
+            };
+            
+            var cx = center.X;
+            var cy = center.Y;
+            var rx = size.Width / 2;
+            var ry = size.Height / 2;
+            canvas.DrawOval(new SKRect((float)(cx - rx), (float)(cy - ry), (float)(cx + rx), (float)(cy + ry)), paint);
+        }
+
         public static void DrawText(SKCanvas canvas,
             string text,
             SFont font,
@@ -68,7 +84,7 @@ namespace Celarix.Starfall.Rendering.Targets
                 fittedSize = SkiaTextRendering.FitTextToHeight(text, font, (float)bounds.Height);
             }
 
-            skFont = useFontSize
+            skFont = useFontSize && fittedSize >= font.Size!.Value
                 ? SkiaTextRendering.GetFont(font)
                 : SkiaTextRendering.GetFont(font.WithSize(fittedSize));
 

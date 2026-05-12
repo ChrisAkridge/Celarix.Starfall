@@ -59,6 +59,9 @@ namespace Celarix.Starfall.Rendering.Targets
         public void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation) =>
             SkiaCommon.DrawRectangle(_canvas, bounds, color, paintStyle);
 
+        public void DrawEllipse(SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle) =>
+            SkiaCommon.DrawEllipse(_canvas, center, size, color, paintStyle);
+
         public void DrawText(string text, SFont font, SRectF bounds, SColor color, SAngle rotation, Alignment alignment = Alignment.Center) =>
             SkiaCommon.DrawText(_canvas, text, font, bounds, color, rotation, alignment);
 

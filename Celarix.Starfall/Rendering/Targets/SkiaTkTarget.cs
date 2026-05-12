@@ -123,6 +123,12 @@ namespace Celarix.Starfall.Rendering.Targets
             SkiaCommon.DrawRectangle(surface.Canvas, bounds, color, paintStyle);
         }
 
+        public void DrawEllipse(SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle)
+        {
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.DrawEllipse(surface.Canvas, center, size, color, paintStyle);
+        }
+
         public void DrawText(string text, SFont font, SRectF bounds, SColor color, SAngle rotation, Alignment alignment = Alignment.Center)
         {
             // TODO: Implement rotation
