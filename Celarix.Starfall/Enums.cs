@@ -117,4 +117,22 @@ namespace Celarix.Starfall
         Integral,
         Limit
     }
+
+    public enum SlideAdvanceResult
+    {
+        /// <summary>
+        /// The slide is at the beginning of its state machine, callers can rewind to the previous slide.
+        /// </summary>
+        CanRewind,
+
+        /// <summary>
+        /// The slide has rewound or advanced to another internal state, but is not yet at the end of its state machine. Callers should not change slides.
+        /// </summary>
+        InternalStateChanged,
+
+        /// <summary>
+        /// The slide is at the end of its state machine, callers can advance to the next slide.
+        /// </summary>
+        CanAdvance
+    }
 }

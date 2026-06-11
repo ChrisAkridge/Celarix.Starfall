@@ -3,5 +3,6 @@
     <File Path=".editorconfig" />
   </Folder>
   <Project Path="Celarix.Starfall.Playground/Celarix.Starfall.Playground.csproj" />
+  <Project Path="Celarix.Starfall.Presentations/Celarix.Starfall.Presentations.csproj" Id="35e5da9f-5a98-4da2-aa98-5181c2b7b32c" />
   <Project Path="Celarix.Starfall/Celarix.Starfall.csproj" />
 </Solution>

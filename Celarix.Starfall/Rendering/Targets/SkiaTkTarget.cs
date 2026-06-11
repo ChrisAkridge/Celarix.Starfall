@@ -161,6 +161,12 @@ namespace Celarix.Starfall.Rendering.Targets
             SkiaCommon.DrawImage(surface.Canvas, image, bounds);
         }
 
+        public void DrawPoint(SPointF point, SColor color)
+        {
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.DrawPoint(surface.Canvas, point, color);
+        }
+
         public IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size) => new SkiaOffscreenTarget((int)size.Width, (int)size.Height, grContext);
 
         // TODO: Cache these text/font measurements, as a lot of the time, the same text will be measured

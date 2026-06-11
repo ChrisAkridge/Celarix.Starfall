@@ -75,3 +75,141 @@ Delphinus does not support CSS or cascading style mechanisms. Instead, all forma
 - `halign`: The horizontal alignment of the text within its container. Valid values are `left`, `center`, and `right`. The default value is `left`. This attribute is only applicable to block-level elements, and will be ignored on inline elements.
 - `valign`: The vertical alignment of the text within its container. Valid values are `top`, `center`, and `bottom`. The default value is `top`. This attribute is only applicable to block-level elements, and will be ignored on inline elements.
 - `linemargin`: The amount of vertical space to add between lines of text in a block element, specified as a multiple of the height of a line of text at the font size of the element that contains nothing that extends the line's height. For example, if the line contains only text at 12 points and the `linemargin` is set to `0.5`, then there will be an additional 6 points of space between that line and the next. This applies only to block-level elements and will be ignored on inline elements. The default value is `0`, meaning that there is no extra space added.
+
+## Mathematical Layout Engine Notes
+
+### Layout Model
+
+Delphinus mathematical rendering is based on a recursive box layout model. Each mathematical element is measured independently and produces a layout box that reports metrics used by its parent element during layout.
+
+Mathematical layout boxes are not defined solely by width and height. In addition to size, boxes also report alignment metrics that allow neighboring expressions to align consistently.
+
+A mathematical layout box conceptually contains:
+
+* Width
+* Height above baseline
+* Depth below baseline
+* Baseline position
+* Math axis position
+
+The baseline represents the line ordinary text sits on. The math axis represents the visual balancing line used by mathematical operators and structures such as fractions, sums, and delimiters.
+
+For example, a fraction does not vertically center its contents within its total bounds. Instead, the vinculum is positioned near the math axis, with the numerator above and denominator below.
+
+Mathematical elements are laid out recursively. Child elements are measured first, then parent elements determine placement offsets and resulting metrics.
+
+### Rendering Strategy
+
+Delphinus mathematical rendering is intended to prioritize stable animated layout and semantic structure over exact TeX compatibility.
+
+Mathematical elements are rendered procedurally rather than relying entirely on font-provided glyph composition. This allows individual components of expressions to maintain stable identity during transitions and animations.
+
+For example, a fraction may internally consist of:
+
+* Numerator box
+* Vinculum box
+* Denominator box
+
+A root expression may internally consist of:
+
+* Radical symbol
+* Vinculum
+* Index
+* Radicand
+
+These components may be individually targeted during animation.
+
+### Mathematical Spacing
+
+Mathematical spacing is determined semantically rather than purely by glyph advance widths.
+
+Expressions are categorized into broad atom types that determine spacing behavior between adjacent elements. These categories are intentionally simpler than TeX's full spacing system but are designed to produce visually readable mathematical layout.
+
+Possible atom categories include:
+
+* Ordinary
+* Operator
+* Binary operator
+* Relation
+* Opening delimiter
+* Closing delimiter
+* Punctuation
+* Large operator
+* Structural expression
+
+Examples:
+
+* Multiplication binds visually tighter than addition.
+* Equality operators receive larger surrounding spacing than binary operators.
+* Parentheses and delimiters bind tightly to enclosed expressions.
+
+Spacing behavior may evolve independently of font metrics in order to improve readability and animation stability.
+
+### Stretchy Delimiters
+
+Large delimiters such as parentheses, brackets, braces, and radical symbols are procedurally constructed when expressions exceed the size practical for ordinary glyph rendering.
+
+Procedural delimiters are intended to preserve:
+
+* Stable stroke thickness
+* Consistent curvature
+* Arbitrary height support
+* Animation friendliness
+
+Stretchy delimiters are not required to exactly match TeX or font-provided delimiter construction behavior.
+
+Delimiter construction may use Bézier curves, repeated extender segments, or procedurally generated geometry.
+
+### Radicals
+
+Root symbols are rendered procedurally rather than by vertically scaling ordinary glyphs.
+
+A root expression consists conceptually of:
+
+* Radical hook
+* Vinculum
+* Optional index
+* Radicand
+
+The radical symbol stretches dynamically to accommodate the size of the radicand.
+
+Nested radicals are expected to trigger recursive resizing of parent radicals and surrounding layout.
+
+### Animation Identity
+
+Mathematical elements preserve semantic identity through rendering and layout changes.
+
+Elements with IDs or class names may retain continuity across transitions even when their rendered geometry changes substantially.
+
+For example:
+
+```xml
+<span id="a">2<sup>7</sup></span>
+```
+
+may later become:
+
+```xml
+<span id="a">128</span>
+```
+
+During animation, Delphinus may treat the expression as the same semantic object whose rendered contents changed rather than as unrelated geometry.
+
+This allows transitions to animate mathematical meaning rather than solely morphing vector paths.
+
+### Scope
+
+Delphinus mathematical layout is intended to support visually expressive animated mathematical explanations rather than complete TeX compatibility.
+
+The initial implementation is expected to support:
+
+* Superscripts and subscripts
+* Fractions
+* Roots
+* Large operators
+* Limits
+* Semantic spacing
+* Stretchy delimiters
+* Recursive mathematical layout
+
+Additional mathematical constructs may be added incrementally over time.

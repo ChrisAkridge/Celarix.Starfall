@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Celarix.Starfall.Layout.Helium;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -22,6 +23,15 @@ namespace Celarix.Starfall.Rendering.Models
         public SPointF Position => new SPointF(X, Y);
         public SSizeF Size => new SSizeF(Width, Height);
 
+        public SPointF TopLeft => Position;
+        public SPointF TopCenter => new(Center.X, Top);
+        public SPointF TopRight => new(Right, Top);
+        public SPointF CenterLeft => new(Left, Center.Y);
+        public SPointF CenterRight => new(Right, Center.Y);
+        public SPointF BottomLeft => new(Left, Bottom);
+        public SPointF BottomCenter => new(Center.X, Bottom);
+        public SPointF BottomRight => new(Left, Bottom);
+
         public SRectF(double x, double y, double width, double height)
         {
             X = x;
@@ -43,6 +53,11 @@ namespace Celarix.Starfall.Rendering.Models
         public static SRectF operator +(SRectF rect, SPointF point)
         {
             return new SRectF(rect.X + point.X, rect.Y + point.Y, rect.Width, rect.Height);
+        }
+
+        public static SRectF operator -(SRectF rect, SPointF point)
+        {
+            return new SRectF(rect.X - point.X, rect.Y - point.Y, rect.Width, rect.Height);
         }
 
         public static bool operator ==(SRectF a, SRectF b)
@@ -103,6 +118,20 @@ namespace Celarix.Starfall.Rendering.Models
             return new SRectF(newX, newY, newWidth, newHeight);
         }
 
+        public SRectF ShrinkByFactor(double horizontalFactor, double verticalFactor)
+        {
+            var horizontalAmount = Width * horizontalFactor / 2;
+            var verticalAmount = Height * verticalFactor / 2;
+            return Shrink(horizontalAmount, verticalAmount);
+        }
+
+        public SRectF ExpandByFactor(double horizontalFactor, double verticalFactor)
+        {
+            var horizontalAmount = Width * (horizontalFactor / 2);
+            var verticalAmount = Height * verticalFactor / 2;
+            return Expand(horizontalAmount, verticalAmount);
+        }
+
         public SRectF RoundStandard()
         {
             // Position rounds to the nearest integer. If the fractional part is < 0.5, round down;
@@ -118,6 +147,18 @@ namespace Celarix.Starfall.Rendering.Models
         public bool FitsWithin(SRectF outer)
         {
             return Left >= outer.Left && Right <= outer.Right && Top >= outer.Top && Bottom <= outer.Bottom;
+        }
+
+        /// <summary>
+        /// Gets the largest square that can fit inside this rectangle
+        /// If the rectangle is already a square, returns itself.
+        /// </summary>
+        /// <returns></returns>
+        public SRectF InsetSquare(Alignment alignment = Alignment.Center)
+        {
+            var minDimension = Math.Min(Width, Height);
+            var squareSize = new SSizeF(minDimension, minDimension);
+            return new(AlignmentHelper.Align(alignment, this, squareSize), squareSize);
         }
     }
 }

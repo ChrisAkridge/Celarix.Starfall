@@ -72,6 +72,18 @@ namespace Celarix.Starfall.Layout.Atria
             }
         }
 
+        public virtual SlideAdvanceResult Rewind()
+        {
+            // Basic implementation assuming no state machine.
+            return SlideAdvanceResult.CanRewind;
+        }
+
+        public virtual SlideAdvanceResult Advance()
+        {
+            // Basic implementation assuming no state machine.
+            return SlideAdvanceResult.CanAdvance;
+        }
+
         public AddedElementOptions Add(IEnumerable<ISlideAddable> addables)
         {
             var newAddables = addables.ToArray();
@@ -92,6 +104,29 @@ namespace Celarix.Starfall.Layout.Atria
                 }
             }
             return new AddedElementOptions(this, [.. newElements], [.. newBasisElements]);
+        }
+
+        public IReadOnlyList<AtriaElement> QueryMultiple(params IEnumerable<string> selectors)
+        {
+            var matchedElements = new List<AtriaElement>();
+            foreach (var selector in selectors)
+            {
+                matchedElements.AddRange(Query(selector));
+            }
+            return matchedElements;
+        }
+
+        public IReadOnlyList<AtriaElement> Query(string selector)
+        {
+            var matchedElements = new List<AtriaElement>();
+            foreach (var element in _elements)
+            {
+                if (element.Id.Matches(selector))
+                {
+                    matchedElements.Add(element);
+                }
+            }
+            return matchedElements;
         }
 
         internal void AddAnimation(ActiveAnimation animation)

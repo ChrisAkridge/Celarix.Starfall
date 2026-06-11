@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Celarix.Starfall.Rendering.Targets
 {
-    public sealed class SkiaPngTarget : IRenderTarget
+    public sealed class SkiaPngTarget : IRenderTarget, IDisposable
     {
         // Just.
         // Code.
@@ -27,6 +27,7 @@ namespace Celarix.Starfall.Rendering.Targets
             _canvas = new SKCanvas(_bitmap);
 
             Directory.CreateDirectory(options.OutputPath);
+            SkiaTextRendering.SetShaperCacheDuration(30000);
         }
 
         public bool CanAnimate => true;
@@ -37,8 +38,8 @@ namespace Celarix.Starfall.Rendering.Targets
 
         public void Complete()
         {
-            var image = SKImage.FromBitmap(_bitmap);
-            var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var image = SKImage.FromBitmap(_bitmap);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
 
             _lastFrameIndex += 1;
             var filePath = Path.Combine(_options.OutputPath, string.Format(FileNameFormat, _lastFrameIndex));
@@ -47,8 +48,6 @@ namespace Celarix.Starfall.Rendering.Targets
 
             stream.Close();
             stream.Dispose();
-            data.Dispose();
-            image.Dispose();
             _canvas.Dispose();
             _bitmap.Dispose();
 
@@ -77,6 +76,9 @@ namespace Celarix.Starfall.Rendering.Targets
         public void DrawImage(SImage image, SRectF bounds) =>
             SkiaCommon.DrawImage(_canvas, image, bounds);
 
+        public void DrawPoint(SPointF point, SColor color) =>
+            SkiaCommon.DrawPoint(_canvas, point, color);
+
         public float FitTextToHeight(string text, SFont font, float height) =>
             SkiaTextRendering.FitTextToHeight(text, font, height);
 
@@ -88,5 +90,11 @@ namespace Celarix.Starfall.Rendering.Targets
         public IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size) => new SkiaOffscreenTarget((int)size.Width, (int)size.Height);
 
         public void Start() { }
+
+        public void Dispose()
+        {
+            _canvas?.Dispose();
+            _bitmap?.Dispose();
+        }
     }
 }

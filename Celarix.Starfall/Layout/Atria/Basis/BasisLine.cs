@@ -19,6 +19,30 @@ namespace Celarix.Starfall.Layout.Atria.Basis
             To = to;
         }
 
+        /// <summary>
+        /// Splits the basis line at the specified fraction and returns the left portion as a new BasisLine. The original line is not modified.
+        /// </summary>
+        /// <param name="fraction">The fraction at which to split the line, between 0 and 1.</param>
+        /// <returns>The left portion of the line as a new BasisLine.</returns>
+        public BasisLine SplitAndTakeLeft(float fraction)
+        {
+            var splitPoint = new SPointF(From.X + (To.X - From.X) * fraction, From.Y + (To.Y - From.Y) * fraction);
+            var leftLine = new BasisLine(From, splitPoint);
+            return leftLine;
+        }
+
+        /// <summary>
+        /// Splits the basis line at the specified fraction and returns the right portion as a new BasisLine. The original line is not modified.
+        /// </summary>
+        /// <param name="fraction">The fraction at which to split the line, between 0 and 1.</param>
+        /// <returns>The right portion of the line as a new BasisLine.</returns>
+        public BasisLine SplitAndTakeRight(float fraction)
+        {
+            var splitPoint = new SPointF(From.X + (To.X - From.X) * fraction, From.Y + (To.Y - From.Y) * fraction);
+            var rightLine = new BasisLine(splitPoint, To);
+            return rightLine;
+        }
+
         public override void RenderDebug(IRenderTarget target)
         {
             target.DrawLine(From, To, SColor.Yellow, 3f);

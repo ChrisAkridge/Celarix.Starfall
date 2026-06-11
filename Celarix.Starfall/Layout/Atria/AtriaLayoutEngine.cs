@@ -51,6 +51,16 @@ namespace Celarix.Starfall.Layout.Atria
             _currentSlideName = name;
         }
 
+        public void SetCurrentSlideAndFade(string name, double duration)
+        {
+            if (!_slides.ContainsKey(name))
+            {
+                throw new ArgumentException($"No slide with the name '{name}' exists in this layout engine.", nameof(name));
+            }
+            
+            
+        }
+
         public void Update(AtriaSlide slide, double deltaTime)
         {
             slide.Update(deltaTime);
@@ -71,6 +81,18 @@ namespace Celarix.Starfall.Layout.Atria
             }
 
             _renderTarget = renderTarget;
+        }
+
+        public SlideAdvanceResult RewindCurrentSlide()
+        {
+            if (CurrentSlide == null) { return SlideAdvanceResult.InternalStateChanged; }
+            return CurrentSlide.Rewind();
+        }
+
+        public SlideAdvanceResult AdvanceCurrentSlide()
+        {
+            if (CurrentSlide == null) { return SlideAdvanceResult.InternalStateChanged; }
+            return CurrentSlide.Advance();
         }
 
         private void ThrowIfNoRenderTarget()

@@ -7,6 +7,20 @@ namespace Celarix.Starfall.Mathematics
 {
     public static class MathHelpers
     {
+        public static double Ease(double start, double end, double progress, Easing easingFunction)
+        {
+            double easedProgress = easingFunction(Math.Clamp(progress, 0, 1));
+            return start + (end - start) * easedProgress;
+        }
+
+        public static SPointF Ease(SPointF start, SPointF end, double progress, Easing easingFunction)
+        {
+            double easedProgress = easingFunction(Math.Clamp(progress, 0, 1));
+            double x = start.X + (end.X - start.X) * easedProgress;
+            double y = start.Y + (end.Y - start.Y) * easedProgress;
+            return new SPointF(x, y);
+        }
+
         public static double SmoothStep(double start, double end, double progress)
         {
             // This is the standard smooth step function, which is a cubic Hermite interpolation between 0 and 1.
@@ -38,6 +52,18 @@ namespace Celarix.Starfall.Mathematics
             byte b = (byte)(from.B + (to.B - from.B) * progress);
             byte a = (byte)(from.A + (to.A - from.A) * progress);
             return new SColor(r, g, b, a);
+        }
+
+        public static double[] SubdivideRange(double start, double end, int subdivisions)
+        {
+            if (subdivisions <= 0) { throw new ArgumentException("Subdivisions must be greater than zero.", nameof(subdivisions)); }
+            var result = new double[subdivisions + 1];
+            var step = (end - start) / subdivisions;
+            for (int i = 0; i <= subdivisions; i++)
+            {
+                result[i] = start + (i * step);
+            }
+            return result;
         }
     }
 }

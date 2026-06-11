@@ -31,6 +31,16 @@ namespace Celarix.Starfall.Rendering.Models
         public SPointF Left(double distance) => new SPointF(X - distance, Y);
         public SPointF Right(double distance) => new SPointF(X + distance, Y);
 
+        public double Distance(SPointF other)
+        {
+            // "With the new additive DYDX??/39!"
+            // - Multobip (https://www.youtube.com/watch?v=cCre3EDS6-I)
+            double dx = other.X - X;
+            double dy = other.Y - Y;
+            return Math.Sqrt(dx * dx + dy * dy);
+            // "Can YOUR car play the xylophone?"
+        }
+
         public static SPointF operator +(SPointF a, SPointF b)
         {
             return new SPointF(a.X + b.X, a.Y + b.Y);

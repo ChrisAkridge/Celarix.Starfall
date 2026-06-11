@@ -61,6 +61,13 @@ namespace Celarix.Starfall.Rendering.Models
             return new HSV(h, s, v);
         }
 
+        public readonly SColor WithOpacity(double opacity)
+        {
+            var clampedOpacity = Math.Clamp(opacity, 0, 1);
+            var newAlpha = (byte)(A * clampedOpacity);
+            return new SColor(R, G, B, newAlpha);
+        }
+
         public static SColor FromArgb(byte alpha, byte red, byte green, byte blue)
         {
             return new SColor(red, green, blue, alpha);
@@ -189,6 +196,32 @@ namespace Celarix.Starfall.Rendering.Models
                 "rebeccapurple" => RebeccaPurple,
                 _ => throw new ArgumentException($"Unknown color name: {name}"),
             };
+        }
+
+        public static SColor TextColorForBackgroundColor(SColor backgroundColor)
+        {
+            // https://stackoverflow.com/a/3943023/2709212
+            const float w3cLuminanceThreshold = 0.179f;
+
+            var cr = BT709Luminance(backgroundColor.R);
+            var cg = BT709Luminance(backgroundColor.G);
+            var cb = BT709Luminance(backgroundColor.B);
+            var luminance = 0.2126f * cr + 0.7152f * cg + 0.0722f * cb;
+            return luminance > w3cLuminanceThreshold ? Black : White;
+        }
+
+        private static float BT709Luminance(byte value)
+        {
+            var normalized = value / 255f;
+            if (normalized < 0.04045f)
+            {
+                normalized /= 12.92f;
+            }
+            else
+            {
+                normalized = (float)Math.Pow((normalized + 0.055f) / 1.055f, 2.4);
+            }
+            return normalized;
         }
 
         #region Defined Colors

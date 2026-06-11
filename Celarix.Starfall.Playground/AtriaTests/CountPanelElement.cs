@@ -182,15 +182,15 @@ namespace Celarix.Starfall.Playground.AtriaTests
             }
         }
 
-        private static readonly BigInteger MaxValue = BigInteger.Pow(10, 3 * _tierTexts.Length) - 1;
+        private static readonly BigInteger PlanckTimesPerSecond = BigInteger.Parse("1854858439986147917170183447354600000000000");
+        private double _elapsedSeconds;
         public override void Update(double deltaTime)
         {
-            var newCount = (Count * 11) / 10;
-            if (newCount > MaxValue)
-            {
-                newCount = MaxValue;
-            }
-            Count = newCount;
+            _elapsedSeconds += deltaTime;
+            var elapsed60HzFrames = _elapsedSeconds * 60d;
+            var elapsedNtscFields = _elapsedSeconds * 59.94d;
+            var difference = elapsed60HzFrames - elapsedNtscFields;
+            Count = (BigInteger)difference;
         }
 
         public override void Render(IRenderTarget target)

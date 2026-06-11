@@ -174,5 +174,10 @@ namespace Celarix.Starfall.Rendering.Targets
         {
             canvas.DrawImage(image.ToSKImage(), bounds.ToSKRect());
         }
+
+        public static void DrawPoint(SKCanvas canvas, SPointF point, SColor color)
+        {
+            canvas.DrawPoint(point.ToSKPoint(), color.ToSKColor());
+        }
     }
 }

@@ -9,8 +9,8 @@ namespace Celarix.Starfall.Layout.Atria.Animation
     public abstract class AnimationType<TProp>
     {
         public abstract Expression<Func<AtriaElement, TProp>> Property { get; }
-        public TProp From { get; }
-        public TProp To { get; }
+        public TProp From { get; protected set; }
+        public TProp To { get; protected set; }
     }
 
     public static class AnimationTypes
@@ -21,8 +21,11 @@ namespace Celarix.Starfall.Layout.Atria.Animation
     public sealed class FadeIn : AnimationType<double>
     {
         public override Expression<Func<AtriaElement, double>> Property => element => element.Opacity;
+
         public FadeIn() : base()
         {
+            From = 0d;
+            To = 1d;
         }
     }
 }

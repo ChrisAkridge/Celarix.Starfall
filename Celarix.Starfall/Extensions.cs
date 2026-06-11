@@ -1,10 +1,14 @@
-﻿using System;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Celarix.Starfall
 {
-    internal static class Extensions
+    public static class Extensions
     {
         private static char[] spaceSeparators;
 
@@ -58,6 +62,53 @@ namespace Celarix.Starfall
             }
 
             return tokens.ToArray();
+        }
+
+        public static SKImage CreateSKImageFromImageSharp(this Image<Rgba32> image)
+        {
+            var buffer = new byte[image.Width * image.Height * 4];
+            var pixel = 0;
+
+            image.ProcessPixelRows(accessor =>
+            {
+                for (var y = 0; y < accessor.Height; y++)
+                {
+                    var row = accessor.GetRowSpan(y);
+                    for (var x = 0; x < row.Length; x++)
+                    {
+                        var pixelData = row[x];
+                        buffer[pixel++] = pixelData.R;
+                        buffer[pixel++] = pixelData.G;
+                        buffer[pixel++] = pixelData.B;
+                        buffer[pixel++] = pixelData.A;
+                    }
+                }
+            });
+
+            var skImage = SKImage.FromPixelCopy(
+                new SKImageInfo(image.Width, image.Height, SKColorType.Rgba8888),
+                buffer,
+                image.Width * 4);
+            return skImage;
+        }
+
+        private static readonly Regex WhitespaceMatch = new(@"\s+", RegexOptions.Compiled);
+        public static string RemoveWhitespace(this string input)
+        {
+            return WhitespaceMatch.Replace(input, string.Empty);
+        }
+
+        public static int[] IndexesOf(this string input, char searchChar)
+        {
+            var indices = new List<int>();
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (input[i] == searchChar)
+                {
+                    indices.Add(i);
+                }
+            }
+            return [.. indices];
         }
     }
 }
