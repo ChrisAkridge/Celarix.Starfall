@@ -51,15 +51,13 @@ namespace Celarix.Starfall.Layout.Atria
             _currentSlideName = name;
         }
 
-        public void SetCurrentSlideAndFade(string name, double duration)
-        {
-            if (!_slides.ContainsKey(name))
-            {
-                throw new ArgumentException($"No slide with the name '{name}' exists in this layout engine.", nameof(name));
-            }
-            
-            
-        }
+        // CANIMPROVE: We need a solid model for slide-to-slide transitions that aren't just
+        // "show one slide than instant cut to another". But fading between slides is more than
+        // just "render both and adjust opacity" because there's only one render target. I also
+        // don't like "freeze the last slide, take its final frame, and fade that out" because
+        // internal animations just stop. Having the render target draw two frame buffers that
+        // we layer is not a bad idea but can lead to performance issues where two slides that
+        // are fine on their own are way too slow together.
 
         public void Update(AtriaSlide slide, double deltaTime)
         {

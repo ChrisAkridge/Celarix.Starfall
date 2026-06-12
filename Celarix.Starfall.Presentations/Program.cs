@@ -37,15 +37,18 @@ layoutEngine.MeasurementService = measurementService;
 string[] slideNames = [
     "f01_titleSlide",
     "f02_integersAreGoodAtMath",
+    "f03_floatsAreGoodAtMath"
 ];
 int currentSlideIndex = 0;
 
 layoutEngine.AddSlide(new SlideFP_01_TitleSlide(ViewportWidth, ViewportHeight, measurementService), "f01_titleSlide");
 layoutEngine.AddSlide(new SlideFP_02_IntegersAreGoodAtMath(ViewportWidth, ViewportHeight), "f02_integersAreGoodAtMath");
+layoutEngine.AddSlide(new SlideFP_03_FloatsAreGoodAtMath(ViewportWidth, ViewportHeight), "f03_floatsAreGoodAtMath");
 
 tkTarget.KeyUp += TkTarget_KeyUp;
 
-layoutEngine.SetCurrentSlide("f01_titleSlide");
+var firstSlide = slideNames[2];
+layoutEngine.SetCurrentSlide(firstSlide);
 layoutEngine.Start();
 
 void TkTarget_KeyUp(object? sender, OpenTK.Windowing.Common.KeyboardKeyEventArgs e)

@@ -106,6 +106,21 @@ namespace Celarix.Starfall.Layout.Atria
             return new AddedElementOptions(this, [.. newElements], [.. newBasisElements]);
         }
 
+        public void Remove(IEnumerable<ISlideAddable> removeables)
+        {
+            foreach (var removeable in removeables)
+            {
+                if (removeable is AtriaElement element)
+                {
+                    _elements.Remove(element);
+                }
+                else if (removeable is BasisElement basisElement)
+                {
+                    _basisElements.Remove(basisElement);
+                }
+            }
+        }
+
         public IReadOnlyList<AtriaElement> QueryMultiple(params IEnumerable<string> selectors)
         {
             var matchedElements = new List<AtriaElement>();

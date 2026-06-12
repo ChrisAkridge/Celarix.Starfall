@@ -59,6 +59,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             return SlideAdvanceResult.InternalStateChanged;
         }
 
+        // Forward transitions
+
         [StateTransition<State>(State.Initial, State.ShowAdditionProblem)]
         private void ToShowAdditionProblem()
         {
@@ -66,35 +68,77 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             // and handle the layout, presenting itself as a single box. Just use Skia rendering
             // directly, don't worry about wrapping Elements inside it. We can add stuff like
             // multiple terms, carries/borrows, step-by-step later.
-            var addend0 = new TextBlock("#addend0")
+            AddProblem(1, "addend", 5, 3, 8, "+");
+        }
+
+        [StateTransition<State>(State.ShowAdditionProblem, State.ShowMultiplicationProblem)]
+        private void ToShowMultiplicationProblem()
+        {
+            AddProblem(2, "factor", 5, 3, 15, "×");
+        }
+
+        [StateTransition<State>(State.ShowMultiplicationProblem, State.ShowDivisionProblem)]
+        private void ToShowDivisionProblem()
+        {
+            // Rounding on purpose to show that integers cannot always represent exact quotients
+            // which is why we need floating point numbers!
+            AddProblem(3, "quotient", 4, 8, 0, "÷");
+        }
+
+        // Reverse transitions
+        [StateTransition<State>(State.ShowAdditionProblem, State.Initial)]
+        private void ToInitial()
+        {
+            // Just remove the elements instead of doing a fadeout for now.
+            var addendElements = QueryMultiple("#addend0", "#addend1", "#addendResult", "#addendResultLine", "#addendResultLineAnchor", "#addend1Anchor", "#addend0Anchor");
+            Remove(addendElements);
+        }
+
+        [StateTransition<State>(State.ShowMultiplicationProblem, State.ShowAdditionProblem)]
+        private void ToShowAdditionProblemReverse()
+        {
+            var factorElements = QueryMultiple("#factor0", "#factor1", "#factorResult", "#factorResultLine", "#factorResultLineAnchor", "#factor1Anchor", "#factor0Anchor");
+            Remove(factorElements);
+        }
+
+        [StateTransition<State>(State.ShowDivisionProblem, State.ShowMultiplicationProblem)]
+        private void ToShowMultiplicationProblemReverse()
+        {
+            var quotientElements = QueryMultiple("#quotient0", "#quotient1", "#quotientResult", "#quotientResultLine", "#quotientResultLineAnchor", "#quotient1Anchor", "#quotient0Anchor");
+            Remove(quotientElements);
+        }
+
+        private void AddProblem(int problemIndex, string identifier, int firstTerm, int secondTerm, int result, string operatorSymbol)
+        {
+            var firstTermBlock = new TextBlock($"#{identifier}0")
             {
-                Text = "  5",
+                Text = $"  {firstTerm}",
                 FontSize = 64,
                 Color = SColor.White,
                 FontFamily = "Consolas"
             };
-            var addend1 = new TextBlock("#addend1")
+            var secondTermBlock = new TextBlock($"#{identifier}1")
             {
-                Text = "+ 3",
+                Text = $"{operatorSymbol} {secondTerm}",
                 FontSize = 64,
                 Color = SColor.White,
                 FontFamily = "Consolas"
             };
 
-            var sum = new TextBlock("#sum")
+            var resultBlock = new TextBlock($"#{identifier}Result")
             {
-                Text = "  8",
+                Text = $"  {result}",
                 FontSize = 64,
                 Color = SColor.White,
                 FontFamily = "Consolas"
             };
 
-            var addend0Size = MeasurementService.MeasureText(addend0);
-            var addend1Size = MeasurementService.MeasureText(addend1);
-            var sumSize = MeasurementService.MeasureText(sum);
+            var firstTermSize = MeasurementService.MeasureText(firstTermBlock);
+            var secondTermSize = MeasurementService.MeasureText(secondTermBlock);
+            var resultSize = MeasurementService.MeasureText(resultBlock);
 
-            var widestTextWidth = Math.Max(addend0Size.Width, Math.Max(addend1Size.Width, sumSize.Width));
-            var sumLine = new LineElement("#sumLine")
+            var widestTextWidth = Math.Max(firstTermSize.Width, Math.Max(secondTermSize.Width, resultSize.Width));
+            var resultLine = new LineElement($"#{identifier}ResultLine")
             {
                 StrokeWidth = 4d,
                 StrokeColor = SColor.White,
@@ -102,31 +146,37 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 ToPoint = SPointF.Zero.Right(widestTextWidth)
             };
 
-            var problemCenterGap = Size.Width / 3d;
-            var addendCenter = LeftCenter.Right(problemCenterGap);
+            var problemCenterGap = Size.Width / 4d;
+            var termCenter = LeftCenter;
+
+            while (problemIndex > 0)
+            {
+                termCenter = termCenter.Right(problemCenterGap);
+                problemIndex--;
+            }
 
             // Place the line on the center line
-            var sumLineAnchor = new BasisPoint(addendCenter, "#sumLineAnchor");
-            sumLine.AnchorCenterTo(sumLineAnchor);
+            var resultLineAnchor = new BasisPoint(termCenter, $"#{identifier}ResultLineAnchor");
+            resultLine.AnchorCenterTo(resultLineAnchor);
 
             // Place addend1 directly above the line with some margin
             var margin = 4d;
-            double addend1DistanceUp = (addend1Size.Height) / 2d + margin;
-            var addend1Anchor = new BasisPoint(addendCenter.Up(addend1DistanceUp), "#addend1Anchor");
-            addend1.AnchorCenterTo(addend1Anchor);
+            double addend1DistanceUp = (secondTermSize.Height) / 2d + margin;
+            var secondTermAnchor = new BasisPoint(termCenter.Up(addend1DistanceUp), $"#{identifier}1Anchor");
+            secondTermBlock.AnchorCenterTo(secondTermAnchor);
 
             // Place addend0 directly above addend1 with some margin
-            double addend0DistanceUp = (addend1Size.Height) + (addend0Size.Height / 2d) + (margin * 2d);
-            var addend0Anchor = new BasisPoint(addendCenter.Up(addend0DistanceUp), "#addend0Anchor");
-            addend0.AnchorCenterTo(addend0Anchor);
+            double addend0DistanceUp = (secondTermSize.Height) + (firstTermSize.Height / 2d) + (margin * 2d);
+            var firstTermAnchor = new BasisPoint(termCenter.Up(addend0DistanceUp), $"#{identifier}0Anchor");
+            firstTermBlock.AnchorCenterTo(firstTermAnchor);
 
             // Place sum directly below the line with some margin
-            double sumDistanceDown = (sumSize.Height / 2d) + margin;
-            var sumAnchor = new BasisPoint(addendCenter.Down(sumDistanceDown), "#sumAnchor");
-            sum.AnchorCenterTo(sumAnchor);
+            double sumDistanceDown = (resultSize.Height / 2d) + margin;
+            var resultAnchor = new BasisPoint(termCenter.Down(sumDistanceDown), $"#{identifier}ResultAnchor");
+            resultBlock.AnchorCenterTo(resultAnchor);
 
             // Actually add the elements
-            Add([addend0, addend1, sumLine, sum, addend0Anchor, addend1Anchor, sumAnchor])
+            Add([firstTermBlock, secondTermBlock, resultLine, resultBlock, firstTermAnchor, secondTermAnchor, resultAnchor])
                 .AnimateBasic(0.35d, AnimationTypes.FadeIn, Easings.Linear);
         }
     }

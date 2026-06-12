@@ -11,8 +11,4 @@
     <ProjectReference Include="..\Celarix.Starfall\Celarix.Starfall.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="FloatingPoint\Elements\" />
-  </ItemGroup>
-
 </Project>
