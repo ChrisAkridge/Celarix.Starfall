@@ -8,6 +8,7 @@ namespace Celarix.Starfall.Layout.Atria.Basis
 {
     public sealed class BasisLine : BasisElement
     {
+        public override AtriaId Id { get; protected set; }
         public SPointF From { get; set; }
         public SPointF To { get; set; }
 

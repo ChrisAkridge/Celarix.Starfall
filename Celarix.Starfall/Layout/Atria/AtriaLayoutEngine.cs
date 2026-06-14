@@ -35,9 +35,9 @@ namespace Celarix.Starfall.Layout.Atria
 
         public void AddSlide(AtriaSlide slide, string name)
         {
-            slide.Initialize();
             slide.SetProtectedProperties(MeasurementService ?? throw new InvalidOperationException("MeasurementService must be set on the layout engine before adding slides."),
                 _debugMode);
+            slide.Initialize();
             // TODO: check for duplicate names and throw if one is found
             _slides.Add(name, slide);
         }

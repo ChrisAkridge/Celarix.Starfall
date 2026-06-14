@@ -63,5 +63,11 @@ namespace Celarix.Starfall.Layout.Atria.Elements
         {
             FontSize = measurementService.FontSizeForDesiredSize(Text ?? string.Empty, Font, Size);
         }
+
+        public void SetTextAndKeepFontSize(MeasurementService measurementService, string newText)
+        {
+            Text = newText;
+            Size = MeasureText(measurementService);
+        }
     }
 }

@@ -7,6 +7,7 @@ namespace Celarix.Starfall.Layout.Atria.Basis
 {
     public abstract class BasisElement
     {
+        public abstract AtriaId Id { get; protected set; }
         public abstract void RenderDebug(IRenderTarget target);
     }
 }

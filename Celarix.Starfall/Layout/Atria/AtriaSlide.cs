@@ -21,6 +21,9 @@ namespace Celarix.Starfall.Layout.Atria
         public SColor BackgroundColor { get; set; }
         public SSizeF Size { get; }
 
+        protected IReadOnlyList<AtriaElement> Elements => _elements;
+        protected IReadOnlyList<BasisElement> BasisElements => _basisElements;
+
         // Points
         public SPointF TopLeft => SPointF.Zero;
         public SPointF TopCenter => new SPointF(Size.Width / 2, 0);
@@ -135,6 +138,19 @@ namespace Celarix.Starfall.Layout.Atria
         {
             var matchedElements = new List<AtriaElement>();
             foreach (var element in _elements)
+            {
+                if (element.Id.Matches(selector))
+                {
+                    matchedElements.Add(element);
+                }
+            }
+            return matchedElements;
+        }
+
+        public IReadOnlyList<BasisElement> QueryBasis(string selector)
+        {
+            var matchedElements = new List<BasisElement>();
+            foreach (var element in _basisElements)
             {
                 if (element.Id.Matches(selector))
                 {

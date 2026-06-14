@@ -37,17 +37,19 @@ layoutEngine.MeasurementService = measurementService;
 string[] slideNames = [
     "f01_titleSlide",
     "f02_integersAreGoodAtMath",
-    "f03_floatsAreGoodAtMath"
+    "f03_floatsAreGoodAtMath",
+    "f04_noEscapeFromInfiniteExpansions"
 ];
-int currentSlideIndex = 0;
+int currentSlideIndex = 3;
 
 layoutEngine.AddSlide(new SlideFP_01_TitleSlide(ViewportWidth, ViewportHeight, measurementService), "f01_titleSlide");
 layoutEngine.AddSlide(new SlideFP_02_IntegersAreGoodAtMath(ViewportWidth, ViewportHeight), "f02_integersAreGoodAtMath");
 layoutEngine.AddSlide(new SlideFP_03_FloatsAreGoodAtMath(ViewportWidth, ViewportHeight), "f03_floatsAreGoodAtMath");
+layoutEngine.AddSlide(new SlideFP_04_NoEscapeFromInfiniteExpansions(ViewportWidth, ViewportHeight), "f04_noEscapeFromInfiniteExpansions");
 
 tkTarget.KeyUp += TkTarget_KeyUp;
 
-var firstSlide = slideNames[2];
+var firstSlide = slideNames[currentSlideIndex];
 layoutEngine.SetCurrentSlide(firstSlide);
 layoutEngine.Start();
 

@@ -9,67 +9,91 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
 {
     internal sealed class LongDivisionElement : AtriaElement
     {
-        private class SolutionRow
+        private struct TextGridCell
         {
-            private const int DividerLineStrokeWidth = 4;
-
-            internal static double? _digitWidth;
-
-            public enum RowType
+            [Flags]
+            public enum BorderSide
             {
-                Subtrahend,
-                Difference,
-                DividerLine
+                None = 0,
+                Top = 0b0001,
+                Bottom = 0b0010,
+                Left = 0b0100,
+                Right = 0b1000
             }
 
-            // okay this I don't like - it means that rendering now needs to be stateful
-            // but I only want divider lines to be as wide as whatever the text above them is,
-            private double _lastTextWidth = 0d;
+            private SSizeF _cellSize;
+            private SFont _font;
 
-            public RowType Type { get; }
-            public string? Value { get; }
-            public int IndentLevel { get; }
+            public char Character { get; set; }
+            public BorderSide Borders { get; set; }
 
-            public SolutionRow(RowType type, string? value, int indentLevel)
+            public TextGridCell(SSizeF cellSize, SFont font)
             {
-                Type = type;
-                Value = value;
-                IndentLevel = indentLevel;
+                _cellSize = cellSize;
+                _font = font;
+                Character = ' ';
+                Borders = BorderSide.None;
             }
 
-            public void Render(IRenderTarget target, double fontSize, double leftX, ref double y)
+            public void Render(IRenderTarget target, SPoint gridCell)
             {
-                var offsetX = leftX + (IndentLevel * _digitWidth!.Value);
+                // Find the proper coordinates
+                var cellBounds = new SRectF(
+                    gridCell.X * _cellSize.Width,
+                    gridCell.Y * _cellSize.Height,
+                    _cellSize.Width,
+                    _cellSize.Height);
 
-                if (Type == RowType.DividerLine)
+                // Draw the character
+                if (Character != ' ')
                 {
+                    target.DrawTextDirectly(Character.ToString(), _font, cellBounds, SColor.White, SAngle.Zero);
+                }
 
+                // Draw the borders, if any
+                if (Borders.HasFlag(BorderSide.Top))
+                {
+                    target.DrawLine(cellBounds.TopLeft, cellBounds.TopRight, SColor.White, 2f);
+                }
+                if (Borders.HasFlag(BorderSide.Bottom))
+                {
+                    target.DrawLine(cellBounds.BottomLeft, cellBounds.BottomRight, SColor.White, 2f);
+                }
+                if (Borders.HasFlag(BorderSide.Left))
+                {
+                    target.DrawLine(cellBounds.TopLeft, cellBounds.BottomLeft, SColor.White, 2f);
+                }
+                if (Borders.HasFlag(BorderSide.Right))
+                {
+                    target.DrawLine(cellBounds.TopRight, cellBounds.BottomRight, SColor.White, 2f);
                 }
             }
         }
 
-        private const double FontSize = 48d;
+        private const float FontSize = 48f;
 
         private string _dividend;
         private string _divisor;
         private string _quotient;
+
+        private TextGridCell[,] _cells;
+        private readonly SFont _font;
+        private readonly SSizeF? _cellSize;
 
         public LongDivisionElement(string dividend, string divisor, string quotient)
         {
             _dividend = dividend;
             _divisor = divisor;
             _quotient = quotient;
+
+            _font = new SFontFamily("Consolas", FontSize);
+            _cells = new TextGridCell[50, 50];  // CANIMPROVE: sigh. Hardcoding it all. Realistically, we will struggle with the fade-in more.
         }
 
 
         public override void Render(IRenderTarget target)
         {
-            if (SolutionRow._digitWidth == null)
-            {
-                var measurementService = Slide!.MeasurementService;
-                var digitSize = measurementService.MeasureText("0", new SFontFamily("Consolas", FontSize));
-                SolutionRow._digitWidth = digitSize.Width;
-            }
+            
         }
     }
 }

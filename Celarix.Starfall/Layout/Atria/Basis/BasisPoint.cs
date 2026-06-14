@@ -8,7 +8,7 @@ namespace Celarix.Starfall.Layout.Atria.Basis
 {
     public sealed class BasisPoint : BasisElement, IAtriaIdentified, ISlideAddable
     {
-        public AtriaId Id { get; private set; }
+        public override AtriaId Id { get; protected set; }
         public SPointF Point { get; set; }
         public AtriaSlide Slide { get; set; }
 
