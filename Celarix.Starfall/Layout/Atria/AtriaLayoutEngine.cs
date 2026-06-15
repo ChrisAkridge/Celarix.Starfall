@@ -16,6 +16,8 @@ namespace Celarix.Starfall.Layout.Atria
         private string? _currentSlideName;
         private DebugMode _debugMode;
 
+        public static int GlobalFrameNumber { get; internal set; }
+
         private AtriaSlide? CurrentSlide => _currentSlideName != null && _slides.TryGetValue(_currentSlideName, out var slide) ? slide : null;
         
         public MeasurementService? MeasurementService { get; set; }
@@ -61,6 +63,7 @@ namespace Celarix.Starfall.Layout.Atria
 
         public void Update(AtriaSlide slide, double deltaTime)
         {
+            GlobalFrameNumber += 1;
             slide.Update(deltaTime);
         }
 

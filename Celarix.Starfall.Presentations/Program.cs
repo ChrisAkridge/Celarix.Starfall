@@ -38,14 +38,16 @@ string[] slideNames = [
     "f01_titleSlide",
     "f02_integersAreGoodAtMath",
     "f03_floatsAreGoodAtMath",
-    "f04_noEscapeFromInfiniteExpansions"
+    "f04_noEscapeFromInfiniteExpansions",
+    "f05_butWellJustPickBinary"
 ];
-int currentSlideIndex = 3;
+int currentSlideIndex = 4;
 
 layoutEngine.AddSlide(new SlideFP_01_TitleSlide(ViewportWidth, ViewportHeight, measurementService), "f01_titleSlide");
 layoutEngine.AddSlide(new SlideFP_02_IntegersAreGoodAtMath(ViewportWidth, ViewportHeight), "f02_integersAreGoodAtMath");
 layoutEngine.AddSlide(new SlideFP_03_FloatsAreGoodAtMath(ViewportWidth, ViewportHeight), "f03_floatsAreGoodAtMath");
 layoutEngine.AddSlide(new SlideFP_04_NoEscapeFromInfiniteExpansions(ViewportWidth, ViewportHeight), "f04_noEscapeFromInfiniteExpansions");
+layoutEngine.AddSlide(new SlideFP_05_ButWellJustPickBinary(ViewportWidth, ViewportHeight), "f05_butWellJustPickBinary");
 
 tkTarget.KeyUp += TkTarget_KeyUp;
 
