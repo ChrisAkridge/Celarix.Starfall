@@ -144,6 +144,11 @@ namespace Celarix.Starfall.Rendering.Models
             return new SRectF(newX, newY, newWidth, newHeight);
         }
 
+        public SRectF Move(double xDelta, double yDelta)
+        {
+            return new SRectF(X + xDelta, Y + yDelta, Width, Height);
+        }
+
         public bool FitsWithin(SRectF outer)
         {
             return Left >= outer.Left && Right <= outer.Right && Top >= outer.Top && Bottom <= outer.Bottom;

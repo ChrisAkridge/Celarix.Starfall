@@ -19,6 +19,16 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             _onError = onError;
         }
 
+        public static ContinuingAnimation StartNow(Func<bool> updateAction, Action<Exception?>? onError = null)
+        {
+            return new ContinuingAnimation(AtriaLayoutEngine.GlobalFrameNumber, updateAction, onError);
+        }
+
+        public static ContinuingAnimation StartIn(int framesFromNow, Func<bool> updateAction, Action<Exception?>? onError = null)
+        {
+            return new ContinuingAnimation(AtriaLayoutEngine.GlobalFrameNumber + framesFromNow, updateAction, onError);
+        }
+
         public void Update(int currentFrame)
         {
             if (currentFrame < StartFrame || Completed)

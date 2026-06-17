@@ -102,6 +102,7 @@ namespace Celarix.Starfall.Rendering.Targets
                 var heightScale = (float)bounds.Height / measuredNewSize.Height;
                 var scale = Math.Min(widthScale, heightScale);
                 skFont = font.WithSize(skFont.Size * (float)scale).ToSKFont();
+                measuredNewSize *= scale;
             }
 
             var alignedPosition = AlignmentHelper.Align(alignment, bounds, measuredNewSize);

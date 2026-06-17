@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Celarix.Starfall.Rendering.Targets;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -38,6 +39,20 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             _updateAction = updateAction;
             _onCompleted = onCompleted;
             _onError = onError;
+        }
+
+        public static FixedDurationAnimation StartNow(int duration, Action<double> updateAction,
+            Action? onCompleted = null,
+            Action<Exception?>? onError = null)
+        {
+            return new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber, duration, updateAction, onCompleted, onError);
+        }
+
+        public static FixedDurationAnimation StartIn(int framesFromNow, int duration, Action<double> updateAction,
+            Action? onCompleted = null,
+            Action<Exception?>? onError = null)
+        {
+            return new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber + framesFromNow, duration, updateAction, onCompleted, onError);
         }
 
         public void Update(int currentFrame)
