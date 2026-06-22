@@ -38,6 +38,19 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             Id = AtriaId.Parse(atriaId);
         }
 
+        public static LineElement Between(SPointF from, SPointF to, string atriaId, SColor? color = null, double strokeWidth = 2d)
+        {
+            color ??= SColor.White;
+            var line = new LineElement(atriaId)
+            {
+                Position = from,
+                ToPoint = to - from,  // Calculate relative offset
+                StrokeColor = color.Value,
+                StrokeWidth = strokeWidth
+            };
+            return line;
+        }
+
         public override void Render(IRenderTarget target)
         {
             var fromPoint = Position;

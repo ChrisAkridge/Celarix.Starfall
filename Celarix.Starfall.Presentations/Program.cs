@@ -39,15 +39,23 @@ string[] slideNames = [
     "f02_integersAreGoodAtMath",
     "f03_floatsAreGoodAtMath",
     "f04_noEscapeFromInfiniteExpansions",
-    "f05_butWellJustPickBinary"
+    "f05_butWellJustPickBinary",
+    "f06_butWhyScientificNotation",
+    "f07_rulesForMantissas",
+    "f08_floatingPointIsScientificNotation",
+    "f09_10_11_openTheWindow"
 ];
-int currentSlideIndex = 4;
+int currentSlideIndex = 8;
 
 layoutEngine.AddSlide(new SlideFP_01_TitleSlide(ViewportWidth, ViewportHeight, measurementService), "f01_titleSlide");
 layoutEngine.AddSlide(new SlideFP_02_IntegersAreGoodAtMath(ViewportWidth, ViewportHeight), "f02_integersAreGoodAtMath");
 layoutEngine.AddSlide(new SlideFP_03_FloatsAreGoodAtMath(ViewportWidth, ViewportHeight), "f03_floatsAreGoodAtMath");
 layoutEngine.AddSlide(new SlideFP_04_NoEscapeFromInfiniteExpansions(ViewportWidth, ViewportHeight), "f04_noEscapeFromInfiniteExpansions");
 layoutEngine.AddSlide(new SlideFP_05_ButWellJustPickBinary(ViewportWidth, ViewportHeight), "f05_butWellJustPickBinary");
+layoutEngine.AddSlide(new SlideFP_06_ButWhyScientificNotation(ViewportWidth, ViewportHeight), "f06_butWhyScientificNotation");
+layoutEngine.AddSlide(new SlideFP_07_RulesForMantissas(ViewportWidth, ViewportHeight), "f07_rulesForMantissas");
+layoutEngine.AddSlide(new SlideFP_08_FloatingPointIsScientificNotation(ViewportWidth, ViewportHeight), "f08_floatingPointIsScientificNotation");
+layoutEngine.AddSlide(new SlideFP_09_10_11_OpenTheWindow(ViewportWidth, ViewportHeight), "f09_10_11_openTheWindow");
 
 tkTarget.KeyUp += TkTarget_KeyUp;
 

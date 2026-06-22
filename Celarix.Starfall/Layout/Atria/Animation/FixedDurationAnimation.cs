@@ -37,7 +37,21 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             StartFrame = startFrame;
             Duration = duration;
             _updateAction = updateAction;
-            _onCompleted = onCompleted;
+            
+            // Kinda hackish, but ensure that we always do a P = 1.00 step at the very end to reach the final state.
+            if (onCompleted == null)
+            {
+                _onCompleted = () => updateAction(1d);
+            }
+            else
+            {
+                _onCompleted = () =>
+                {
+                    updateAction(1d);
+                    onCompleted();
+                };
+            }
+
             _onError = onError;
         }
 

@@ -1,6 +1,9 @@
 ﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
+using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Presentations.FloatingPoint.Elements;
+using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,76 +12,127 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_05_ButWellJustPickBinary : AtriaSlide
     {
+        private enum State
+        {
+            Initial,
+            ShowBinaryPlaceValues,
+            ShowBinaryExponents,
+            ShowDecimalElement,
+            ShowDecimalPlaceValuesAndExponents
+        }
+
+        private StateMachine<State> _stateMachine;
+        private AnimationContext _animationContext;
+
         public SlideFP_05_ButWellJustPickBinary(int width, int height) : base(width, height)
         {
-            
         }
 
         public override void Initialize()
         {
-            // Man, reasoning about coordinates is making my head hurt. Future me: layers, man. Anyway,
-            // The FloatingPointWindowElement has a row of bits. It's 277 bits wide, so it's pretty wide.
-            // We pick a font size, check the size of a "0" or "1" in that font, then use that as the bit's
-            // height, from which we derive the rest of the sizing of a single bit. Then the row is just 277
-            // times that width.
-            //
-            // We render the font at full size, though, so the actual OpenTk window is only viewing a
-            // rectangular portion of the whole thing. We pan across it to show different bits. We do
-            // so by dragging around a CenteredX property within it. But in order to discuss that, we
-            // need to figure out coordinate spaces.
-            //
-            // We only care about horizontal coordinates here. By definition, the very center of the
-            // binary point is at a row X of 0. The bits to the left of it are at negative Xs, and the
-            // bits to the right of it are at positive Xs. We'll call the narrower rectangle the element
-            // rectangle, as wide as the OpenTk window is. It has a left of (-ElementWidth/2) and a right
-            // of (ElementWidth/2). When CenteredX == 0, we have the binary point in the center of the
-            // element rectangle. Thus row and element X matches up perfectly.
-            //
-            // When CenteredX moves negative, the bits pan to the right and we see more left bits. This
-            // is the same as if the entire row moved to the right by CenteredX, so the row's X is
-            // actually (RowX - CenteredX), since CenteredX is negative and (pos - neg) = pos + abs(neg).
-            //
-            // When CenteredX moves positive, the bits pan to the left and we see more right bits. This
-            // is the same as if the entire row moved to the left by CenteredX, so the row's X is
-            // actually (RowX - CenteredX), since CenteredX is positive and (pos - pos) = 0.
-
             BackgroundColor = Constants.FloatingPointBackground;
+            _stateMachine = new StateMachine<State>(this, State.Initial);
+            _animationContext = new AnimationContext();
 
-            var tempElement = new FloatingPointWindowElement("#tempElement", MeasurementService)
+            var binaryElement = new FloatingPointWindowElement("#binaryElement", MeasurementService)
             {
-                Size = Size
+                Size = new SSizeF(Size.Width, Size.Height / 3f),
+                ArrowOpacity = 0d,
+                WindowOpacity = 0d
             };
-            var anchor = new BasisPoint(TopLeft, "#tempAnchor");
-            tempElement.AnchorTopLeftTo(anchor);
-            Add([anchor, tempElement]);
+            var binaryAnchor = new BasisPoint(Center, "#binaryAnchor");
+            binaryElement.AnchorCenterTo(binaryAnchor);
+
+            Add([binaryElement, binaryAnchor])
+                .AnimateBasic(0.35d, AnimationTypes.FadeIn, Easings.Linear);
         }
 
-        private Random _debugRandom = new Random();
-        private int _lastSetBit = 0;
         public override SlideAdvanceResult Advance()
         {
-            var fpWindow = Query("#tempElement").OfType<FloatingPointWindowElement>().First();
+            if (_stateMachine.CurrentState == State.ShowDecimalPlaceValuesAndExponents)
+            {
+                return SlideAdvanceResult.CanAdvance;
+            }
 
-            // 1. Pick a random bit to center on. The range of bits is -149 to 127, inclusive, since the binary point is between bit -1 and bit 0.
-            //var newBit = _debugRandom.Next(-149, 128);
-            //fpWindow.ScrollBitToCenter(newBit);
-
-            // 2. Set the next bit down.
-            //fpWindow.SetBit(_lastSetBit, true, bounce: true);
-            //_lastSetBit += 1;
-
-            // 3. Show exponents.
-            // fpWindow.SetShowExponents(show: true);
-
-            // 4. Toggle exponents
-            //fpWindow.SetShowExponents(_lastSetBit % 2 == 0);
-            //_lastSetBit += 1;
-
-            // 5. Toggle place values
-            fpWindow.SetShowPlaceValues(_lastSetBit % 2 == 0);
-            _lastSetBit += 1;
-
+            var nextState = _stateMachine.CurrentState + 1;
+            _stateMachine.GoToState(nextState);
             return SlideAdvanceResult.InternalStateChanged;
+        }
+
+        public override SlideAdvanceResult Rewind()
+        {
+            if (_stateMachine.CurrentState == State.Initial)
+            {
+                return SlideAdvanceResult.CanRewind;
+            }
+
+            var previousState = _stateMachine.CurrentState - 1;
+            _stateMachine.GoToState(previousState);
+            return SlideAdvanceResult.InternalStateChanged;
+        }
+
+        public override void Update(double deltaTime)
+        {
+            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(deltaTime);
+        }
+
+        // Forward transitions
+        [StateTransition<State>(State.Initial, State.ShowBinaryPlaceValues)]
+        private void ToBinaryPlaceValues()
+        {
+            var binaryElement = (FloatingPointWindowElement)Query("#binaryElement").Single();
+            binaryElement.SetShowPlaceValues(true);
+        }
+
+        [StateTransition<State>(State.ShowBinaryPlaceValues, State.ShowBinaryExponents)]
+        private void ToBinaryExponents()
+        {
+            var binaryElement = (FloatingPointWindowElement)Query("#binaryElement").Single();
+            binaryElement.SetShowExponents(true);
+        }
+
+        [StateTransition<State>(State.ShowBinaryExponents, State.ShowDecimalElement)]
+        private void ToDecimalElement()
+        {
+            var binaryAnchor = (BasisPoint)QueryBasis("#binaryAnchor").Single();
+            var oldBinaryAnchorPosition = binaryAnchor.Point;
+            var newBinaryAnchorPosition = new BasisLine(TopCenter, BottomCenter).SplitAndTakeRight(2f / 3f).Center;
+            var moveBinaryAnchorAnimation = new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber, 30, p =>
+            {
+                binaryAnchor.Point = MathHelpers.Ease(oldBinaryAnchorPosition, newBinaryAnchorPosition, p, Easings.Land);
+            });
+
+            var decimalElement = new FloatingPointWindowElement("#decimalElement", MeasurementService)
+            {
+                Size = new SSizeF(Size.Width, Size.Height / 3f)
+            };
+            decimalElement.SetDisplayedExponentBase(10);
+            decimalElement.ArrowOpacity = 0d;
+            decimalElement.WindowOpacity = 0d;
+            var decimalAnchor = new BasisPoint(Center, "#decimalAnchor");
+            decimalElement.AnchorCenterTo(decimalAnchor);
+            Add([decimalElement, decimalAnchor])
+                .AnimateBasic(0.35d, AnimationTypes.FadeIn, Easings.Linear);
+
+            // I know we're adding an anchor just to move it immediately but I think it'll look cool
+            var oldDecimalAnchorPosition = decimalAnchor.Point;
+            var newDecimalAnchorPosition = new BasisLine(TopCenter, BottomCenter).SplitAndTakeLeft(1f / 3f).Center;
+            var moveDecimalAnchorAnimation = new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber, 30, p =>
+            {
+                decimalAnchor.Point = MathHelpers.Ease(oldDecimalAnchorPosition, newDecimalAnchorPosition, p, Easings.Land);
+            });
+
+            _animationContext.ScheduleAnimation(moveBinaryAnchorAnimation);
+            _animationContext.ScheduleAnimation(moveDecimalAnchorAnimation);
+        }
+
+        [StateTransition<State>(State.ShowDecimalElement, State.ShowDecimalPlaceValuesAndExponents)]
+        private void ToDecimalPlaceValuesAndExponents()
+        {
+            var decimalElement = (FloatingPointWindowElement)Query("#decimalElement").Single();
+            decimalElement.SetShowPlaceValues(true);
+            decimalElement.SetShowExponents(true);
         }
     }
 }

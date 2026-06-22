@@ -25,7 +25,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             // is 2^-126. When the exponent is -126, we can have up to 23 more bits below it, leading to a smallest
             // possible bit of -149. The complete range is from -149 to +127, which is 277 bits total.
             public const int TotalSinglePrecisionBits = 277;
-            public const double SmallFontSizeFactor = 0.25d;
+            public const double SmallFontSizeFactor = 0.20d;
             private const double BitSpacingRatioOfBitHeight = 0.1d;
             public const double SmallTextMarginRatioOfBitHeight = 0.05d;
             
@@ -34,6 +34,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             public static readonly SColor SecondaryTextColor = new SColor(0xBF, 0xBF, 0xBF, 255);
 
             public static SSizeF _bitTextSize;
+
+            public int? BaseOverride { get; set; }
 
             // Bit properties
             public bool BitSet { get; set; }
@@ -45,7 +47,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             public bool ShowExponent => ExponentOpacity != 0d;
             public double ExponentOpacity { get; set; }
             public double ExponentAscentProgress { get; set; }
-            public string ExponentText => $"2{string.Concat(Exponent.ToString().Select(c => ToUnicodeSuperscript(c)))}";
+            public string ExponentText => BaseOverride.HasValue
+                ? $"{BaseOverride.Value}{string.Concat(Exponent.ToString().Select(c => FPHelpers.ToUnicodeSuperscript(c)))}"
+                : $"2{string.Concat(Exponent.ToString().Select(c => FPHelpers.ToUnicodeSuperscript(c)))}";
 
             // Place value properties (on bottom)
             public bool ShowPlaceValue => PlaceValueOpacity != 0d;
@@ -57,13 +61,24 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 {
                     var isFraction = Exponent < 0;
                     var absExponent = Math.Abs(Exponent);
-                    var exponentValue = BigInteger.Pow(2, absExponent);
+                    var exponentValue = BigInteger.Pow(BaseOverride.HasValue ? BaseOverride.Value : 2, absExponent);
                     var log10 = BigInteger.Log10(exponentValue);
 
-                    if (Exponent >= -9 && Exponent <= 13)
+                    int lowExponent = BaseOverride.HasValue ? -2 : -9;
+                    int highExponent = BaseOverride.HasValue ? 3 : 13;
+                    if (Exponent >= lowExponent && Exponent <= highExponent)
                     {
                         // Display between 2^-9 and 2^13 as normal numbers (1/512 to 8192)
                         return isFraction ? $"1/{exponentValue}" : exponentValue.ToString();
+                    }
+
+                    // BigInteger.Log10 of 1 billion is 8.999999 or so, not 9. Detect when we're within
+                    // an epsilon of 0.001 of an integer and round up.
+                    var differenceHigh = Math.Abs(Math.Truncate(log10) - log10);
+                    var differenceLow = Math.Abs(1 - differenceHigh);
+                    if (differenceHigh < 0.001d || differenceLow < 0.001d)
+                    {
+                        log10 = Math.Ceiling(log10);
                     }
 
                     var log1000 = log10 - 3;
@@ -117,38 +132,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             {
                 get
                 {
-                    // The window has a binary point '.' which is half the width of a bit.
-                    // This binary point is defined such that its center is at X = 0. 127 bits to the
-                    // left of it and 149 bits to the right of it.
-                    //var direction = Exponent >= 0 ? -1 : 1;
-                    //var facingBinaryPointEdgeX = (BinaryPointWidth / 2d) * direction;
-                    //var fullBitSize = BitSize;
-
-                    //double bitLeftX;
-                    //if (Exponent >= 0)
-                    //{
-                    //    // We're to the left of the binary point. The left edge of the binary point
-                    //    // faces this bit, and the higher the exponent, the lower the X coordinate.
-                    //    var fullBitsWidth = fullBitSize.Width * -Exponent;
-                    //    bitLeftX = fullBitsWidth + facingBinaryPointEdgeX;
-
-                    //    // We also need to include the width of the bit itself. Why?
-                    //    // Let's say Exponent == 3. That's -90 pixels, right? Not quite. It's actually -120
-                    //    // to account for the 2^0 bit in addition to the other three bits.
-                    //    bitLeftX -= fullBitSize.Width;
-                    //}
-                    //else
-                    //{
-                    //    // We're to the right of the binary point. The right edge of the binary point faces
-                    //    // this bit, and the lower the exponent, the higher the X coordinate.
-                    //    var fullBitsWidth = fullBitSize.Width * -Exponent;
-                    //    // yes we're inverting the exponent in both cases
-                    //    // it's fine - here, the exponent is negative, we need it positive since we're
-                    //    // going right (positive X)
-                    //    bitLeftX = facingBinaryPointEdgeX + fullBitsWidth;
-                    //}
-                    //return new SPointF(bitLeftX, 0);
-                    var facingCenterX = -Exponent * BitSize.Width;
+                    var facingCenterX = Exponent >= 0
+                        ? -Exponent * BitSize.Width
+                        : -(Exponent + 1) * BitSize.Width;
                     facingCenterX += (BinaryPointWidth / 2d) * (Exponent >= 0 ? -1 : 1);
 
                     double bitLeftX;
@@ -193,29 +179,10 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 else if (xPosition >= 0)
                 {
                     // Negative exponent and a bit to the right of the binary point
-                    return (int)((xPosition - (BinaryPointWidth / 2d)) / BitSize.Width) * -1;
+                    return (int)Math.Round(((xPosition - (BinaryPointWidth / 2d)) / BitSize.Width) * -1);
                 }
 
                 throw new ArgumentException($"Unreachable: Invalid xPosition: {xPosition}");
-            }
-
-            private static char ToUnicodeSuperscript(char digit)
-            {
-                return digit switch
-                {
-                    '0' => '⁰',
-                    '1' => '¹',
-                    '2' => '²',
-                    '3' => '³',
-                    '4' => '⁴',
-                    '5' => '⁵',
-                    '6' => '⁶',
-                    '7' => '⁷',
-                    '8' => '⁸',
-                    '9' => '⁹',
-                    '-' => '⁻',
-                    _ => throw new ArgumentException($"Invalid digit character: {digit}")
-                };
             }
         }
 
@@ -230,7 +197,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         private static readonly SColor ArrowColor = SColor.White;
         private static readonly SColor NegativeFlagTextColor = SColor.Red;
 
-        private SFont _bitFont = new SFontFamily("Consolas", 72f);
+        private SFont _bitFont => new SFontFamily("Consolas", BaseFontSize);
         private GradientProvider _windowBitGradientProvider = new GradientProvider(RowBit.SecondaryTextColor, RowBit.PrimaryTextColor);
         private readonly RowBit[] _bits = new RowBit[RowBit.TotalSinglePrecisionBits];
 
@@ -241,6 +208,18 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         private int _framesUntilJitterToggle;
         private Random _random = new();
         private readonly SSizeF _negativeTextSize;
+        private readonly MeasurementService _measurementService;
+        private float _baseFontSize;
+
+        public float BaseFontSize
+        {
+            get => _baseFontSize;
+            set
+            {
+                _baseFontSize = value;
+                RowBit._bitTextSize = _measurementService.MeasureText("0", _bitFont);
+            }
+        }
 
         // Row properties
         private SSizeF RowSize
@@ -255,29 +234,36 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         // Arrow properties
         public double ArrowOpacity { get; set; }
         public double ArrowCenterX { get; set; }
+        public int ArrowExponent => RowBit.GetBitForXPosition(ArrowCenterX) ?? 0;
 
         // Window properties
         public SColor WindowColor { get; set; } = WindowDefaultColor;
-        public int WindowWidthInBits { get; set; }
+
+        /// <summary>
+        /// The width of the window in bits (can be fractional during animations).
+        /// </summary>
+        public double WindowWidthInBits { get; set; }
+
+        /// <summary>
+        /// Factor (0.0 to 1.0) for adding binary point width. Allows smooth transitions.
+        /// </summary>
+        public double BinaryPointWidthFactor { get; set; }
 
         public SSizeF WindowSize
         {
             get
             {
-                // We'll add the margin in rendering later
-                var width = (WindowWidthInBits * RowBit.BitSize.Width);
+                var bitWidth = RowBit.BitSize.Width;
+                var width = WindowWidthInBits * bitWidth;
+                
+                // Add binary point width based on the factor (allows smooth lerping)
+                width += RowBit.BinaryPointWidth * BinaryPointWidthFactor;
+                
                 var height = RowBit.BitSize.Height;
-
-                var windowLeftBit = RowBit.GetBitForXPosition(WindowLeftX);
-                if (windowLeftBit.HasValue && windowLeftBit.Value > -23 && windowLeftBit.Value < 1)
-                {
-                    // The window contains the binary point, so we need to add extra width to accommodate it.
-                    width += RowBit.BinaryPointWidth;
-                }
-
                 return new SSizeF(width, height);
             }
         }
+
         public double WindowLeftX { get; set; }
         public double WindowOpacity { get; set; }
         public bool DoWindowJitter { get; set; }
@@ -291,6 +277,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
 
         // Negative flag properties
         public bool ShowNegativeFlag { get; set; }
+        public double NegativeFlagOpacity { get; set; }
+        public float NegativeFlagFontSize => (float)(RowBit._bitTextSize.Height * RowBit.SmallFontSizeFactor);
 
         // Falling window properties
         public bool ShowFallingWindowRect { get; set; }
@@ -304,6 +292,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         public FloatingPointWindowElement(string atriaIdString, MeasurementService measurementService)
         {
             Id = AtriaId.Parse(atriaIdString);
+            _measurementService = measurementService;
 
             // Initialize the bits
             for (var i = 0; i < RowBit.TotalSinglePrecisionBits; i++)
@@ -313,14 +302,17 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             }
 
             // Pre-measure the bit text size since it's constant and we'll need it for layout
+            _baseFontSize = 120f;
             RowBit._bitTextSize = measurementService.MeasureText("0", _bitFont);
-            _negativeTextSize = measurementService.MeasureText("Negative!", _bitFont.WithSize((float)(RowBit._bitTextSize.Height * RowBit.SmallFontSizeFactor)));
+            _negativeTextSize = measurementService.MeasureText("Negative!", _bitFont.WithSize(NegativeFlagFontSize));
 
             // These should probably be initialized externally?
             WindowWidthInBits = 24;
             WindowOpacity = 1d;
             CenteredX = 0;
             WindowLeftX = _bits[127].Position.X;
+            ArrowCenterX = _bits[127].Position.WithSize(RowBit._bitTextSize).Center.X;
+            ArrowOpacity = 1;
         }
 
         public override void Render(IRenderTarget target)
@@ -347,7 +339,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 SRectF finalWindowRect = windowRect
                     .Expand(windowMargin * 2, windowMargin * 2)
                     .Move(0, yOffset);
-                target.DrawRectangle(finalWindowRect, WindowColor.WithOpacity(WindowOpacity), SPaintStyle.Fill, SAngle.Zero);
+                target.DrawRectangle(finalWindowRect, WindowColor.WithOpacity(WindowOpacity * Opacity), SPaintStyle.Fill, SAngle.Zero);
             }
 
             // 2. Draw the bits in the element (and remember the binary point if it's visible)
@@ -356,7 +348,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             if (SpanVisible(binaryPointRect.Left, binaryPointRect.Right))
             {
                 var inWindow = WindowSize.Width % 1 != 0;
-                target.DrawText(".", _bitFont, binaryPointRect.Move(0, yOffset), inWindow ? RowBit.PrimaryTextColor : RowBit.SecondaryTextColor, SAngle.Zero, Alignment.Center);
+                SColor color = inWindow ? RowBit.PrimaryTextColor : RowBit.SecondaryTextColor;
+                target.DrawText(".", _bitFont, binaryPointRect.Move(0, yOffset), color.WithOpacity(Opacity), SAngle.Zero, Alignment.Center);
             }
 
             for (var i = 0; i < RowBit.TotalSinglePrecisionBits; i++)
@@ -387,7 +380,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                     target.DrawText(bit.ExponentText,
                         _bitFont.WithSize((float)exponentTextSize.Height),
                         exponentRect.Move(0, yOffset),
-                        RowBit.PrimaryTextColor.WithOpacity(bit.ExponentOpacity),
+                        RowBit.PrimaryTextColor.WithOpacity(bit.ExponentOpacity * Opacity),
                         SAngle.Zero,
                         Alignment.Center);
                 }
@@ -403,7 +396,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                     target.DrawText(bit.PlaceValueText,
                         _bitFont.WithSize((float)placeValueTextSize.Height * 0.9f), // CANIMPROVE: This 0.9 is a band-aid for the fact that the place value text is too big and 1/128 and lower have no margin
                         placeValueRect.Move(0, yOffset),
-                        RowBit.PrimaryTextColor.WithOpacity(bit.PlaceValueOpacity),
+                        RowBit.PrimaryTextColor.WithOpacity(bit.PlaceValueOpacity * Opacity),
                         SAngle.Zero,
                         Alignment.Center);
                 }
@@ -414,7 +407,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                     && exponent <= windowLeftBit.Value
                     && exponent >= windowRightBit!.Value;
                 bitTextRect = bitTextRect.Move(0d, -bit.BounceHeight); // Apply bounce offset
-                target.DrawTextDirectly(bit.BitText, _bitFont, bitTextRect.Move(0, yOffset), inWindow ? bitInWindowColor : bitOutOfWindowColor, SAngle.Zero);
+                SColor color = inWindow ? bitInWindowColor : bitOutOfWindowColor;
+                target.DrawTextDirectly(bit.BitText, _bitFont, bitTextRect.Move(0, yOffset), color.WithOpacity(Opacity), SAngle.Zero);
             }
 
             // 5. Draw the arrow if visible
@@ -423,12 +417,10 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             // "▼"
             var arrowEdgeLength = RowBit.BitSize.Width;
             var arrowLeft = ArrowCenterX - (arrowEdgeLength / 2d);
-            var arrowRect = new SRectF(RowXToScreenX(arrowLeft),
-                (RowBit.BitSize.Height / 2d) + (RowBit._bitTextSize.Height * RowBit.SmallFontSizeFactor) + (RowBit.SmallTextMarginRatioOfBitHeight * RowBit.BitSize.Height),
-                arrowEdgeLength, RowBit._bitTextSize.Height);
+            var arrowRect = new SRectF(RowXToScreenX(arrowLeft), -arrowEdgeLength, arrowEdgeLength, RowBit._bitTextSize.Height);
             // CANIMPROVE: We should really think of this element like a stack of rows: arrow on top, exponents, bits, then place values
             // This way we can just compute the Y position of each row.
-            target.DrawTextDirectly("▼", _bitFont.WithSize((float)arrowRect.Height), arrowRect.Move(0, yOffset), ArrowColor.WithOpacity(ArrowOpacity), SAngle.Zero);
+            target.DrawText("▼", _bitFont.WithSize((float)arrowRect.Height), arrowRect.Move(0, yOffset), ArrowColor.WithOpacity(ArrowOpacity * Opacity), SAngle.Zero);
 
             // 6. Draw the falling window rect if visible
             if (ShowFallingWindowRect)
@@ -445,11 +437,11 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                                                    FallingWindowRectCenter.Y - (FallingWindowRectSize.Height / 2d),
                                                    FallingWindowRectSize.Width,
                                                    FallingWindowRectSize.Height);
-                target.DrawRectangle(fallingWindowRect, FallingWindowColor, SPaintStyle.Fill, FallingWindowAngle);
+                target.DrawRectangle(fallingWindowRect, FallingWindowColor.WithOpacity(Opacity), SPaintStyle.Fill, FallingWindowAngle);
             }
 
             // 7. Draw the negative indicator if necessary
-            if (ShowNegativeFlag)
+            if (ShowNegativeFlag && NegativeFlagOpacity > 0d)
             {
                 var elementTopRight = Bounds.TopRight;
                 var xPadding = -10d;
@@ -458,7 +450,11 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                     elementTopRight.Y + yPadding,
                     _negativeTextSize.Width,
                     _negativeTextSize.Height);
-                target.DrawTextDirectly("Negative!", _bitFont.WithSize((float)_negativeTextSize.Height), negativeTextRect, NegativeFlagTextColor, SAngle.Zero);
+                target.DrawTextDirectly("Negative!",
+                    _bitFont.WithSize(NegativeFlagFontSize),
+                    negativeTextRect,
+                    NegativeFlagTextColor.WithOpacity(NegativeFlagOpacity * Opacity),
+                    SAngle.Zero);
             }
         }
 
@@ -483,7 +479,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             {
                 // Negative exponent, bit to the right of the binary point, X is positive
                 var bitNeg1Left = RowBit.BinaryPointWidth / 2d;
-                var wantedBitLeft = bitNeg1Left + (RowBit.BitSize.Width * (bitExponent - 1));
+                var wantedBitLeft = bitNeg1Left + (RowBit.BitSize.Width * -(bitExponent - 1));
                 wantedBitCenter = wantedBitLeft + (RowBit.BitSize.Width / 2d);
             }
             else
@@ -492,7 +488,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             }
 
             var originalCenteredX = CenteredX;
-            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(2d),
+            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
                 p =>
                 {
                     var newCenteredX = originalCenteredX + ((wantedBitCenter - originalCenteredX) * Easings.Smoothstep(p));
@@ -518,7 +514,25 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 _animationContext.ScheduleAnimation(animation);
             }
         }
+
         // - SetBitAndAdvanceArrowAndScroll: Sets a bit value, queues a Bounce animation for it, advances the arrow to the next bit, and scrolls that next bit to the center of the element
+        public void SetBitAndAdvanceArrowAndScroll(int bitExponent, bool value)
+        {
+            SetBit(bitExponent, value, bounce: true);
+            var nextBitExponent = bitExponent - 1;
+            var nextBitIndex = 127 - nextBitExponent;
+            var nextBitPosition = _bits[nextBitIndex].Position;
+            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+                p =>
+                {
+                    // Move the arrow center X from its current position to the center of the next bit
+                    var wantedArrowCenterX = nextBitPosition.X + (RowBit.BitSize.Width / 2d);
+                    ArrowCenterX = ArrowCenterX + ((wantedArrowCenterX - ArrowCenterX) * Easings.Smoothstep(p));
+                });
+            _animationContext.ScheduleAnimation(animation);
+            ScrollBitToCenter(nextBitExponent);
+        }
+
         // - SetShowExponents: Shows/hides exponents with an ascent and fade-in animation
         public void SetShowExponents(bool show)
         {
@@ -613,11 +627,109 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         //      - We stop jittering immediately and clear flags and the timer
         //      - We lerp the window color back to the default color
         //      - We lerp the width back to 24 bits (or 24.25 bits)
+        public void MoveWindowToExponent(int targetExponent, int mantissaBits = 24, double durationSeconds = 1.0)
+        {
+
+            // Calculate target position
+            var targetLeftX = _bits.First(b => b.Exponent == targetExponent).Position.X;
+            
+            // Calculate target width (handles binary point automatically)
+            var (targetWidth, targetBinaryPointFactor) = CalculateWindowWidthForPosition(targetLeftX, mantissaBits);
+            
+            // Capture starting values
+            var startLeftX = WindowLeftX;
+            var startWidth = WindowWidthInBits;
+            var startBinaryPointFactor = BinaryPointWidthFactor;
+
+            if (Math.Abs(WindowOpacity) < 0.001d)
+            {
+                // We can't see the window, just instantly move it without animating.
+                WindowLeftX = targetLeftX;
+                WindowWidthInBits = targetWidth;
+                BinaryPointWidthFactor = targetBinaryPointFactor;
+                return;
+            }
+
+            var animation = FixedDurationAnimation.StartNow(
+                AnimationContext.SecondsToFrames(durationSeconds),
+                p =>
+                {
+                    WindowLeftX = startLeftX + (targetLeftX - startLeftX) * p;
+                    WindowWidthInBits = startWidth + (targetWidth - startWidth) * p;
+                    BinaryPointWidthFactor = startBinaryPointFactor + (targetBinaryPointFactor - startBinaryPointFactor) * p;
+                });
+            
+            _animationContext.ScheduleAnimation(animation);
+        }
+
         // - SetShowNegativeFlag: Shows/hides the negative flag with a fade-in/out animation
+        public void SetShowNegativeFlag(bool show)
+        {
+            if (ShowNegativeFlag == show)
+            {
+                return; // Already in the desired state, do nothing
+            }
+            ShowNegativeFlag = show;
+            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+                p =>
+                {
+                    NegativeFlagOpacity = Easings.Land(show ? p : 1 - p);
+                });
+            _animationContext.ScheduleAnimation(animation);
+        }
+
+        public void SetShowArrow(bool show)
+        {
+            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+                p =>
+                {
+                    ArrowOpacity = Easings.Land(show ? p : 1 - p);
+                });
+            _animationContext.ScheduleAnimation(animation);
+        }
+
         // - SetArrowBit: Queues a FixedDurationAnimation to move the arrow to point at a specific bit
+        public void SetArrowBit(int exponent)
+        {
+            var bitIndex = 127 - exponent;
+            var bitRect = _bits[bitIndex].Position.WithSize(RowBit._bitTextSize);
+            var wantedArrowCenterX = bitRect.Center.X;
+            var originalArrowCenterX = ArrowCenterX;
+            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.8d),
+                p =>
+                {
+                    var newArrowCenterX = originalArrowCenterX + ((wantedArrowCenterX - originalArrowCenterX) * Easings.Smoothstep(p));
+                    ArrowCenterX = newArrowCenterX;
+                });
+            _animationContext.ScheduleAnimation(animation);
+        }
+
         // - CenterOnArrow: Queues a FixedDurationAnimation to scroll the bits such that the arrow is centered in the element
+        public void CenterOnArrow()
+        {
+            var wantedCenteredX = RowXToScreenX(ArrowCenterX);
+            var originalCenteredX = CenteredX;
+            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.8d),
+                p =>
+                {
+                    var newCenteredX = originalCenteredX + ((wantedCenteredX - originalCenteredX) * Easings.Smoothstep(p));
+                    CenteredX = newCenteredX;
+                });
+            _animationContext.ScheduleAnimation(animation);
+        }
+
         // - ComedicallyDropWindow: Hides the window and sets the falling window properties to drop a rectangle from the window's last position with a rotation
         // - ShowCursedNaNWindow: Flashes then holds a 23-bit wide red window at the window position to represent a NaN value, setting it to jitter for extra effect
+
+        public void SetDisplayedExponentBase(int newBase)
+        {
+            // Doesn't actually make the bits support the new base, but is fine for display as long as
+            // you don't set anything
+            for (var i = 0; i < RowBit.TotalSinglePrecisionBits; i++)
+            {
+                _bits[i].BaseOverride = newBase;
+            }
+        }
 
         // Animation state flags (if any of these are set and we try to reset them (or set them again), we force end the current animation):
         // - Scrolling
@@ -706,6 +818,17 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             });
             Console.WriteLine($"Scheduling staggered animation for {animationCount} bits");
             _animationContext.ScheduleContinuingAnimation(staggeredAnimation);
+        }
+
+        private (double widthInBits, double binaryPointFactor) CalculateWindowWidthForPosition(double leftX, int mantissaBits)
+        {
+            var leftBit = RowBit.GetBitForXPosition(leftX);
+            var rightBit = leftBit - mantissaBits + 1;
+
+            // Check if the binary point (between bit 0 and bit -1) falls within this range
+            bool containsBinaryPoint = leftBit.HasValue && leftBit.Value >= 0 && rightBit < 0;
+
+            return (mantissaBits, containsBinaryPoint ? 1.0 : 0.0);
         }
     }
 }
