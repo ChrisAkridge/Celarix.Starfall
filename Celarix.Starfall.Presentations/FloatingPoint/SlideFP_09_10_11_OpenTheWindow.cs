@@ -14,28 +14,15 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_09_10_11_OpenTheWindow : AtriaSlide
     {
-        // Slide flow:
-        // 0. Fade in a FloatingPointWindowElement with the 24-bit window not shown, centered again on bit 0.
-        // 1. Zoom in (make the font size bigger) and show place values and exponents.
-        // 2. Hide the place values and exponents and zoom out to the original size.
-        // 3. Show the 24-bit window at exponent = 0, such that it is all visible.
-        // 4. Stagger loading values below the element, showing things like current value, target value, and so forth.
-        // 5. Fade the arrow in on bit 0.
-        // 6. Set the current bit of the window to approach the target value. If we're not on the last bit, go to step 6, otherwise go to step 7.
-        // 7. The console asks me for a number provided by an audience member. I type it in and press Enter.
-        //    All 1 bits are set to 0 with a bounce, and the window, arrow, and centered bit all scroll to where the user's number is.
-        //    We also show the negative flag if we need to.
-        // 8. Set the current bit of the window to approach the target value. If we're not on the last bit, go to step 8, otherwise go to step 9.
-        // 9. Ask me if there's another number someone wants to see. If so, go back to step 7, otherwise go to step 10.
-        // 10. Final state.
         private int _state;
         private FloatingPointWindowElement _element;
+        private SingleBinaryViewElement _binaryView;
         private readonly AnimationContext _animationContext = new();
 
         private bool _isNegative;
         private int _exponent = 0;
         private BitArray _currentMantissa = new(24);
-        private BitArray _targetMantissa = new(24);
+        private BitArray _targetMantissa = new(23);
         private int _nextSetBit = 0;
 
         private float CurrentValue
@@ -55,7 +42,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                     exponentBits = 0;
                 }
 
-            var intValue = signBit | exponentBits | mantissaBits;
+                var intValue = signBit | exponentBits | (mantissaBits & 0x007F_FFFF);
                 return BitConverter.Int32BitsToSingle(intValue);
             }
         }
@@ -78,21 +65,24 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             get
             {
-                var superscriptExponent = _exponent.ToString().Select(c => FPHelpers.ToUnicodeSuperscript(c)); // Exponent in superscript
-                return $"{(_isNegative ? "-" : "")}1.{GetMantissaBinaryString(_currentMantissa)} × 2{string.Concat(superscriptExponent)}";
+                var superscriptExponent = _exponent.ToString().Select(FPHelpers.ToUnicodeSuperscript); // Exponent in superscript
+                string currentMantissaString = GetMantissaBinaryString(_currentMantissa).Substring(1); // Remove the implied leading bit
+                var impliedLeadingBit = ((_exponent != -127) ? "1" : "0");
+                return $"{(_isNegative ? "-" : "")}{impliedLeadingBit}.{currentMantissaString} × 2{string.Concat(superscriptExponent)}";
             }
         }
 
-        private string CurrentValueString => CurrentValue.ToString("R");
-        private string TargetValueString => TargetValue.ToString("R");
-        private string DifferenceString => (TargetValue - CurrentValue).ToString("R");
+        private string CurrentValueString => Helpers.ExactStringSingle(CurrentValue);
+        private string TargetValueString => Helpers.ExactStringSingle(TargetValue);
+        private string DifferenceString => Helpers.ExactStringSingle(TargetValue - CurrentValue);
         private string PlaceValueString
         {
             get
             {
-                var exponentSuperscript = _element.ArrowExponent.ToString().Select(c => FPHelpers.ToUnicodeSuperscript(c)); // Exponent in superscript
+                var currentExponent = _exponent - _nextSetBit;
+                var exponentSuperscript = currentExponent.ToString().Select(FPHelpers.ToUnicodeSuperscript); // Exponent in superscript
                 var exponentPart = $"2{string.Concat(exponentSuperscript)}";
-                var placeValuePart = Helpers.ExactStringSingle((float)Math.Pow(2, _element.ArrowExponent));
+                var placeValuePart = Helpers.ExactStringSingle((float)Math.Pow(2, currentExponent));
                 return $"{exponentPart} = {placeValuePart}";
             }
         }
@@ -126,6 +116,13 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 ArrowOpacity = 0d,
                 BaseFontSize = 48
             };
+            _binaryView = new SingleBinaryViewElement("#binaryView", "Consolas")
+            {
+                Size = new SSizeF(Size.Width, Size.Height / 4d),
+                BaseFontSize = 48
+            };
+
+            _element.SetArrowBit(0);
         }
 
         public override void Update(double deltaTime)
@@ -138,16 +135,20 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             switch (_state)
             {
-                case 0: return FadeWindow();
+                case 0: return FadeInBitRow();
                 case 1: return ZoomInAndShowExponentsAndPlaceValues();
                 case 2: return ZoomOutAndHideExponentsAndPlaceValues();
                 case 3: return ShowWindow();
                 case 4: return ShowValues();
+                case 5: return ShowArrow();
+                case 6: return SetNextMantissaBit();
+                case 7: return AskTheAudience();
+                case 8: return SlideAdvanceResult.CanAdvance;
                 default: throw new InvalidOperationException("Unreachable.");
             }
         }
 
-        private SlideAdvanceResult FadeWindow()
+        private SlideAdvanceResult FadeInBitRow()
         {
             var elementAnchor = new BasisPoint(TopLeft.Down(Size.Height / 6d), "#floatingPointWindowAnchor");
             _element.AnchorTopLeftTo(elementAnchor);
@@ -190,7 +191,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult ShowWindow()
         {
-            var windowAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(2d), p =>
+            var windowAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 _element.WindowOpacity = p;
             }, () => _state = 4);
@@ -206,24 +207,111 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 Font = new SFontFamily("Consolas", 36f),
                 Color = SColor.White
             };
-            var valuesAnchor = new BasisPoint(BottomLeft.Up(20d), "#valuesAnchor");
+            var valuesAnchor = new BasisPoint(BottomLeft.Down(25d), "#valuesAnchor");
             valuesBlock.AnchorBottomLeftTo(valuesAnchor);
 
-            Add([valuesBlock, valuesAnchor])
+            var viewAnchor = new BasisPoint(_element.Bounds.BottomLeft, "#viewAnchor");
+            _binaryView.AnchorTopLeftTo(viewAnchor);
+            _binaryView.Size = new SSizeF(Size.Width, Size.Height / 4d);
+
+            Add([valuesBlock, valuesAnchor, _binaryView, viewAnchor])
                 .AnimateBasic(0.5d, AnimationTypes.FadeIn, Easings.Linear);
             _state = 5;
             return SlideAdvanceResult.InternalStateChanged;
         }
 
+        private SlideAdvanceResult ShowArrow()
+        {
+            var arrowAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            {
+                _element.ArrowOpacity = p;
+            }, () => _state = 6);
+            _animationContext.ScheduleAnimation(arrowAnimation);
+
+            SetTarget((float)Math.PI);
+
+            return SlideAdvanceResult.InternalStateChanged;
+        }
+
+        private SlideAdvanceResult SetNextMantissaBit()
+        {
+            if (_nextSetBit >= 24)
+            {
+                _state = 7;
+                _nextSetBit = 0;
+                return SlideAdvanceResult.InternalStateChanged;
+            }
+
+            var bitIndex = _nextSetBit;
+            bool nextTargetBit;
+
+            if (bitIndex == 0)
+            {
+                // Implied leading bit.
+                var isNormal = _exponent != -127 && _exponent != 128;
+                nextTargetBit = isNormal;
+            }
+            else
+            {
+                nextTargetBit = _targetMantissa[bitIndex - 1];
+            }
+
+            _currentMantissa[bitIndex] = nextTargetBit;
+            _nextSetBit += 1;
+
+            _element.SetBitAndAdvanceArrowAndScroll(_exponent - bitIndex, nextTargetBit);
+            UpdateVisibleValues();
+            return SlideAdvanceResult.InternalStateChanged;
+        }
+
+        private SlideAdvanceResult AskTheAudience()
+        {
+            float? newTarget = null;
+            do
+            {
+                Console.Write("Enter a new target value (or 'exit' to finish): ");
+                var input = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    continue;
+                }
+
+                if (input.ToLowerInvariant().Trim() == "exit")
+                {
+                    _state = 8;
+                    return SlideAdvanceResult.InternalStateChanged;
+                }
+
+                if (float.TryParse(input, out var parsedValue))
+                {
+                    newTarget = parsedValue;
+                    _nextSetBit = 0;
+                    _element.ClearAllSetBits(bounce: true);
+                    _currentMantissa.SetAll(false);
+                    SetTarget(newTarget.Value);
+                    _state = 6;
+                    
+                    return SlideAdvanceResult.InternalStateChanged;
+                }
+                else
+                {
+                    Console.WriteLine("Invalid input. Please enter a valid floating-point number or 'exit'.");
+                }
+            } while (newTarget == null);
+
+            throw new InvalidOperationException("Unreachable code reached in AskTheAudience.");
+        }
+
         // Helpers
         private int GetMantissaValue(BitArray mantissa)
         {
+            var highestShift = mantissa.Length - 1;
             var value = 0;
             for (var i = 0; i < mantissa.Length; i++)
             {
                 if (mantissa[i])
                 {
-                    value |= 1 << (23 - i);
+                    value |= 1 << (highestShift - i);
                 }
             }
             return value;
@@ -237,6 +325,45 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 sb.Append(mantissa[i] ? '1' : '0');
             }
             return sb.ToString();
+        }
+
+        private void UpdateVisibleValues()
+        {
+            var valuesBlock = (MultilineTextBlock)Query("#values").Single();
+            valuesBlock.Text = VisibleValues;
+
+            var sign = _isNegative ? unchecked((int)0x8000_0000) : 0;
+            var biasedExponent = (_exponent + 127) & 0xFF;
+            var exponentBits = biasedExponent << 23;
+            var currentMantissa = GetMantissaValue(_currentMantissa);
+            var intValue = sign | exponentBits | (currentMantissa & 0x007F_FFFF);
+            _binaryView.Value = BitConverter.Int32BitsToSingle(intValue);
+        }
+
+        private void SetTarget(float target)
+        {
+            var intValue = BitConverter.SingleToInt32Bits(target);
+            _isNegative = (intValue & 0x8000_0000) != 0;
+            _element.SetShowNegativeFlag(_isNegative);
+
+            var oldExponent = _exponent;
+            var biasedExponent = (intValue >> 23) & 0xFF;
+            _exponent = biasedExponent - 127;
+            if (_exponent != oldExponent)
+            {
+                _element.MoveWindowToExponent(_exponent);
+                _element.SetArrowBit(_exponent);
+                _element.ScrollBitToCenter(_exponent);
+            }
+
+            var mantissaBits = intValue & 0x007F_FFFF;
+
+            for (var i = 0; i < 23; i++)
+            {
+                _targetMantissa[i] = (mantissaBits & (1 << (22 - i))) != 0;
+            }
+
+            UpdateVisibleValues();
         }
     }
 }

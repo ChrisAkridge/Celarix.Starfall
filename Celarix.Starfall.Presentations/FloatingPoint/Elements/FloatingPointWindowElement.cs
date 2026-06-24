@@ -179,7 +179,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 else if (xPosition >= 0)
                 {
                     // Negative exponent and a bit to the right of the binary point
-                    return (int)Math.Round(((xPosition - (BinaryPointWidth / 2d)) / BitSize.Width) * -1);
+                    return -(int)Math.Ceiling((xPosition - (BinaryPointWidth / 2d)) / BitSize.Width);
                 }
 
                 throw new ArgumentException($"Unreachable: Invalid xPosition: {xPosition}");
@@ -187,7 +187,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         }
 
         private const double WindowOuterMarginRatioOfBitHeight = 0.01d;
-        private const double GravitationalAccelerationPxPerFrameSquared = 0.5d;
+        private const double GravitationalAccelerationPxPerFrameSquared = 0.12d;
+        private const int FramesUntilFiringWindowFallingOffscreenEvent = 90;   // 1.5 seconds @ 60fps
         private const double AngularAccelerationPerFrameSquared = 0.01d;
         private const double MaxFallingWindowVelocityPerFrame = 20d;
         private const double MaxFallingWindowAngularVelocityPerFrame = 0.5d;
@@ -206,6 +207,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         private bool _showingPlaceValues = false;
         private bool _isJitteringWindow;
         private int _framesUntilJitterToggle;
+        private int? _framesUntilFiringWindowFallingOffscreenEvent;
         private Random _random = new();
         private readonly SSizeF _negativeTextSize;
         private readonly MeasurementService _measurementService;
@@ -287,7 +289,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         public SSizeF FallingWindowRectSize { get; set; }
         public SColor FallingWindowColor { get; set; }
         public SAngle FallingWindowAngularVelocityPerFrame { get; set; }
+        public SPointF FallingWindowCenterAccelerationPerFrame { get; set; }
         public SPointF FallingWindowCenterVelocityPerFrame { get; set; }
+        public event EventHandler? FallingWindowRectExited;
 
         public FloatingPointWindowElement(string atriaIdString, MeasurementService measurementService)
         {
@@ -403,9 +407,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
 
                 // Draw the actual bit. We do want to vertically center it and it gets drawn at the top
                 // of bitRect.
-                var inWindow = windowLeftBit.HasValue
-                    && exponent <= windowLeftBit.Value
-                    && exponent >= windowRightBit!.Value;
+                var bitRight = bitLeft + RowBit.BitSize.Width;
+                var windowRight = WindowLeftX + WindowSize.Width;
+                var inWindow = bitRight > WindowLeftX && bitLeft < windowRight;
                 bitTextRect = bitTextRect.Move(0d, -bit.BounceHeight); // Apply bounce offset
                 SColor color = inWindow ? bitInWindowColor : bitOutOfWindowColor;
                 target.DrawTextDirectly(bit.BitText, _bitFont, bitTextRect.Move(0, yOffset), color.WithOpacity(Opacity), SAngle.Zero);
@@ -461,6 +465,42 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         public override void Update(double deltaTime)
         {
             _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+
+            if (ShowFallingWindowRect)
+            {
+                // Update the falling window's position and angle based on its velocity and angular velocity
+                FallingWindowCenterVelocityPerFrame = FallingWindowCenterVelocityPerFrame.Move(FallingWindowCenterAccelerationPerFrame.X, FallingWindowCenterAccelerationPerFrame.Y);
+                FallingWindowRectCenter = FallingWindowRectCenter.Move(FallingWindowCenterVelocityPerFrame.X, FallingWindowCenterVelocityPerFrame.Y);
+                FallingWindowAngle = FallingWindowAngle + FallingWindowAngularVelocityPerFrame;
+
+                // Check if the falling window is completely off-screen. If so, stop showing it.
+                if (!SRectF.RotatedIntersects(Slide!.Size.At(SPointF.Zero), FallingWindowRectSize.CenterAt(FallingWindowRectCenter),
+                    SAngle.Zero, FallingWindowAngle))
+                {
+                    ShowFallingWindowRect = false;
+                    _framesUntilFiringWindowFallingOffscreenEvent = FramesUntilFiringWindowFallingOffscreenEvent;
+                }
+            }
+
+            if (_framesUntilFiringWindowFallingOffscreenEvent.HasValue)
+            {
+                _framesUntilFiringWindowFallingOffscreenEvent--;
+                if (_framesUntilFiringWindowFallingOffscreenEvent <= 0)
+                {
+                    _framesUntilFiringWindowFallingOffscreenEvent = null;
+                    FallingWindowRectExited?.Invoke(this, EventArgs.Empty);
+                }
+            }
+
+            if (DoWindowJitter)
+            {
+                _framesUntilJitterToggle--;
+                if (_framesUntilJitterToggle <= 0)
+                {
+                    _isJitteringWindow = !_isJitteringWindow;
+                    _framesUntilJitterToggle = _random.Next(5, 16); // Randomly toggle jitter every 5 to 15 frames
+                }
+            }
         }
 
         // Public operations:
@@ -522,14 +562,15 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             var nextBitExponent = bitExponent - 1;
             var nextBitIndex = 127 - nextBitExponent;
             var nextBitPosition = _bits[nextBitIndex].Position;
-            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
-                p =>
-                {
-                    // Move the arrow center X from its current position to the center of the next bit
-                    var wantedArrowCenterX = nextBitPosition.X + (RowBit.BitSize.Width / 2d);
-                    ArrowCenterX = ArrowCenterX + ((wantedArrowCenterX - ArrowCenterX) * Easings.Smoothstep(p));
-                });
-            _animationContext.ScheduleAnimation(animation);
+            //var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+            //    p =>
+            //    {
+            //        // Move the arrow center X from its current position to the center of the next bit
+            //        var wantedArrowCenterX = nextBitPosition.X + (RowBit.BitSize.Width / 2d);
+            //        ArrowCenterX = ArrowCenterX + ((wantedArrowCenterX - ArrowCenterX) * Easings.Smoothstep(p));
+            //    });
+            //_animationContext.ScheduleAnimation(animation);
+            SetArrowBit(nextBitExponent);
             ScrollBitToCenter(nextBitExponent);
         }
 
@@ -695,6 +736,14 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             var bitRect = _bits[bitIndex].Position.WithSize(RowBit._bitTextSize);
             var wantedArrowCenterX = bitRect.Center.X;
             var originalArrowCenterX = ArrowCenterX;
+
+            if (Math.Abs(ArrowOpacity) < 0.001d)
+            {
+                // We can't see the arrow, just instantly move it without animating.
+                ArrowCenterX = wantedArrowCenterX;
+                return;
+            }
+
             var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.8d),
                 p =>
                 {
@@ -719,6 +768,20 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         }
 
         // - ComedicallyDropWindow: Hides the window and sets the falling window properties to drop a rectangle from the window's last position with a rotation
+        public void ComedicallyDropWindow()
+        {
+            // Set the falling window properties to drop a rectangle from the window's last position with a rotation
+            FallingWindowRectCenter = new SPointF(RowXToScreenX(WindowLeftX + (WindowSize.Width / 2d)), GetRowRenderingRectOnElement().Y + WindowSize.Height / 2d);
+            FallingWindowRectSize = WindowSize;
+            FallingWindowColor = WindowColor;
+            FallingWindowAngle = SAngle.Zero;
+            FallingWindowAngularVelocityPerFrame = SAngle.FromDegrees(_random.NextDouble() * 2 - 1); // Random angular velocity between -1 and 1 degrees per frame
+            FallingWindowCenterAccelerationPerFrame = new SPointF(0, GravitationalAccelerationPxPerFrameSquared);
+            FallingWindowCenterVelocityPerFrame = new SPointF(0, 0);
+            ShowFallingWindowRect = true;
+            // Hide the window
+            WindowOpacity = 0;
+        }
         // - ShowCursedNaNWindow: Flashes then holds a 23-bit wide red window at the window position to represent a NaN value, setting it to jitter for extra effect
 
         public void SetDisplayedExponentBase(int newBase)
@@ -728,6 +791,18 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             for (var i = 0; i < RowBit.TotalSinglePrecisionBits; i++)
             {
                 _bits[i].BaseOverride = newBase;
+            }
+        }
+
+        public void ClearAllSetBits(bool bounce)
+        {
+            for (var i = 0; i < RowBit.TotalSinglePrecisionBits; i++)
+            {
+                var bit = _bits[i];
+                if (!bit.BitSet) { continue; }
+
+                var exponent = bit.Exponent;
+                SetBit(exponent, false, bounce: bounce);
             }
         }
 

@@ -11,4 +11,17 @@
     <ProjectReference Include="..\Celarix.Starfall\Celarix.Starfall.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Assets\Images\3317968666_f46dbaac72_o_cropped.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Sounds\159197__justbrando__glass-breaking.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="FloatingPoint\Components\" />
+  </ItemGroup>
+
 </Project>

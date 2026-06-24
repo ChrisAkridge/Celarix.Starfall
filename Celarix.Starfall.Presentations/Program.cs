@@ -43,9 +43,12 @@ string[] slideNames = [
     "f06_butWhyScientificNotation",
     "f07_rulesForMantissas",
     "f08_floatingPointIsScientificNotation",
-    "f09_10_11_openTheWindow"
+    "f09_10_11_openTheWindow",
+    "f13_impliedLeadingBits",   // No slide 12, we did so well in 9/10/11 that we don't need a 12
+    "f14_15_specialExponents",
+    "testSlide"
 ];
-int currentSlideIndex = 8;
+int currentSlideIndex = 10;
 
 layoutEngine.AddSlide(new SlideFP_01_TitleSlide(ViewportWidth, ViewportHeight, measurementService), "f01_titleSlide");
 layoutEngine.AddSlide(new SlideFP_02_IntegersAreGoodAtMath(ViewportWidth, ViewportHeight), "f02_integersAreGoodAtMath");
@@ -56,6 +59,9 @@ layoutEngine.AddSlide(new SlideFP_06_ButWhyScientificNotation(ViewportWidth, Vie
 layoutEngine.AddSlide(new SlideFP_07_RulesForMantissas(ViewportWidth, ViewportHeight), "f07_rulesForMantissas");
 layoutEngine.AddSlide(new SlideFP_08_FloatingPointIsScientificNotation(ViewportWidth, ViewportHeight), "f08_floatingPointIsScientificNotation");
 layoutEngine.AddSlide(new SlideFP_09_10_11_OpenTheWindow(ViewportWidth, ViewportHeight), "f09_10_11_openTheWindow");
+layoutEngine.AddSlide(new SlideFP_13_ImpliedLeadingBits(ViewportWidth, ViewportHeight), "f13_impliedLeadingBits");
+layoutEngine.AddSlide(new SlideFP_14_15_SpecialExponents(ViewportWidth, ViewportHeight), "f14_15_specialExponents");
+layoutEngine.AddSlide(new TestSlide(ViewportWidth, ViewportHeight), "testSlide");
 
 tkTarget.KeyUp += TkTarget_KeyUp;
 

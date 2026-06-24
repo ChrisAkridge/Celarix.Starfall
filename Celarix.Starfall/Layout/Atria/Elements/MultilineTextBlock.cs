@@ -10,7 +10,7 @@ public class MultilineTextBlock : AtriaElement
     public string Text { get; set; }
     public SFont Font { get; set; }
     public SColor Color { get; set; }
-    public double LineSpacing { get; set; } = 1.2; // 120% of font size
+    public double LineSpacing { get; set; } = 1.1; // 110% of font size
     public Alignment HorizontalAlignment { get; set; } = Alignment.LeftCenter;
 
     public MultilineTextBlock(string atriaIdString)

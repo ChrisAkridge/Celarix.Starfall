@@ -65,5 +65,37 @@ namespace Celarix.Starfall.Mathematics
             }
             return result;
         }
+
+        public static double[] EquallySpacePoints(double start, double end, int points)
+        {
+            if (points <= 0) { throw new ArgumentException("Points must be greater than zero.", nameof(points)); }
+            var result = new double[points];
+            var step = (end - start) / (points - 1);
+            for (int i = 0; i < points; i++)
+            {
+                result[i] = start + (i * step);
+            }
+            return result;
+        }
+
+        public static double[] EquallySpaceCenteredPoints(double start, double end, int points)
+        {
+            if (points <= 0)
+            {
+                throw new ArgumentException("Points must be greater than zero.", nameof(points));
+            }
+
+            // Treat it as if we have two more points (one at the start and one at the end) than was provided,
+            // so that we get the points centered within the range.
+            var spacedPoints = EquallySpacePoints(start, end, points + 2);
+            var result = new double[points];
+            Array.Copy(spacedPoints, 1, result, 0, points);
+            return result;
+        }
+
+        public static double DotProduct(SPointF a, SPointF b)
+        {
+            return a.X * b.X + a.Y * b.Y;
+        }
     }
 }

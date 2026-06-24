@@ -26,9 +26,16 @@ namespace Celarix.Starfall.Rendering.Models
 
         public override readonly string ToString() => $"{Degrees}° ({Radians} rad)";
 
+        public static SAngle FromDegrees(double degrees) => new(degrees);
+
         public static SAngle FromRadians(double radians)
         {
             return new SAngle(radians * (double)(180 / Math.PI));
+        }
+
+        public static SAngle operator +(SAngle a, SAngle b)
+        {
+            return new SAngle(a.Degrees + b.Degrees);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Layout.Helium;
+using Celarix.Starfall.Mathematics;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -73,6 +74,41 @@ namespace Celarix.Starfall.Rendering.Models
         public static bool Intersects(SRectF a, SRectF b)
         {
             return a.Left < b.Right && a.Right > b.Left && a.Top < b.Bottom && a.Bottom > b.Top;
+        }
+
+        public static bool RotatedIntersects(SRectF a, SRectF b, SAngle rotationA, SAngle rotationB)
+        {
+            var ac = Math.Cos(rotationA.Radians);
+            var @as = Math.Sin(rotationA.Radians);
+            var bc = Math.Cos(rotationB.Radians);
+            var bs = Math.Sin(rotationB.Radians);
+
+            var au = new SPointF(ac, @as);
+            var av = new SPointF(-@as, ac);
+            var bu = new SPointF(bc, bs);
+            var bv = new SPointF(-bs, bc);
+
+            var aHw = a.Width / 2d;
+            var aHh = a.Height / 2d;
+            var bHw = b.Width / 2d;
+            var bHh = b.Height / 2d;
+
+            var axes = new SPointF[] { au, av, bu, bv };
+            foreach (var axis in axes)
+            {
+                var ca = MathHelpers.DotProduct(a.Center, axis);
+                var cb = MathHelpers.DotProduct(b.Center, axis);
+
+                var ra = aHw * Math.Abs(MathHelpers.DotProduct(au, axis)) + aHh * Math.Abs(MathHelpers.DotProduct(av, axis));
+                var rb = bHw * Math.Abs(MathHelpers.DotProduct(bu, axis)) + bHh * Math.Abs(MathHelpers.DotProduct(bv, axis));
+
+                if (Math.Abs(ca - cb) > ra + rb)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public static SRectF Lerp(SRectF from, SRectF to, double progress)

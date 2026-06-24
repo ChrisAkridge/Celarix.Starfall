@@ -31,6 +31,8 @@ namespace Celarix.Starfall.Rendering.Models
         public SPointF Left(double distance) => new SPointF(X - distance, Y);
         public SPointF Right(double distance) => new SPointF(X + distance, Y);
 
+        public SPointF Move(double xDistance, double yDistance) => new SPointF(X + xDistance, Y + yDistance);
+
         public double Distance(SPointF other)
         {
             // "With the new additive DYDX??/39!"
