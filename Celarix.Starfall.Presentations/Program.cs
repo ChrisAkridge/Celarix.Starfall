@@ -50,9 +50,10 @@ string[] slideNames = [
     "s01_thisShouldBeProgrammable",
     "s02_introducingStarfall",
     "s03_noDSLs",
+    "s04_noAbsolutePositioning",
     "testSlide"
 ];
-int currentSlideIndex = 14;
+int currentSlideIndex = 15;
 
 layoutEngine.AddSlide(new SlideFP_01_TitleSlide(ViewportWidth, ViewportHeight, measurementService), "f01_titleSlide");
 layoutEngine.AddSlide(new SlideFP_02_IntegersAreGoodAtMath(ViewportWidth, ViewportHeight), "f02_integersAreGoodAtMath");
@@ -69,6 +70,7 @@ layoutEngine.AddSlide(new SlideFP_16_LossOfPrecision(ViewportWidth, ViewportHeig
 layoutEngine.AddSlide(new SlideSF_01_ThisShouldBeProgrammable(ViewportWidth, ViewportHeight), "s01_thisShouldBeProgrammable");
 layoutEngine.AddSlide(new SlideSF_02_IntroducingStarfall(ViewportWidth, ViewportHeight), "s02_introducingStarfall");
 layoutEngine.AddSlide(new SlideSF_03_NoDSLs(ViewportWidth, ViewportHeight), "s03_noDSLs");
+layoutEngine.AddSlide(new SlideSF_04_NoAbsolutePositioning(ViewportWidth, ViewportHeight), "s04_noAbsolutePositioning");
 layoutEngine.AddSlide(new TestSlide(ViewportWidth, ViewportHeight), "testSlide");
 
 tkTarget.KeyUp += TkTarget_KeyUp;
