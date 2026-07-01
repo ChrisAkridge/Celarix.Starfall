@@ -73,8 +73,8 @@ namespace Celarix.Starfall.Rendering.Targets
         public void DrawImageFromFile(string filePath, SRectF bounds, double opacity, SAngle rotation) =>
             SkiaCommon.DrawImageFromFile(_canvas, filePath, bounds, opacity, rotation);
 
-        public void DrawImage(SImage image, SRectF bounds) =>
-            SkiaCommon.DrawImage(_canvas, image, bounds);
+        public void DrawImage(SImage image, SRectF bounds, double opacity = 1d) =>
+            SkiaCommon.DrawImage(_canvas, image, bounds, opacity);
 
         public void DrawPoint(SPointF point, SColor color) =>
             SkiaCommon.DrawPoint(_canvas, point, color);

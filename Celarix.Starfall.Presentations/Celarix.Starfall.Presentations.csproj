@@ -15,6 +15,12 @@
     <None Update="Assets\Images\3317968666_f46dbaac72_o_cropped.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Assets\Images\awk_logo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Images\povray_logo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Assets\Sounds\159197__justbrando__glass-breaking.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

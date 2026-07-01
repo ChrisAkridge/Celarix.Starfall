@@ -1,0 +1,6 @@
+Attributions:
+	- Floating Point Numbers, Visualized
+		- "Glass breaking.mp3" sound effect by justBrando (https://freesound.org/people/justBrando/sounds/159197/), CC0 licensed
+		- "static on a mexican television station 2" by J E Theriot (https://www.flickr.com/photos/jetheriot/3317968666), CC BY 2.0 licensed
+		- "awk_logo.png" by Alfred Aho (https://commons.wikimedia.org/wiki/File:The-AWK-Programming-Language.svg), simple geometry ineligible for copyright
+		- "povray_logo.png" by SharkD (https://commons.wikimedia.org/wiki/File:Povray_logo_sphere.png), CC Attribution-Share Alike 3.0 Unported license

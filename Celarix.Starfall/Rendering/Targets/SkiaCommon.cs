@@ -171,9 +171,14 @@ namespace Celarix.Starfall.Rendering.Targets
             }
         }
 
-        public static void DrawImage(SKCanvas canvas, SImage image, SRectF bounds)
+        public static void DrawImage(SKCanvas canvas, SImage image, SRectF bounds, double opacity)
         {
-            canvas.DrawImage(image.ToSKImage(), bounds.ToSKRect());
+            using var paint = new SKPaint
+            {
+                Color = SKColors.White.WithAlpha((byte)(opacity * 255)),
+                IsAntialias = true
+            };
+            canvas.DrawImage(image.ToSKImage(), bounds.ToSKRect(), paint);
         }
 
         public static void DrawPoint(SKCanvas canvas, SPointF point, SColor color)

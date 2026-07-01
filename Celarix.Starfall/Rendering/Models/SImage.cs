@@ -45,6 +45,13 @@ namespace Celarix.Starfall.Rendering.Models
             return FromSKImage(image);
         }
 
+        public static SImage FromFile(string filePath)
+        {
+            using var skBitmap = SKBitmap.Decode(filePath);
+            var skImage = SKImage.FromBitmap(skBitmap);
+            return FromSKImage(skImage);
+        }
+
         internal SKImage ToSKImage() => _skImage ?? throw new InvalidOperationException("SImage does not contain a valid SKImage.");
     }
 }

@@ -20,7 +20,7 @@ namespace Celarix.Starfall.Rendering.Targets
         void DrawTextDirectly(string text, SFont font, SRectF bounds, SColor color, SAngle rotation);
         void DrawLine(SPointF start, SPointF end, SColor color, float thickness);
         void DrawImageFromFile(string filePath, SRectF bounds, double opacity, SAngle rotation);
-        void DrawImage(SImage image, SRectF bounds);
+        void DrawImage(SImage image, SRectF bounds, double opacity = 1d);
         void DrawPoint(SPointF point, SColor color);
 
         float FitTextToWidth(string text, SFont font, float width);

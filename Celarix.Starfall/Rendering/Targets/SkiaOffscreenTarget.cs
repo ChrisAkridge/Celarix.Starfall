@@ -32,8 +32,8 @@ namespace Celarix.Starfall.Rendering.Targets
 
         public IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size) => this;
 
-        public void DrawImage(SImage image, SRectF bounds) =>
-            SkiaCommon.DrawImage(_surface.Canvas, image, bounds);
+        public void DrawImage(SImage image, SRectF bounds, double opacity = 1d) =>
+            SkiaCommon.DrawImage(_surface.Canvas, image, bounds, opacity);
 
         public void DrawImageFromFile(string filePath, SRectF bounds, double opacity, SAngle rotation) =>
             SkiaCommon.DrawImageFromFile(_surface.Canvas, filePath, bounds, opacity, rotation);

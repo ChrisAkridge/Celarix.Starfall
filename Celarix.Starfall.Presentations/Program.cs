@@ -46,9 +46,13 @@ string[] slideNames = [
     "f09_10_11_openTheWindow",
     "f13_impliedLeadingBits",   // No slide 12, we did so well in 9/10/11 that we don't need a 12
     "f14_15_specialExponents",
+    "f16_lossOfPrecision",
+    "s01_thisShouldBeProgrammable",
+    "s02_introducingStarfall",
+    "s03_noDSLs",
     "testSlide"
 ];
-int currentSlideIndex = 10;
+int currentSlideIndex = 14;
 
 layoutEngine.AddSlide(new SlideFP_01_TitleSlide(ViewportWidth, ViewportHeight, measurementService), "f01_titleSlide");
 layoutEngine.AddSlide(new SlideFP_02_IntegersAreGoodAtMath(ViewportWidth, ViewportHeight), "f02_integersAreGoodAtMath");
@@ -61,6 +65,10 @@ layoutEngine.AddSlide(new SlideFP_08_FloatingPointIsScientificNotation(ViewportW
 layoutEngine.AddSlide(new SlideFP_09_10_11_OpenTheWindow(ViewportWidth, ViewportHeight), "f09_10_11_openTheWindow");
 layoutEngine.AddSlide(new SlideFP_13_ImpliedLeadingBits(ViewportWidth, ViewportHeight), "f13_impliedLeadingBits");
 layoutEngine.AddSlide(new SlideFP_14_15_SpecialExponents(ViewportWidth, ViewportHeight), "f14_15_specialExponents");
+layoutEngine.AddSlide(new SlideFP_16_LossOfPrecision(ViewportWidth, ViewportHeight), "f16_lossOfPrecision");
+layoutEngine.AddSlide(new SlideSF_01_ThisShouldBeProgrammable(ViewportWidth, ViewportHeight), "s01_thisShouldBeProgrammable");
+layoutEngine.AddSlide(new SlideSF_02_IntroducingStarfall(ViewportWidth, ViewportHeight), "s02_introducingStarfall");
+layoutEngine.AddSlide(new SlideSF_03_NoDSLs(ViewportWidth, ViewportHeight), "s03_noDSLs");
 layoutEngine.AddSlide(new TestSlide(ViewportWidth, ViewportHeight), "testSlide");
 
 tkTarget.KeyUp += TkTarget_KeyUp;

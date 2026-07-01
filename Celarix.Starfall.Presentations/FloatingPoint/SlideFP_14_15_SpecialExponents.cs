@@ -253,6 +253,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 case 8: return GoToTheMaximumExponent();
                 case 9: return ComedicallyDropWindow();
                 case 10: return ShowCorruptedNaNWindow();
+                case 11: return SlideAdvanceResult.CanAdvance;
                 default: throw new InvalidOperationException("Unreachable.");
             }
         }
