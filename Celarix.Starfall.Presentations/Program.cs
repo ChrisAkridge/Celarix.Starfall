@@ -53,7 +53,7 @@ string[] slideNames = [
     "s04_noAbsolutePositioning",
     "testSlide"
 ];
-int currentSlideIndex = 15;
+int currentSlideIndex = 16;
 
 layoutEngine.AddSlide(new SlideFP_01_TitleSlide(ViewportWidth, ViewportHeight, measurementService), "f01_titleSlide");
 layoutEngine.AddSlide(new SlideFP_02_IntegersAreGoodAtMath(ViewportWidth, ViewportHeight), "f02_integersAreGoodAtMath");
