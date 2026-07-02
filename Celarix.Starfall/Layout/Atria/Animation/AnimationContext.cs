@@ -19,6 +19,42 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             _continuingAnimations.Add(animation);
         }
 
+        public void StaggerAnimations(Queue<Func<FixedDurationAnimation>> animationFactories, int frameDelay,
+            Action? onCompleted = null)
+        {
+            onCompleted ??= () => { };
+
+            var globalFrameRemainder = AtriaLayoutEngine.GlobalFrameNumber % frameDelay;
+            var animationCount = animationFactories.Count;
+            var staggeredAnimation = ContinuingAnimation.StartNow(() =>
+            {
+                var currentGlobalFrame = AtriaLayoutEngine.GlobalFrameNumber;
+                if ((currentGlobalFrame % frameDelay) == globalFrameRemainder)
+                {
+                    if (animationFactories.Count != 0)
+                    {
+                        var nextAnimationFactory = animationFactories.Dequeue();
+                        var nextAnimation = nextAnimationFactory();
+
+                        if (animationFactories.Count == 0)
+                        {
+                            // This is the last animation, so we need to schedule the onCompleted action to run when it finishes.
+                            var originalOnCompleted = nextAnimation.OnCompleted;
+                            nextAnimation.OnCompleted = () =>
+                            {
+                                originalOnCompleted?.Invoke();
+                                onCompleted();
+                            };
+                        }
+
+                        ScheduleAnimation(nextAnimation);
+                    }
+                }
+                return animationFactories.Count != 0;
+            });
+            ScheduleContinuingAnimation(staggeredAnimation);
+        }
+
         public void Update(int currentFrame)
         {
             UpdateFixedDurationAnimations(currentFrame);
@@ -37,7 +73,9 @@ namespace Celarix.Starfall.Layout.Atria.Animation
                 animation.ForceEnd(currentFrame);
             }
 
-            foreach (var animation in _fixedDurationAnimations)
+            // Animations can schedule more animations, so we need to copy the list to avoid modifying it while iterating.
+            var fixedDurationAnimationsCopy = _fixedDurationAnimations.ToArray();
+            foreach (var animation in fixedDurationAnimationsCopy)
             {
                 // Intentionally leaving update order not strongly defined.
                 animation.Update(currentFrame);

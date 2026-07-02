@@ -9,5 +9,13 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
     {
         public SRectF Rectangle { get; set; }
         public SColor Color { get; set; }
+
+        public ColoredBox(SRectF rectangle, SColor color)
+        {
+            Rectangle = rectangle;
+            Color = color;
+        }
+
+        public override string ToString() => $"ColoredBox(Rectangle: {Rectangle}, Color: {Color})";
     }
 }

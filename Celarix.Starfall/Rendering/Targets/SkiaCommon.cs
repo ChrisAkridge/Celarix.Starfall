@@ -181,6 +181,16 @@ namespace Celarix.Starfall.Rendering.Targets
             canvas.DrawImage(image.ToSKImage(), bounds.ToSKRect(), paint);
         }
 
+        public static void DrawCroppedImage(SKCanvas canvas, SImage image, SRectF sourceRect, SRectF destRect, double opacity)
+        {
+            using var paint = new SKPaint
+            {
+                Color = SKColors.White.WithAlpha((byte)(opacity * 255)),
+                IsAntialias = true
+            };
+            canvas.DrawImage(image.ToSKImage(), sourceRect.ToSKRect(), destRect.ToSKRect(), paint);
+        }
+
         public static void DrawPoint(SKCanvas canvas, SPointF point, SColor color)
         {
             canvas.DrawPoint(point.ToSKPoint(), color.ToSKColor());

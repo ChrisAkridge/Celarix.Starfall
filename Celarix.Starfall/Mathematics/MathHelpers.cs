@@ -21,6 +21,16 @@ namespace Celarix.Starfall.Mathematics
             return new SPointF(x, y);
         }
 
+        public static SRectF Ease(SRectF start, SRectF end, double progress, Easing easingFunction)
+        {
+            double easedProgress = easingFunction(Math.Clamp(progress, 0, 1));
+            double x = start.X + (end.X - start.X) * easedProgress;
+            double y = start.Y + (end.Y - start.Y) * easedProgress;
+            double width = start.Width + (end.Width - start.Width) * easedProgress;
+            double height = start.Height + (end.Height - start.Height) * easedProgress;
+            return new SRectF(x, y, width, height);
+        }
+
         public static double SmoothStep(double start, double end, double progress)
         {
             // This is the standard smooth step function, which is a cubic Hermite interpolation between 0 and 1.

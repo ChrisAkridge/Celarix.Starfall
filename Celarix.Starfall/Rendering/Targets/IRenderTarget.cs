@@ -21,6 +21,7 @@ namespace Celarix.Starfall.Rendering.Targets
         void DrawLine(SPointF start, SPointF end, SColor color, float thickness);
         void DrawImageFromFile(string filePath, SRectF bounds, double opacity, SAngle rotation);
         void DrawImage(SImage image, SRectF bounds, double opacity = 1d);
+        void DrawCroppedImage(SImage image, SRectF sourceRect, SRectF destRect, double opacity = 1d);
         void DrawPoint(SPointF point, SColor color);
 
         float FitTextToWidth(string text, SFont font, float width);

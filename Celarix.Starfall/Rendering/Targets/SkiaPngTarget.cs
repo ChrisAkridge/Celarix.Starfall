@@ -76,6 +76,9 @@ namespace Celarix.Starfall.Rendering.Targets
         public void DrawImage(SImage image, SRectF bounds, double opacity = 1d) =>
             SkiaCommon.DrawImage(_canvas, image, bounds, opacity);
 
+        public void DrawCroppedImage(SImage image, SRectF sourceRect, SRectF destRect, double opacity = 1d) =>
+            SkiaCommon.DrawCroppedImage(_canvas, image, sourceRect, destRect, opacity);
+
         public void DrawPoint(SPointF point, SColor color) =>
             SkiaCommon.DrawPoint(_canvas, point, color);
 

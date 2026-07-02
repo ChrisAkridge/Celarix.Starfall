@@ -185,6 +185,11 @@ namespace Celarix.Starfall.Rendering.Models
             return new SRectF(X + xDelta, Y + yDelta, Width, Height);
         }
 
+        public SRectF At(SPointF newPosition)
+        {
+            return new SRectF(newPosition.X, newPosition.Y, Width, Height);
+        }
+
         public bool FitsWithin(SRectF outer)
         {
             return Left >= outer.Left && Right <= outer.Right && Top >= outer.Top && Bottom <= outer.Bottom;

@@ -17,8 +17,14 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
         ShowBytes,
         ShowBoxes,
         ColorBoxes,
-        MergeColors,
+        MergeBoxes,
         BuildPixelRow,
         FillImage
+    }
+
+    internal enum PointKind
+    {
+        Left,
+        Right
     }
 }

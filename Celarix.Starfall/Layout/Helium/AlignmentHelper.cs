@@ -79,7 +79,7 @@ namespace Celarix.Starfall.Layout.Helium
         }
 
         /// <summary>
-        /// Calculates the right coordinate required to center-align an inner element within an outer boundary.
+        /// Calculates the correct coordinate required to center-align an inner element within an outer boundary.
         /// </summary>
         /// <remarks>Use this method when positioning an element so that its center matches the center
         /// of a container. The returned value does not account for cases where the inner element may not fit
