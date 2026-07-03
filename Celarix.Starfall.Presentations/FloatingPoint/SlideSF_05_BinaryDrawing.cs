@@ -74,6 +74,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                     return FillImage();
                 case 7:
                     return CheckForNextImage();
+                case 8:
+                    return SlideAdvanceResult.CanAdvance;
                 default:
                     throw new InvalidOperationException($"Unexpected state {_state} in {nameof(SlideSF_05_BinaryDrawing)}.");
             }
@@ -102,6 +104,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
                 Add([createdBinaryDrawingElement, infoText, infoTextAnchor])
                     .AnimateBasic(0.5d, AnimationTypes.FadeIn, Easings.Linear);
+                _elementsCreated = true;
             }
 
             var binaryDrawingElement = (BinaryDrawingExampleElement)Query("#binaryDrawingExample").Single();
@@ -170,11 +173,13 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             if (response?.Trim().ToLower() == "y")
             {
                 var openFileDialog = new OpenFileDialog();
-                if (openFileDialog.ShowDialog() == true)
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
+                    var binaryDrawingElement = (BinaryDrawingExampleElement)Query("#binaryDrawingExample").Single();
                     _currentFilePath = openFileDialog.FileName;
                     _currentFileSize = new FileInfo(_currentFilePath).Length;
                     _currentBinaryDrawnImageSize = null;
+                    binaryDrawingElement.Reset();
                     UpdateInfoText();
                     _state = 0;
                     return SlideAdvanceResult.InternalStateChanged;

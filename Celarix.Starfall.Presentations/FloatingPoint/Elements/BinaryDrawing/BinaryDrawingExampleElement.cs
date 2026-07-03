@@ -508,11 +508,24 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
             _drawnImageRows = 1;
         }
 
+        public void Reset()
+        {
+            _stage = BinaryDrawingStage.Initial;
+            _drawBytes = false;
+            _byteYOffset = 0d;
+            _tripletsOpacity = 0d;
+            _boxesOpacity = 0d;
+            _boxesColoringProgress = 0d;
+            _boxesMergeProgress = 0d;
+            _pixelScaleFactor = 1d;
+            _drawnImagePosition = SPointF.Zero;
+            _drawnImageRows = 0;
+        }
+
         private void ScheduleUncrop()
         {
             var initialDrawnImageRows = _drawnImageRows;
             var targetDrawnImageRows = _binaryDrawnImage!.Height;
-
 
             var initialByteYOffset = _byteYOffset;
             var targetByteYOffset = Slide!.Size.Height; // Move the bytes off the screen
