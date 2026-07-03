@@ -32,8 +32,8 @@ namespace Celarix.Starfall.Rendering.Targets
 
         public IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size) => this;
 
-        public void DrawImage(SImage image, SRectF bounds, double opacity = 1d) =>
-            SkiaCommon.DrawImage(_surface.Canvas, image, bounds, opacity);
+        public void DrawImage(SImage image, SRectF bounds, double opacity = 1d, SAngle? rotation = null) =>
+            SkiaCommon.DrawImage(_surface.Canvas, image, bounds, opacity, rotation ?? SAngle.Zero);
 
         public void DrawImageFromFile(string filePath, SRectF bounds, double opacity, SAngle rotation) =>
             SkiaCommon.DrawImageFromFile(_surface.Canvas, filePath, bounds, opacity, rotation);
@@ -45,7 +45,7 @@ namespace Celarix.Starfall.Rendering.Targets
             SkiaCommon.DrawLine(_surface.Canvas, start, end, color, thickness);
 
         public void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation) =>
-            SkiaCommon.DrawRectangle(_surface.Canvas, bounds, color, paintStyle);
+            SkiaCommon.DrawRectangle(_surface.Canvas, bounds, color, paintStyle, rotation);
 
         public void DrawText(string text, SFont font, SRectF bounds, SColor color, SAngle rotation, Alignment alignment = Alignment.Center) =>
             SkiaCommon.DrawText(_surface.Canvas, text, font, bounds, color, rotation, alignment);
@@ -67,9 +67,10 @@ namespace Celarix.Starfall.Rendering.Targets
 
         public void Start() { }
 
-        public void DrawEllipse(SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle)
-        {
-            throw new NotImplementedException();
-        }
+        public void DrawEllipse(SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle) =>
+            SkiaCommon.DrawEllipse(_surface.Canvas, center, size, color, paintStyle);
+
+        public void DrawRadialGradientCircle(SPointF center, double radius, SColor[] colors, double[] colorPositions, SShaderTileMode tileMode, SBlendMode blendMode) =>
+            SkiaCommon.DrawRadialGradientCircle(_surface.Canvas, center, radius, colors, colorPositions, tileMode, blendMode);
     }
 }

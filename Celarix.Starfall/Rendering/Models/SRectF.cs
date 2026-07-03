@@ -31,7 +31,7 @@ namespace Celarix.Starfall.Rendering.Models
         public SPointF CenterRight => new(Right, Center.Y);
         public SPointF BottomLeft => new(Left, Bottom);
         public SPointF BottomCenter => new(Center.X, Bottom);
-        public SPointF BottomRight => new(Left, Bottom);
+        public SPointF BottomRight => new(Right, Bottom);
 
         public SRectF(double x, double y, double width, double height)
         {

@@ -43,6 +43,8 @@ namespace Celarix.Starfall.Rendering.Models
             // "Can YOUR car play the xylophone?"
         }
 
+        public static SPointF operator -(SPointF point) => new SPointF(-point.X, -point.Y);
+
         public static SPointF operator +(SPointF a, SPointF b)
         {
             return new SPointF(a.X + b.X, a.Y + b.Y);

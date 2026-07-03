@@ -37,5 +37,15 @@ namespace Celarix.Starfall.Rendering.Models
         {
             return new SAngle(a.Degrees + b.Degrees);
         }
+
+        public static bool operator ==(SAngle a, SAngle b)
+        {
+            return a.Degrees == b.Degrees;
+        }
+
+        public static bool operator !=(SAngle a, SAngle b)
+        {
+            return a.Degrees != b.Degrees;
+        }
     }
 }

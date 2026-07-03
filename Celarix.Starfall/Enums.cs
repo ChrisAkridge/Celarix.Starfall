@@ -135,4 +135,45 @@ namespace Celarix.Starfall
         /// </summary>
         CanAdvance
     }
+
+    public enum SShaderTileMode
+    {
+        Clamp = 0,
+        Repeat = 1,
+        Mirror = 2,
+        Decal = 3
+    }
+
+    public enum SBlendMode
+    {
+        Clear,
+        Src,
+        Dst,
+        SrcOver,
+        DstOver,
+        SrcIn,
+        DstIn,
+        SrcOut,
+        DstOut,
+        SrcATop,
+        DstATop,
+        Xor,
+        Plus,
+        Modulate,
+        Screen,
+        Overlay,
+        Darken,
+        Lighten,
+        ColorDodge,
+        ColorBurn,
+        HardLight,
+        SoftLight,
+        Difference,
+        Exclusion,
+        Multiply,
+        Hue,
+        Saturation,
+        Color,
+        Luminosity
+    }
 }

@@ -107,5 +107,17 @@ namespace Celarix.Starfall.Mathematics
         {
             return a.X * b.X + a.Y * b.Y;
         }
+
+        public static bool RectangleIntersectsXCoordinate(SRectF rectangle, double xCoordinate)
+        {
+            return rectangle.Left <= xCoordinate && rectangle.Right >= xCoordinate;
+        }
+
+        public static double RandomInRange(Random random, double min, double max)
+        {
+            var range = max - min;
+            var sample = random.NextDouble() * range;
+            return sample + min;
+        }
     }
 }

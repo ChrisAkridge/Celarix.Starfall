@@ -1,6 +1,7 @@
 ﻿using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Rendering.Converters;
 using Celarix.Starfall.Rendering.Models;
+using FastCache;
 using HarfBuzzSharp;
 using SkiaSharp;
 using System;
@@ -12,21 +13,35 @@ namespace Celarix.Starfall.Rendering.Targets
 {
     internal static class SkiaCommon
     {
+        private static readonly double DefaultCacheDurationMinutes = 60d;
+
         public static void Clear(SKCanvas canvas, SColor color)
         {
             canvas.Clear(color.ToSKColor());
         }
 
-        public static void DrawRectangle(SKCanvas canvas, SRectF bounds, SColor color, SPaintStyle paintStyle)
+        public static void DrawRectangle(SKCanvas canvas, SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle angle)
         {
-            // TODO: implement rotation
+            SKRect rect = bounds.ToSKRect();
             using var paint = new SKPaint
             {
                 Color = color.ToSKColor(),
                 Style = paintStyle.ToSKPaintStyle(),
                 IsAntialias = true
             };
-            canvas.DrawRect(bounds.ToSKRect(), paint);
+
+            if (angle == SAngle.Zero)
+            {
+                
+                canvas.DrawRect(rect, paint);
+            }
+            else
+            {
+                canvas.Save();
+                canvas.RotateDegrees((float)angle.Degrees, rect.MidX, rect.MidY);
+                canvas.DrawRect(rect, paint);
+                canvas.Restore();
+            }
         }
 
         public static void DrawEllipse(SKCanvas canvas, SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle)
@@ -171,14 +186,26 @@ namespace Celarix.Starfall.Rendering.Targets
             }
         }
 
-        public static void DrawImage(SKCanvas canvas, SImage image, SRectF bounds, double opacity)
+        public static void DrawImage(SKCanvas canvas, SImage image, SRectF bounds, double opacity, SAngle rotation)
         {
             using var paint = new SKPaint
             {
                 Color = SKColors.White.WithAlpha((byte)(opacity * 255)),
                 IsAntialias = true
             };
-            canvas.DrawImage(image.ToSKImage(), bounds.ToSKRect(), paint);
+            SKRect skRect = bounds.ToSKRect();
+            
+            if (rotation == SAngle.Zero)
+            {
+                canvas.DrawImage(image.ToSKImage(), skRect, paint);
+            }
+            else
+            {
+                canvas.Save();
+                canvas.RotateDegrees((float)rotation.Degrees, skRect.MidX, skRect.MidY);
+                canvas.DrawImage(image.ToSKImage(), skRect, paint);
+                canvas.Restore();
+            }
         }
 
         public static void DrawCroppedImage(SKCanvas canvas, SImage image, SRectF sourceRect, SRectF destRect, double opacity)
@@ -194,6 +221,42 @@ namespace Celarix.Starfall.Rendering.Targets
         public static void DrawPoint(SKCanvas canvas, SPointF point, SColor color)
         {
             canvas.DrawPoint(point.ToSKPoint(), color.ToSKColor());
+        }
+
+        public static void DrawRadialGradientCircle(SKCanvas canvas,
+            SPointF center,
+            double radius,
+            SColor[] colors,
+            double[] colorPositions,
+            SShaderTileMode tileMode,
+            SBlendMode blendMode)
+        {
+            var cacheKey = $"{center}|{radius}|{string.Join("|", colors)}|{string.Join("|", colorPositions)}|{tileMode}";
+            SKShader shader;
+            if (!Cached<SKShader>.TryGet(cacheKey, out var cachedShader))
+            {
+                var newShader = SKShader.CreateRadialGradient(
+                    center.ToSKPoint(),
+                    (float)radius,
+                    [.. colors.Select(c => c.ToSKColor())],
+                    [.. colorPositions.Select(p => (float)p)],
+                    tileMode.ToSKShaderTileMode()
+                );
+                shader = cachedShader.Save(newShader, TimeSpan.FromMinutes(DefaultCacheDurationMinutes));
+            }
+            else
+            {
+                shader = cachedShader.Value;
+            }
+
+            using var paint = new SKPaint
+            {
+                Shader = shader,
+                BlendMode = blendMode.ToSKBlendMode(),
+                IsAntialias = true
+            };
+
+            canvas.DrawCircle(center.ToSKPoint(), (float)radius, paint);
         }
     }
 }

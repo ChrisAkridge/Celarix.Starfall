@@ -21,6 +21,12 @@
     <None Update="Assets\Images\cssPositioning.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Assets\Images\hp_gold_star.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Images\night_ground.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Assets\Images\povray_logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

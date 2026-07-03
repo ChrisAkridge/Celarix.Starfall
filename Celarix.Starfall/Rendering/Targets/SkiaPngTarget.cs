@@ -56,10 +56,13 @@ namespace Celarix.Starfall.Rendering.Targets
         }
 
         public void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation) =>
-            SkiaCommon.DrawRectangle(_canvas, bounds, color, paintStyle);
+            SkiaCommon.DrawRectangle(_canvas, bounds, color, paintStyle, rotation);
 
         public void DrawEllipse(SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle) =>
             SkiaCommon.DrawEllipse(_canvas, center, size, color, paintStyle);
+
+        public void DrawRadialGradientCircle(SPointF center, double radius, SColor[] colors, double[] colorPositions, SShaderTileMode tileMode, SBlendMode blendMode) =>
+            SkiaCommon.DrawRadialGradientCircle(_canvas, center, radius, colors, colorPositions, tileMode, blendMode);
 
         public void DrawText(string text, SFont font, SRectF bounds, SColor color, SAngle rotation, Alignment alignment = Alignment.Center) =>
             SkiaCommon.DrawText(_canvas, text, font, bounds, color, rotation, alignment);
@@ -73,8 +76,8 @@ namespace Celarix.Starfall.Rendering.Targets
         public void DrawImageFromFile(string filePath, SRectF bounds, double opacity, SAngle rotation) =>
             SkiaCommon.DrawImageFromFile(_canvas, filePath, bounds, opacity, rotation);
 
-        public void DrawImage(SImage image, SRectF bounds, double opacity = 1d) =>
-            SkiaCommon.DrawImage(_canvas, image, bounds, opacity);
+        public void DrawImage(SImage image, SRectF bounds, double opacity = 1d, SAngle? rotation = null) =>
+            SkiaCommon.DrawImage(_canvas, image, bounds, opacity, rotation ?? SAngle.Zero);
 
         public void DrawCroppedImage(SImage image, SRectF sourceRect, SRectF destRect, double opacity = 1d) =>
             SkiaCommon.DrawCroppedImage(_canvas, image, sourceRect, destRect, opacity);
