@@ -1,0 +1,320 @@
+// linux/arch/alpha/boot/tools/objstrip.c
+// Includes: stdio.h, string.h, stdlib.h, unistd.h,
+// sys/fcntl.h, sys/stat.h, sys/types.h, linux/a.out.h,
+// linux/coff.h, linux/param.h, linux/elf.h #ifdef __ELF__
+
+// define BLOCK_SIZE 512
+
+// const char * prog_name
+stackalloc 4
+
+// static void usage(void)
+usage:
+	// fprintf(stderr, "usage: %s [-v] -p file primary \n%s [-vb] file [secondary]\n", prog_name, prog_name);
+	push stack[0]
+	push stack[0]
+	push "usage: %s [-v] -p file primary \n%s [-vb] file [secondary]\n"
+	push stderr
+	call fprintf
+	push 1
+	call exit
+	ret
+
+// int main(int argc, char *argv[])
+main:
+	// size_t nwritten, tocopy, n, mem_size, fil_size, pad = 0;
+	stackalloc 4
+	stackalloc 4
+	stackalloc 4
+	stackalloc 4
+	stackalloc 4
+	stackalloc 4
+	
+	// int fd, ofd, i, j, verbose = 0, primary = 0;
+	stackalloc 4
+	stackalloc 4
+	stackalloc 4
+	stackalloc 4
+	stackalloc 4
+	stackalloc 4
+	
+	// char buf[8192], *inname;
+	stackalloc 4
+	stackalloc 8192
+	
+	// struct exec * aout;
+	stackalloc 16
+	
+	// long offset;
+	stackalloc 8
+	
+	// struct elfhdr *elf;
+	stackalloc 16
+	
+	// struct elf_phdr *elf_phdr;
+	stackalloc 16
+	
+	// unsigned long long e_entry;
+	stackalloc 8
+	
+	// for (i = 1; i < argc && argv[i][0] == '-'; ++i)
+	mov 1 stack[9]
+	main__loop_1_main:
+		mov stack[9] eax
+		mov stack[19] ebx
+		mov stack[20] ecx
+		ltl eax ebx edx
+		cjmp edx main__loop_1_exit
+		addl ecx stack[9] ecx
+		mov *ecx ecx
+		mov *ecx ecx
+		push ecx
+		push '-'
+		ineq
+		pop ecx
+		cjmp ecx main_loop_1_exit
+		mov 0 eax
+		mov 0 ebx
+		mov 0 ecx
+		
+		// for (j = 1; argv[i][j]; ++j)
+		mov 1 stack[10]
+		main__loop_2_main:
+			mov stack[20] eax
+			addl eax stack[9] eax
+			mov *eax eax
+			addl eax stack[10] eax
+			ineql eax 0 eax
+			cjmp main__loop_2_exit
+			mov 0 eax
+			
+			// switch(argv[i][j])
+			mov stack[20] eax
+			addl eax stack[9] eax
+			mov *eax eax
+			addl eax stack[10] eax
+			mov *eax eax
+			
+			// case 'v':
+			eql eax "v" ebx
+			cjmp ebx main__switch_1_v
+			jmp main__switch_1_end
+			
+			// case 'b':
+			eql eax "b" ebx
+			cjmp ebx main__switch_1_b
+			jmp main__switch_1_end
+			
+			// case 'p':
+			eql eax "p" ebx
+			cjmp ebx main__switch_1_p
+			jmp main__switch_1_end
+			
+			main__switch_1_v:
+				// verbose = ~verbose
+				bwnotl stack[11] stack[11]
+				jmp main__switch_1_end
+				
+			main__switch_1_b:
+				// pad = BLOCK_SIZE;
+				mov 512 stack[18]
+				jmp main__switch_1_end
+				
+			main__switch_1_p:
+				// primary = 1;
+				mov 1 stack[12]
+				
+			main__switch_1_end:
+				incl stack[10] stack[10]
+				jmp main__loop_2_main
+				
+		main__loop_2_exit:
+			incl stack[9] stack[9]
+			jmp main__loop_1_main
+			
+	main__loop_1_exit:
+	// if (i >= argc)
+	gteql stack[9] stack[19] eax
+	// usage();
+	ccall eax usage
+	
+	// inname = argv[i++];
+	incl stack[9] stack[9]
+	mov stack[20] eax
+	addl stack[9] eax eax
+	mov *eax eax
+	mov eax stack[6]
+	
+	// fd = open(inname, O_RDONLY);
+	push O_RDONLY
+	push stack[7]
+	call open
+	mov stack[0] stack[8]
+	pop nul
+	
+	// if (fd == -1)
+	push -1
+	push stack[8]
+	eql
+	pop eax
+	cjmp eax main__if_fd_eq_m1
+	
+	// ofd = 1;
+	mov 1 stack[8]
+	
+	// if (i < argc)
+	ltl stack[9] stack[19] eax
+	cjmp eax main__if_i_lt_argc_true
+	jmp main__if_i_lt_argc_false
+	
+	main__if_fd_eq_m1:
+		// perror("open");
+		push "open"
+		call perror
+		
+		// exit(1)
+		push 1
+		call exit
+	
+	main__if_i_lt_argc_true:
+		// ofd = open(argv[i++], O_WRONLY | O_CREAT | O_TRUNC, 0666);
+		push 438
+		push O_TRUNC
+		push O_CREAT
+		bwor
+		push O_WRONLY
+		bwor
+		incl stack[11] stack[11]
+		mov stack[23] eax
+		addl eax stack[11] eax
+		mov *eax eax
+		push eax
+		call open
+		mov stack[0] stack[9]
+		pop nul
+		
+		// if (ofd == -1)
+		eql stack[8] -1 eax
+		cjmp main__if_ofd_eq_m1_true
+		jmp main__if_i_lt_argc_false
+		
+	main__if_ofd_eq_m1_true:
+		// perror("open")
+		push "open"
+		call perror
+		
+		// exit(1)
+		push 1
+		call exit
+
+	
+	main__if_i_lt_argc_false:
+		// if (primary)
+		ineql stack[12] 0 eax
+		cjmp eax main__if_primary_true
+		jmp main__if_primary_false
+		
+	main__if_primary_true:
+		// unsigned long bb[64], sum = 0;
+		stackalloc 4
+		stackalloc 512
+		
+		// struct stat st
+		stackalloc 16
+		
+		// off_t size;
+		stackalloc 4
+		
+		// int i;
+		stackalloc 4
+		
+		// if (ofd == 1)
+		eql stack[13] 1 eax
+		ccall eax usage
+		mov 0 eax
+		
+		// if (fstart(fd, &st) == -1)
+		deref stack[2] eax
+		push eax
+		push stack[13]
+		call fstart
+		push -1
+		eq
+		pop eax
+		cjmp eax main__if_fstart_fd_st_eq_1_true
+		jmp main__if_fstart_fd_st_eq_1_false
+		
+	main__if_fstart_fd_st_eq_1_true:
+		// perror("fstat");
+		push "fstart"
+		call perror
+		
+		// exit(1);
+		push 1
+		call exit
+	
+	main__if_fstart_fd_st_eq_1_false:
+		// size = (st.st_size + BLOCK_SIZE - 1) & ~(BLOCK_SIZE - 1);
+		push 1
+		push 512
+		sub
+		bwnot
+		push 1
+		push 512
+		sub
+		deref stack[4] eax
+		addl eax 4 eax
+		push *eax
+		add
+		bwand
+		mov stack[0] stack[1]
+		pop nul
+		
+		// memset(bb, 0, sizeof(bb))
+		push stack[3]
+		call sizeof
+		push 0
+		push stack[5]
+		call memset
+		
+		// strcpy((char *) bb, "Linux SRM bootblock");
+		push "Linux SRM bootblock"
+		push stack[4]
+		call strcpy
+		
+		// bb[60] = size / BLOCK_SIZE;
+		push 512
+		push stack[2]
+		div
+		deref stack[4] eax
+		addl 480 eax eax
+		pop *eax
+		
+		// bb[61] = 1;
+		push 1
+		deref stack[4] eax
+		addl 488 eax eax
+		pop *eax
+		
+		// bb[62] = 0;
+		push 0
+		deref stack[4] eax
+		addl 496 eax eax
+		pop *eax
+		
+		// for (i = 0; i < 63; i++)
+		mov 0 stack[0]
+		main__loop_3_main:
+			ltl stack[0] 63 eax
+			cjmp main__loop_3_end
+			mov 0 eax
+			
+			// sum += bb[i]
+			deref stack[4] eax
+			multl 8 stack[0] ebx
+			addl ebx eax eax
+			mov 0 ebx
+			addl stack[5] *eax
+			
+			// bb[63] = sum;
+			

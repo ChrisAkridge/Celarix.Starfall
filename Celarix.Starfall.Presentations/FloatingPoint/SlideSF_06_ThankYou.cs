@@ -59,7 +59,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 FontSize = 96f,
                 Color = SColor.White
             };
-            var thankYouAnchor = new BasisPoint(Center, "#thankYouAnchor");
+            var thankYouAnchor = new BasisPoint(Center.Up(Size.Height / 4d), "#thankYouAnchor");
             thankYouText.AnchorCenterTo(thankYouAnchor);
 
             Add([starfallElement, thankYouAnchor, thankYouText])

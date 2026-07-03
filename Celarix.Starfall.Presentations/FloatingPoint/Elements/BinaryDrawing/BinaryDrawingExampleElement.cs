@@ -91,6 +91,11 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
             get => _fontSize;
         }
 
+        public BinaryDrawingExampleElement(string atriaIdString)
+        {
+            Id = AtriaId.Parse(atriaIdString);
+        }
+
         public override void Render(IRenderTarget target)
         {
             DrawFirstRowPixels(target);

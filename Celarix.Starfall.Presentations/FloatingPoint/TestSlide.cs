@@ -20,7 +20,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         public override void Initialize()
         {
             BackgroundColor = Constants.FloatingPointBackground;
-            var binaryDrawingElement = new BinaryDrawingExampleElement
+            var binaryDrawingElement = new BinaryDrawingExampleElement("#binaryDrawingExample")
             {
                 Position = SPointF.Zero,
                 Size = new SSizeF(Size.Width, Size.Height),
