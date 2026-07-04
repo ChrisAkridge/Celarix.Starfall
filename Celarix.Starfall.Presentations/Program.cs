@@ -14,6 +14,7 @@
 using Celarix.Starfall;
 using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Presentation;
+using Celarix.Starfall.Presentations;
 using Celarix.Starfall.Presentations.FloatingPoint;
 using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Targets;
@@ -23,99 +24,68 @@ using Image = SixLabors.ImageSharp.Image;
 
 internal class Program
 {
+    // Working out command line arguments:
+    // Celarix.Starfall.Presentations.exe <viewportWidth> <viewportHeight>
+
     [STAThread]
     private static void Main(string[] args)
     {
-        var engineOptions = new PresentationEngineOptions
+        if (args.Length is not (2 or 3))
         {
-            ErrorLevel = ErrorLevel.Display
+            Usage();
+            return;
+        }
+
+        if (!int.TryParse(args[0], out var viewportWidth))
+        {
+            Usage();
+            return;
+        }
+
+        if (!int.TryParse(args[1], out var viewportHeight))
+        {
+            Usage();
+            return;
+        }
+
+        var reinitializeOnLastChanceException = false;
+        if (args.Length == 3 && args[2].Equals("--reinit", StringComparison.OrdinalIgnoreCase))
+        {
+            reinitializeOnLastChanceException = true;
+        }
+
+        var initArgs = new PresentationInitializationArguments
+        {
+            ViewportWidth = viewportWidth,
+            ViewportHeight = viewportHeight,
+            ReinitializeOnLastChanceException = reinitializeOnLastChanceException
         };
 
-        const int ViewportWidth = 1280;
-        const int ViewportHeight = 720;
-
-        var layoutEngine = new AtriaLayoutEngine(ViewportWidth, ViewportHeight);
-        var tkTarget = new SkiaTkTarget(ViewportWidth, ViewportHeight, 60, "Floating Point Numbers, Visualized", layoutEngine);
-
-
-        layoutEngine.SetRenderTarget(tkTarget);
-        var measurementService = new MeasurementService(tkTarget);
-        layoutEngine.MeasurementService = measurementService;
-
-        string[] slideNames = [
-            "f01_titleSlide",
-            "f02_integersAreGoodAtMath",
-            "f03_floatsAreGoodAtMath",
-            "f04_noEscapeFromInfiniteExpansions",
-            "f05_butWellJustPickBinary",
-            "f06_butWhyScientificNotation",
-            "f07_rulesForMantissas",
-            "f08_floatingPointIsScientificNotation",
-            "f09_10_11_openTheWindow",
-            "f13_impliedLeadingBits",   // No slide 12, we did so well in 9/10/11 that we don't need a 12
-            "f14_15_specialExponents",
-            "f16_lossOfPrecision",
-            "s01_thisShouldBeProgrammable",
-            "s02_introducingStarfall",
-            "s03_noDSLs",
-            "s04_noAbsolutePositioning",
-            "s05_binaryDrawingExample",
-            "s06_thankYou",
-            "testSlide"
-        ];
-        int currentSlideIndex = 16;
-
-        layoutEngine.AddSlide(new SlideFP_01_TitleSlide(ViewportWidth, ViewportHeight, measurementService), "f01_titleSlide");
-        layoutEngine.AddSlide(new SlideFP_02_IntegersAreGoodAtMath(ViewportWidth, ViewportHeight), "f02_integersAreGoodAtMath");
-        layoutEngine.AddSlide(new SlideFP_03_FloatsAreGoodAtMath(ViewportWidth, ViewportHeight), "f03_floatsAreGoodAtMath");
-        layoutEngine.AddSlide(new SlideFP_04_NoEscapeFromInfiniteExpansions(ViewportWidth, ViewportHeight), "f04_noEscapeFromInfiniteExpansions");
-        layoutEngine.AddSlide(new SlideFP_05_ButWellJustPickBinary(ViewportWidth, ViewportHeight), "f05_butWellJustPickBinary");
-        layoutEngine.AddSlide(new SlideFP_06_ButWhyScientificNotation(ViewportWidth, ViewportHeight), "f06_butWhyScientificNotation");
-        layoutEngine.AddSlide(new SlideFP_07_RulesForMantissas(ViewportWidth, ViewportHeight), "f07_rulesForMantissas");
-        layoutEngine.AddSlide(new SlideFP_08_FloatingPointIsScientificNotation(ViewportWidth, ViewportHeight), "f08_floatingPointIsScientificNotation");
-        layoutEngine.AddSlide(new SlideFP_09_10_11_OpenTheWindow(ViewportWidth, ViewportHeight), "f09_10_11_openTheWindow");
-        layoutEngine.AddSlide(new SlideFP_13_ImpliedLeadingBits(ViewportWidth, ViewportHeight), "f13_impliedLeadingBits");
-        layoutEngine.AddSlide(new SlideFP_14_15_SpecialExponents(ViewportWidth, ViewportHeight), "f14_15_specialExponents");
-        layoutEngine.AddSlide(new SlideFP_16_LossOfPrecision(ViewportWidth, ViewportHeight), "f16_lossOfPrecision");
-        layoutEngine.AddSlide(new SlideSF_01_ThisShouldBeProgrammable(ViewportWidth, ViewportHeight), "s01_thisShouldBeProgrammable");
-        layoutEngine.AddSlide(new SlideSF_02_IntroducingStarfall(ViewportWidth, ViewportHeight), "s02_introducingStarfall");
-        layoutEngine.AddSlide(new SlideSF_03_NoDSLs(ViewportWidth, ViewportHeight), "s03_noDSLs");
-        layoutEngine.AddSlide(new SlideSF_04_NoAbsolutePositioning(ViewportWidth, ViewportHeight), "s04_noAbsolutePositioning");
-        layoutEngine.AddSlide(new SlideSF_05_BinaryDrawing(ViewportWidth, ViewportHeight), "s05_binaryDrawingExample");
-        layoutEngine.AddSlide(new SlideSF_06_ThankYou(ViewportWidth, ViewportHeight), "s06_thankYou");
-        layoutEngine.AddSlide(new TestSlide(ViewportWidth, ViewportHeight), "testSlide");
-
-        tkTarget.KeyUp += TkTarget_KeyUp;
-
-        var firstSlide = slideNames[currentSlideIndex];
-        layoutEngine.SetCurrentSlide(firstSlide);
-        layoutEngine.Start();
-
-        void TkTarget_KeyUp(object? sender, OpenTK.Windowing.Common.KeyboardKeyEventArgs e)
+        var runPresentation = true;
+        while (runPresentation)
         {
-            SlideAdvanceResult? result = null;
-            if (e.Key == OpenTK.Windowing.GraphicsLibraryFramework.Keys.Right)
-            {
-                result = layoutEngine.AdvanceCurrentSlide();
-            }
-            else if (e.Key == OpenTK.Windowing.GraphicsLibraryFramework.Keys.Left)
-            {
-                result = layoutEngine.RewindCurrentSlide();
-            }
+            var runner = new PresentationRunner(initArgs);
 
-            if (result != null && result != SlideAdvanceResult.InternalStateChanged)
+            try
             {
-                if (result == SlideAdvanceResult.CanAdvance && currentSlideIndex < slideNames.Length - 1)
+                runner.Run();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Caught last-chance exception in Main: " + ex);
+
+                // Last best hope handling here, just remake the entire darn thing and try again
+                if (!reinitializeOnLastChanceException)
                 {
-                    currentSlideIndex++;
-                    layoutEngine.SetCurrentSlide(slideNames[currentSlideIndex]);
-                }
-                else if (result == SlideAdvanceResult.CanRewind && currentSlideIndex > 0)
-                {
-                    currentSlideIndex--;
-                    layoutEngine.SetCurrentSlide(slideNames[currentSlideIndex]);
+                    runPresentation = false;
                 }
             }
         }
+    }
+
+    private static void Usage()
+    {
+        Console.WriteLine("Usage: Celarix.Starfall.Presentations.exe <viewportWidth> <viewportHeight>");
+        Environment.Exit(1);
     }
 }

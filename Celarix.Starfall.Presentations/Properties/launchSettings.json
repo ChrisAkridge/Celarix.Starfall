@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Celarix.Starfall.Presentations": {
+      "commandName": "Project",
+      "commandLineArgs": "1280 720"
+    }
+  }
+}

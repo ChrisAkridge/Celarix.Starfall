@@ -16,11 +16,14 @@ namespace Celarix.Starfall.Layout.Atria
         private string? _currentSlideName;
         private DebugMode _debugMode;
 
+        public event EventHandler<Exception>? OnException;
+
         public static int GlobalFrameNumber { get; internal set; }
 
         private AtriaSlide? CurrentSlide => _currentSlideName != null && _slides.TryGetValue(_currentSlideName, out var slide) ? slide : null;
         
         public MeasurementService? MeasurementService { get; set; }
+        public string? CurrentSlideName => _currentSlideName;
 
         public AtriaLayoutEngine(int viewportWidth, int viewportHeight)
         {
@@ -42,6 +45,20 @@ namespace Celarix.Starfall.Layout.Atria
             slide.Initialize();
             // TODO: check for duplicate names and throw if one is found
             _slides.Add(name, slide);
+        }
+
+        public void RemoveSlide(string name)
+        {
+            if (!_slides.ContainsKey(name))
+            {
+                throw new ArgumentException($"No slide with the name '{name}' exists in this layout engine.", nameof(name));
+            }
+            _slides.Remove(name);
+
+            if (_currentSlideName?.Equals(name, StringComparison.OrdinalIgnoreCase) == true)
+            {
+                _currentSlideName = null;
+            }
         }
 
         public void SetCurrentSlide(string name)
@@ -114,8 +131,22 @@ namespace Celarix.Starfall.Layout.Atria
                 return;
             }
 
-            Update(CurrentSlide, deltaTime);
-            Render(CurrentSlide);
+            try
+            {
+                Update(CurrentSlide, deltaTime);
+                Render(CurrentSlide);
+            }
+            catch (Exception ex)
+            {
+                if (OnException != null)
+                {
+                    OnException.Invoke(this, ex);
+                }
+                else
+                {
+                    Console.WriteLine($"Unhandled exception in AtriaLayoutEngine.OnFrameRequested: {ex}");
+                }
+            }
         }
     }
 }
