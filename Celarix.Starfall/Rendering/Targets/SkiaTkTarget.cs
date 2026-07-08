@@ -1,7 +1,9 @@
 ﻿using Celarix.Starfall.Layout.Helium;
+using Celarix.Starfall.Rendering.Initialization;
 using Celarix.Starfall.Rendering.Models;
 using FastCache;
 using OpenTK.Graphics.ES11;
+using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using SkiaSharp;
 using System;
@@ -15,6 +17,7 @@ namespace Celarix.Starfall.Rendering.Targets
     {
         private readonly INotifyFrameRequested frameRequested;
         private readonly GameWindow window;
+        private readonly SMonitorInfo[] _monitorInfos;
         private GRContext? grContext;
         private SKSurface? surface;
 
@@ -25,21 +28,47 @@ namespace Celarix.Starfall.Rendering.Targets
             set => window.IsEventDriven = !value;
         }
 
-        public SkiaTkTarget(int width, int height, int desiredFrameRate, string title, INotifyFrameRequested frameRequested)
+        public IReadOnlyList<SMonitorInfo> MonitorInfos => _monitorInfos;
+
+        public SkiaTkTarget(int width,
+            int height,
+            int desiredFrameRate,
+            string title,
+            INotifyFrameRequested frameRequested,
+            int? monitorIndex = null)
         {
+            _monitorInfos = [.. MonitorInfoProvider.GetMonitorInfos()];
+
             this.frameRequested = frameRequested;
             var nativeSettings = new NativeWindowSettings()
             {
                 ClientSize = new OpenTK.Mathematics.Vector2i(width, height),
                 Title = title,
             };
+
+            if (monitorIndex != null)
+            {
+                nativeSettings.CurrentMonitor = new MonitorHandle(_monitorInfos[monitorIndex.Value].Handle);
+                nativeSettings.WindowState = WindowState.Normal;
+                nativeSettings.WindowBorder = WindowBorder.Hidden;
+                nativeSettings.StartVisible = true;
+                nativeSettings.StartFocused = false;
+                var monitor = _monitorInfos[monitorIndex.Value];
+                nativeSettings.Location = new OpenTK.Mathematics.Vector2i((int)monitor.WorkArea.X, (int)monitor.WorkArea.Y);
+
+                // Attempt to fix black flickering on focus change (https://github.com/opentk/opentk/issues/1857)
+                // Kind of an odd hack, but...
+                nativeSettings.ClientSize = new OpenTK.Mathematics.Vector2i(monitor.Width - 1, monitor.Height - 1);
+                // ...maybe it works.
+            }
+
             var windowSettings = new GameWindowSettings
             {
                 UpdateFrequency = desiredFrameRate
             };
             window = new GameWindow(windowSettings, nativeSettings)
             {
-                VSync = OpenTK.Windowing.Common.VSyncMode.On
+                VSync = VSyncMode.On
             };
 
             window.Load += () =>
@@ -71,7 +100,7 @@ namespace Celarix.Starfall.Rendering.Targets
             SkiaTextRendering.SetShaperCacheDuration(30000);
         }
 
-        private void Window_RenderFrame(object? sender, OpenTK.Windowing.Common.FrameEventArgs e)
+        private void Window_RenderFrame(object? sender, FrameEventArgs e)
         {
             frameRequested.OnFrameRequested(e.Time);
         }
@@ -82,16 +111,37 @@ namespace Celarix.Starfall.Rendering.Targets
         }
 
         // ======
+        // Multi-monitor and Fullscreen API
+        // ======
+        public void SetFullscreen(int monitorIndex)
+        {
+            if (monitorIndex < 0 || monitorIndex >= _monitorInfos.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(monitorIndex), $"Monitor index must be between 0 and {_monitorInfos.Length - 1}.");
+            }
+
+            var monitor = _monitorInfos[monitorIndex];
+            window.MakeFullscreen(new MonitorHandle(monitor.Handle));
+            window.WindowBorder = WindowBorder.Hidden;
+        }
+
+        public void ClearFullscreen()
+        {
+            window.WindowBorder = WindowBorder.Resizable;
+            window.WindowState = WindowState.Normal;
+        }
+
+        // ======
         // Inbound Event Handlers
         // ======
-        public event EventHandler<OpenTK.Windowing.Common.KeyboardKeyEventArgs> KeyUp;
+        public event EventHandler<KeyboardKeyEventArgs> KeyUp;
 
         private void RegisterEventHandlers()
         {
             window.KeyUp += OnKeyUp;
         }
 
-        private void OnKeyUp(OpenTK.Windowing.Common.KeyboardKeyEventArgs e)
+        private void OnKeyUp(KeyboardKeyEventArgs e)
         {
             KeyUp?.Invoke(this, e);
         }

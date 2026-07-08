@@ -40,6 +40,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 {
                     BackgroundColor = MathHelpers.InterpolateColor(Constants.StarfallBackground, Constants.FloatingPointBackground, p);
                 }, AddElementAndText));
+                _elementAdded = true;
             }
 
             return SlideAdvanceResult.InternalStateChanged;

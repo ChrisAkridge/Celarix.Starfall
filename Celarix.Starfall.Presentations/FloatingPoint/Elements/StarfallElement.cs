@@ -60,10 +60,10 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         private const double CloudMaxRadius = 110d;
         private const double CloudMinY = -80d;
         private const double CloudMaxY = 200d;
-        private const double FallingStarSpawnChancePerFrame = 3d / 60d;
-        private const double FallingStarXVelocity = -8d; // pixels per frame
-        private const double FallingStarYVelocity = 8d; // pixels per frame
-        private const int FallingStarShrinkDuration = 90; // frames
+        private const double FallingStarSpawnChancePerFrame = 2.5d / 60d;
+        private const double FallingStarXVelocity = -10d; // pixels per frame
+        private const double FallingStarYVelocity = 10d; // pixels per frame
+        private const int FallingStarShrinkDuration = 150; // frames
         private const int FallingStarGlowExpansionDuration = 2; // frames
         private const double FallingStarGlowMultiplier = 2d;
 

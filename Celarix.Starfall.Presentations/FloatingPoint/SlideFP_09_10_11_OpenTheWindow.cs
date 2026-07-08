@@ -14,6 +14,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_09_10_11_OpenTheWindow : AtriaSlide
     {
+        private const float WindowElementBaseFontSize = 52f;
+
         private int _state;
         private FloatingPointWindowElement _element;
         private SingleBinaryViewElement _binaryView;
@@ -114,12 +116,12 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 Size = new SSizeF(Size.Width, Size.Height / 4d),
                 WindowOpacity = 0d,
                 ArrowOpacity = 0d,
-                BaseFontSize = 48
+                BaseFontSize = WindowElementBaseFontSize
             };
             _binaryView = new SingleBinaryViewElement("#binaryView", "Consolas")
             {
                 Size = new SSizeF(Size.Width, Size.Height / 4d),
-                BaseFontSize = 48
+                BaseFontSize = 64
             };
 
             _element.SetArrowBit(0);
@@ -164,7 +166,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             Console.WriteLine("FP9: Zooming and showing exponents and place values.");
             var fontSizeAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(2d), p =>
             {
-                _element.BaseFontSize = (float)MathHelpers.Ease(48d, 120d, p, Easings.Land);
+                _element.BaseFontSize = (float)MathHelpers.Ease(WindowElementBaseFontSize, 120d, p, Easings.Land);
             }, () =>
             {
                 _element.SetShowExponents(show: true);
@@ -180,7 +182,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             Console.WriteLine("FP9: Zooming out and hiding exponents and place values.");
             var fontSizeAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(2d), p =>
             {
-                _element.BaseFontSize = (float)MathHelpers.Ease(120d, 48d, p, Easings.Land);
+                _element.BaseFontSize = (float)MathHelpers.Ease(120d, WindowElementBaseFontSize, p, Easings.Land);
             }, () =>
             {
                 _element.SetShowExponents(show: false);

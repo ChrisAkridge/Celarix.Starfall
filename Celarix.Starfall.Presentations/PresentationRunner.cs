@@ -2,6 +2,8 @@
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Presentations.FloatingPoint;
 using Celarix.Starfall.Rendering;
+using Celarix.Starfall.Rendering.Initialization;
+using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using OpenTK.Windowing.Common;
 using System;
@@ -60,13 +62,23 @@ namespace Celarix.Starfall.Presentations
         public void Run()
         {
             Console.WriteLine("INFO: Running presentation...");
+
+            // Pick a monitor to display the presentation on
+            var monitorInfos = MonitorInfoProvider.GetMonitorInfos();
+            var monitorIndex = GetDesiredMonitorIndex(monitorInfos);
+
             var engineOptions = new PresentationEngineOptions
             {
                 ErrorLevel = ErrorLevel.Display
             };
 
             _layoutEngine = new AtriaLayoutEngine(args.ViewportWidth, args.ViewportHeight);
-            var tkTarget = new SkiaTkTarget(args.ViewportWidth, args.ViewportHeight, 60, "Floating Point Numbers, Visualized", _layoutEngine);
+            var tkTarget = new SkiaTkTarget(args.ViewportWidth,
+                args.ViewportHeight,
+                60,
+                "Floating Point Numbers, Visualized",
+                _layoutEngine,
+                monitorIndex);
             tkTarget.KeyUp += TkTarget_KeyUp;
 
             _layoutEngine.SetRenderTarget(tkTarget);
@@ -97,6 +109,33 @@ namespace Celarix.Starfall.Presentations
             // Initialize and switch to the first slide
             InitializeAndSwitchToSlide(0);
             _layoutEngine.Start();
+        }
+
+        private int GetDesiredMonitorIndex(IReadOnlyList<SMonitorInfo> monitorInfos)
+        {
+            Console.WriteLine("Available monitors:");
+            for (int i = 0; i < monitorInfos.Count; i++)
+            {
+                SMonitorInfo? monitorInfo = monitorInfos[i];
+                Console.WriteLine($"\t{i}. ({monitorInfo.Width}x{monitorInfo.Height}) {monitorInfo.Name}");
+            }
+            Console.Write("Please select the monitor index to display the presentation on: ");
+
+            int? chosenMonitorIndex = null;
+            do
+            {
+                var input = Console.ReadLine();
+                if (!int.TryParse(input, out int index) || index < 0 || index >= monitorInfos.Count)
+                {
+                    Console.WriteLine("Invalid input. Please enter a valid monitor index.");
+                }
+                else
+                {
+                    chosenMonitorIndex = index;
+                }
+            } while (chosenMonitorIndex == null);
+
+            return chosenMonitorIndex.Value;
         }
 
         private void TkTarget_KeyUp(object? sender, KeyboardKeyEventArgs e)

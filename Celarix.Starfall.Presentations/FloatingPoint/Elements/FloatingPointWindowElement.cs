@@ -497,8 +497,16 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 _framesUntilJitterToggle--;
                 if (_framesUntilJitterToggle <= 0)
                 {
+                    var wasJittering = _isJitteringWindow;
                     _isJitteringWindow = !_isJitteringWindow;
                     _framesUntilJitterToggle = _random.Next(5, 16); // Randomly toggle jitter every 5 to 15 frames
+
+                    if (wasJittering)
+                    {
+                        // When we stop jittering, we want a longer delay before we start again, otherwise
+                        // it just looks too buzzy.
+                        _framesUntilJitterToggle *= 6;
+                    }
                 }
             }
         }

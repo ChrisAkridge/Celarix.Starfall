@@ -156,7 +156,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 Size = new SSizeF(Size.Width, Size.Height / 4d),
                 WindowOpacity = 1d,
                 ArrowOpacity = 1d,
-                BaseFontSize = 40
+                BaseFontSize = 48
             };
             var elementAnchor = new BasisPoint(TopLeft.Down(Size.Height / 6d), "#floatingPointWindowAnchor");
             _element.AnchorTopLeftTo(elementAnchor);
@@ -165,7 +165,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             _binaryView = new SingleBinaryViewElement("#binaryView", "Consolas")
             {
                 Size = new SSizeF(Size.Width, Size.Height / 4d),
-                BaseFontSize = 48
+                BaseFontSize = 64
             };
             var viewAnchor = new BasisPoint(_element.Bounds.BottomLeft, "#viewAnchor");
             _binaryView.AnchorTopLeftTo(viewAnchor);
@@ -179,7 +179,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             var valuesBlock = new MultilineTextBlock("#values")
             {
                 Text = VisibleValues,
-                Font = new SFontFamily("Consolas", 36f),
+                Font = new SFontFamily("Consolas", 30f),
                 Color = SColor.White
             };
             var valuesAnchor = new BasisPoint(BottomLeft.Up(50d), "#valuesAnchor");
@@ -328,7 +328,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             Console.WriteLine("FP14: Starting to add to the mantissa.");
             var valuesBlock = (MultilineTextBlock)Query("#values").Single();
-            valuesBlock.Font = new SFontFamily("Consolas", 20f);
+            valuesBlock.Font = new SFontFamily("Consolas", 30f);
 
             _animationContext.ScheduleContinuingAnimation(ContinuingAnimation.StartNow(() =>
             {

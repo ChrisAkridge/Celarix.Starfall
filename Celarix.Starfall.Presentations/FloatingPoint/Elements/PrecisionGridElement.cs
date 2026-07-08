@@ -47,6 +47,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
 
             var slideWidth = Slide.Size.Width;
             var cellWidth = slideWidth / DotsOnRow;
+            var yOffset = cellWidth;    // not much of a fan of the dots being drawn right at Y = 0... overscan kinda worries me, even on HDTVs
             var dotCenterXs = new List<double>();
             var lastX = 0d;
             while (lastX < slideWidth)
@@ -56,7 +57,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             }
 
             var dotCenterYs = new List<double>();
-            var lastY = 0d;
+            var lastY = yOffset;
             while (lastY < Slide.Size.Height)
             {
                 dotCenterYs.Add(lastY + cellWidth / 2d);
@@ -91,7 +92,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             // Draw the window first so it's under the bits.
             var windowWidth = cellWidth * 24;
             var windowHeight = cellWidth;
-            target.DrawRectangle(new SRectF(_drawnWindowLeftX, 0d, windowWidth, windowHeight), _windowColor.WithOpacity(Opacity), SPaintStyle.Fill, SAngle.Zero);
+            target.DrawRectangle(new SRectF(_drawnWindowLeftX, yOffset, windowWidth, windowHeight), _windowColor.WithOpacity(Opacity), SPaintStyle.Fill, SAngle.Zero);
 
             // Now draw the dots.
             for (var y = 0; y < dotCenterYs.Count; y++)
