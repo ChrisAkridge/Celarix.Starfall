@@ -27,6 +27,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             if (_state == 0)
             {
+                Console.WriteLine("SF03: Adding awk logo");
                 var awkLogo = ImageElement.FromFile("Assets/Images/awk_logo.png", "#awkLogo");
                 var awkAnchor = new BasisPoint(new(Center.X, Size.Height * (1d / 4d)), "#awkAnchor");
                 awkLogo.AnchorCenterTo(awkAnchor);
@@ -38,6 +39,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
             else if (_state == 1)
             {
+                Console.WriteLine("SF03: Adding POV-Ray logo");
                 var povrayLogo = ImageElement.FromFile("Assets/Images/povray_logo.png", "#povrayLogo");
                 var povrayAnchor = new BasisPoint(new(Center.X, Size.Height * (3d / 4d)), "#povrayAnchor");
                 povrayLogo.AnchorCenterTo(povrayAnchor);
@@ -49,6 +51,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
             else if (_state == 2)
             {
+                Console.WriteLine("SF03: Adding VHDL text");
                 var vhdlText = new TextBlock("#vhdlText")
                 {
                     Text = "VHDL",
@@ -65,6 +68,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
             else if (_state == 3)
             {
+                Console.WriteLine("SF03: Adding Verilog text");
                 var verilogText = new TextBlock("#verilogText")
                 {
                     Text = "Verilog",

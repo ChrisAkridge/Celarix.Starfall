@@ -35,6 +35,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             if (!_elementAdded)
             {
+                Console.WriteLine("SF06: Making the stars fall!");
                 _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d), p =>
                 {
                     BackgroundColor = MathHelpers.InterpolateColor(Constants.StarfallBackground, Constants.FloatingPointBackground, p);

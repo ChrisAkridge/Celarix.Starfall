@@ -73,6 +73,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Initial, State.ShowScientificNotationNumber)]
         private void ShowScientificNotationNumber()
         {
+            Console.WriteLine("FP7: Shows a number in scientific notation.");
             var goodExample = new TextBlock("#goodExample")
             {
                 Text = "8.300 × 10⁹",
@@ -90,6 +91,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowScientificNotationNumber, State.ShowPartsLabelsAndLines)]
         private void ShowPartsLabelsAndLines()
         {
+            Console.WriteLine("FP7: Shows the parts of that number.");
             var goodExample = Query("#goodExample").Single() as TextBlock;
             var characterSize = new SSizeF(goodExample.Size.Width / goodExample.Text.Length,
                 goodExample.Size.Height);
@@ -164,6 +166,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private void HidePartsLabelsAndLines()
         {
             // CANIMPROVE: Fading out elements and then removing them can be done a LOT better than this.
+            Console.WriteLine("FP7: Hides the parts labels and lines.");
             AtriaElement[] elementsToFadeOut = [
                 Query("#mantissaLabel").Single(),
                 Query("#baseLabel").Single(),
@@ -190,6 +193,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.HidePartsLabelsAndLines, State.ShowBadExamples)]
         private void ShowBadExamples()
         {
+            Console.WriteLine("FP7: Shows two examples of numbers that are not in proper scientific notation.");
             var goodExampleAnchor = (BasisPoint)QueryBasis("#goodExampleAnchor").Single();
             var vBasisLine = new BasisLine(TopCenter, BottomCenter);
             var startPosition = goodExampleAnchor.Point;
@@ -227,6 +231,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowBadExamples, State.ColorHighMantissaRed)]
         private void ColorHighMantissaRed()
         {
+            Console.WriteLine("FP7: Colors the mantissa with too many digits to the left of the decimal point in red.");
             var badExample1 = (TextBlock)Query("#badExample1").Single();
             _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
@@ -237,6 +242,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ColorHighMantissaRed, State.ColorLowMantissaRed)]
         private void ColorLowMantissaRed()
         {
+            Console.WriteLine("FP7: Colors the mantissa with a 0 to the left of the decimal point in red.");
             var badExample2 = (TextBlock)Query("#badExample2").Single();
             _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {

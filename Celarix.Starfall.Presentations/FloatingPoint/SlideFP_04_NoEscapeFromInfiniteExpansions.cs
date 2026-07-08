@@ -75,6 +75,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Initial, State.ShowDividendAndDivisor)]
         private void ToShowDividendAndDivisor()
         {
+            Console.WriteLine("FP4: Showing 1 / 3");
             var initialBasis = TopLeft.Right(InnerPadding).Down(InnerPadding);
 
             var divisorAnchor = new BasisPoint(initialBasis.Down(_lineHeight!.Value), "#divisorAnchor");
@@ -111,6 +112,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private void ToStep01()
         {
             // Demonstrates that we have to treat it like 10 / 3 first because 3 > 1
+            Console.WriteLine("FP4: (1) Showing 1.0 / 3");
             var topLineAnchor = (BasisPoint)QueryBasis("#topLineAnchor").Single();
 
             SPointF quotientPoint = topLineAnchor.Point
@@ -132,6 +134,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             // Okay, now we can start the long division process. We have 1.0 / 0.3, which gives us a quotient
             // of 0.3 and a remainder of 1.
+            Console.WriteLine("FP4: (2) Making quotient 0.3");
             SetTextBlock("#quotient", "0.3");
 
             var dividend = (TextBlock)Query("#dividend").Single();
@@ -147,6 +150,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Step02, State.Step03)]
         private void ToStep03()
         {
+            Console.WriteLine("FP4: (3) Subtracting Barker term");
             var divider0Anchor = GetDividerAnchor(GetCenterRightOf("#line0"), "0");
             LineElement divider0 = MakeDivider(divider0Anchor, "0");
 
@@ -162,6 +166,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private void ToStep04()
         {
             // Now we can do more in one step. Carry another 0 down, get another digit in the quotient, and get a new remainder of 1 again.
+            Console.WriteLine("FP4: (4) Carrying down another 0, getting another digit in the quotient, and getting a new remainder of 1 again.");
             SetTextBlock("#quotient", "0.33");
             SetTextBlock("#dividend", "1.00");
             SetTextBlock("#line1", "10");
@@ -179,6 +184,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Step04, State.Step05)]
         private void ToStep05()
         {
+            Console.WriteLine("FP4: (5) Adding another digit in the quotient and a new remainder of 1 again.");
             var divider1Anchor = GetDividerAnchor(GetCenterRightOf("#line2"), "1");
             var divider1 = MakeDivider(divider1Anchor, "1");
             var line3Anchor = new BasisPoint(divider1.Bounds.CenterRight.Down((_lineHeight!.Value / 2d) + LineMargin), "#line3Anchor");
@@ -192,6 +198,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private void ToFinishProblem()
         {
             // Just keep adding lines until our quotient overflows the right, but all at once.
+            Console.WriteLine("FP4: (6, last) Adding more digits to the quotient and dividend until the quotient overflows the right.");
             var addedElements = new List<ISlideAddable>();
             var lastLineIndex = 3;
             var lastDividerIndex = 2;
@@ -306,6 +313,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private void BackToStep05()
         {
             // Just remove all the elements we added in the last step.
+            Console.WriteLine("FP4: (6 -> 5) Rewinding to step 5");
             var elementsToRemove = Elements.Where(e => e.Id.Id!.StartsWith("f_"))
                 .Cast<ISlideAddable>()
                 .Concat(BasisElements.Where(e => e.Id.Id!.StartsWith("f_")).Cast<ISlideAddable>())
@@ -325,6 +333,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Step05, State.Step04)]
         private void BackToStep04()
         {
+            Console.WriteLine("FP4: (5 -> 4) Rewinding to step 4");
             Remove([(ISlideAddable)QueryBasis("#divider1Anchor").Single(), Query("#divider1").Single(), (ISlideAddable)QueryBasis("#line3Anchor").Single(), Query("#line3").Single()]);
             SetTextBlock("#quotient", "0.3");
             SetTextBlock("#dividend", "1.00");
@@ -335,6 +344,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Step04, State.Step03)]
         private void BackToStep03()
         {
+            Console.WriteLine("FP4: (4 -> 3) Rewinding to step 3");
             Remove([(ISlideAddable)QueryBasis("#line2Anchor").Single(), Query("#line2").Single()]);
             SetTextBlock("#quotient", "0.3");
             SetTextBlock("#dividend", "1.0");
@@ -346,6 +356,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Step03, State.Step02)]
         private void BackToStep02()
         {
+            Console.WriteLine("FP4: (3 -> 2) Rewinding to step 2");
             Remove([(ISlideAddable)QueryBasis("#divider0Anchor").Single(), Query("#divider0").Single(),
                 (ISlideAddable)QueryBasis("#line0Anchor").Single(), Query("#line0").Single()]);
             SetTextBlock("#quotient", "0.");
@@ -355,6 +366,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Step02, State.Step01)]
         private void BackToStep01()
         {
+            Console.WriteLine("FP4: (2 -> 1) Rewinding to step 1");
             Remove([(ISlideAddable)QueryBasis("#quotientAnchor").Single(), Query("#quotient").Single()]);
             SetTopLineWidth(1);
             SetTextBlock("#dividend", "1");
@@ -363,6 +375,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Step01, State.ShowDividendAndDivisor)]
         private void BackToShowDividendAndDivisor()
         {
+            Console.WriteLine("FP4: (1 -> 0) Rewinding to show dividend and divisor");
             Remove([(ISlideAddable)QueryBasis("#quotientAnchor").Single(), Query("#quotient").Single()]);
             SetTopLineWidth(1);
             SetTextBlock("#dividend", "1");
@@ -371,6 +384,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowDividendAndDivisor, State.Initial)]
         private void BackToInitial()
         {
+            Console.WriteLine("FP4: (0 -> -1) Rewinding to initial state");
             Remove([(ISlideAddable)QueryBasis("#divisorAnchor").Single(), Query("#divisor").Single(),
                 (ISlideAddable)QueryBasis("#sideLineAnchor").Single(), Query("#sideLine").Single(),
                 (ISlideAddable)QueryBasis("#topLineAnchor").Single(), Query("#topLine").Single(),

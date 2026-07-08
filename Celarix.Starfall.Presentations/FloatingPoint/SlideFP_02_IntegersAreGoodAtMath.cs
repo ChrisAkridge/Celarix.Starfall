@@ -68,12 +68,14 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             // and handle the layout, presenting itself as a single box. Just use Skia rendering
             // directly, don't worry about wrapping Elements inside it. We can add stuff like
             // multiple terms, carries/borrows, step-by-step later.
+            Console.WriteLine("FP2: Showing 5 + 3 = 8");
             AddProblem(1, "addend", 5, 3, 8, "+");
         }
 
         [StateTransition<State>(State.ShowAdditionProblem, State.ShowMultiplicationProblem)]
         private void ToShowMultiplicationProblem()
         {
+            Console.WriteLine("FP2: Showing 5 * 3 = 15");
             AddProblem(2, "factor", 5, 3, 15, "×");
         }
 
@@ -82,6 +84,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             // Rounding on purpose to show that integers cannot always represent exact quotients
             // which is why we need floating point numbers!
+            Console.WriteLine("FP2: Showing 4 ÷ 8 = 0");
             AddProblem(3, "quotient", 4, 8, 0, "÷");
         }
 
@@ -90,6 +93,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private void ToInitial()
         {
             // Just remove the elements instead of doing a fadeout for now.
+            Console.WriteLine("FP2: Hiding addition problem");
             var addendElements = QueryMultiple("#addend0", "#addend1", "#addendResult", "#addendResultLine", "#addendResultLineAnchor", "#addend1Anchor", "#addend0Anchor");
             Remove(addendElements);
         }
@@ -97,6 +101,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowMultiplicationProblem, State.ShowAdditionProblem)]
         private void ToShowAdditionProblemReverse()
         {
+            Console.WriteLine("FP2: Hiding multiplication problem");
             var factorElements = QueryMultiple("#factor0", "#factor1", "#factorResult", "#factorResultLine", "#factorResultLineAnchor", "#factor1Anchor", "#factor0Anchor");
             Remove(factorElements);
         }
@@ -104,6 +109,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowDivisionProblem, State.ShowMultiplicationProblem)]
         private void ToShowMultiplicationProblemReverse()
         {
+            Console.WriteLine("FP2: Hiding division problem");
             var quotientElements = QueryMultiple("#quotient0", "#quotient1", "#quotientResult", "#quotientResultLine", "#quotientResultLineAnchor", "#quotient1Anchor", "#quotient0Anchor");
             Remove(quotientElements);
         }

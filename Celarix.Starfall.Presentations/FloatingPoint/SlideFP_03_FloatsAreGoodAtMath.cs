@@ -60,18 +60,21 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Initial, State.ShowDivisionProblem)]
         private void ShowDivisionProblem()
         {
+            Console.WriteLine("FP3: Showing 4 / 8 = 0.5");
             AddProblem(1, "quotient", "4", "8", Helpers.ExactStringSingle(4f / 8f), "÷");
         }
 
         [StateTransition<State>(State.ShowDivisionProblem, State.ShowMultiplicationProblem)]
         private void ShowMultiplicationProblem()
         {
+            Console.WriteLine("FP3: Showing 5 * 3 = 15");
             AddProblem(2, "product", "5", "3", Helpers.ExactStringSingle(5f * 3f), "×");
         }
 
         [StateTransition<State>(State.ShowMultiplicationProblem, State.ShowAdditionProblem)]
         private void ShowAdditionProblem()
         {
+            Console.WriteLine("FP3: Showing 0.1 + 0.2 ~ 0.3");
             AddProblem(3, "sum", "0.1", "0.2", Helpers.ExactStringSingle(0.1f + 0.2f), "+");
         }
 
@@ -80,6 +83,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private void ToInitial()
         {
             // Just remove the elements instead of doing a fadeout for now.
+            Console.WriteLine("FP3: Removing 4 / 8");
             var addendElements = QueryMultiple("#quotient0", "#quotient1", "#quotientResult", "#quotientResultLine", "#quotientResultLineAnchor", "#quotient1Anchor", "#quotient0Anchor");
             Remove(addendElements);
         }
@@ -87,6 +91,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowMultiplicationProblem, State.ShowDivisionProblem)]
         private void ToShowDivisionProgramReverse()
         {
+            Console.WriteLine("FP3: Removing 5 * 3");
             var factorElements = QueryMultiple("#product0", "#product1", "#productResult", "#productResultLine", "#productResultLineAnchor", "#product1Anchor", "#product0Anchor");
             Remove(factorElements);
         }
@@ -94,6 +99,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowAdditionProblem, State.ShowMultiplicationProblem)]
         private void ToShowMultiplicationProblemReverse()
         {
+            Console.WriteLine("FP3: Removing 0.1 + 0.2");
             var quotientElements = QueryMultiple("#sum0", "#sum1", "#sumResult", "#sumResultLine", "#sumResultLineAnchor", "#sum1Anchor", "#sum0Anchor");
             Remove(quotientElements);
         }

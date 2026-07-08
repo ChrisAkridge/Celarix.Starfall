@@ -2,7 +2,7 @@
   "profiles": {
     "Celarix.Starfall.Presentations": {
       "commandName": "Project",
-      "commandLineArgs": "1280 720"
+      "commandLineArgs": "1920 1080"
     }
   }
 }

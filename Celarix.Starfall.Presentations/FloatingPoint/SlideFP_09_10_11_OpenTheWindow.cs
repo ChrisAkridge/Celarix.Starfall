@@ -150,6 +150,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult FadeInBitRow()
         {
+            Console.WriteLine("FP9: Fading in bit row.");
             var elementAnchor = new BasisPoint(TopLeft.Down(Size.Height / 6d), "#floatingPointWindowAnchor");
             _element.AnchorTopLeftTo(elementAnchor);
             Add([_element, elementAnchor])
@@ -160,6 +161,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult ZoomInAndShowExponentsAndPlaceValues()
         {
+            Console.WriteLine("FP9: Zooming and showing exponents and place values.");
             var fontSizeAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(2d), p =>
             {
                 _element.BaseFontSize = (float)MathHelpers.Ease(48d, 120d, p, Easings.Land);
@@ -175,6 +177,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult ZoomOutAndHideExponentsAndPlaceValues()
         {
+            Console.WriteLine("FP9: Zooming out and hiding exponents and place values.");
             var fontSizeAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(2d), p =>
             {
                 _element.BaseFontSize = (float)MathHelpers.Ease(120d, 48d, p, Easings.Land);
@@ -191,6 +194,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult ShowWindow()
         {
+            Console.WriteLine("FP9: Showing the window.");
             var windowAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 _element.WindowOpacity = p;
@@ -201,6 +205,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult ShowValues()
         {
+            Console.WriteLine("FP9: Showing the values.");
             var valuesBlock = new MultilineTextBlock("#values")
             {
                 Text = VisibleValues,
@@ -222,6 +227,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult ShowArrow()
         {
+            Console.WriteLine("FP9: Showing the arrow.");
             var arrowAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 _element.ArrowOpacity = p;
@@ -235,6 +241,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult SetNextMantissaBit()
         {
+            Console.WriteLine($"FP9: Setting mantissa bit {_nextSetBit}.");
             if (_nextSetBit >= 24)
             {
                 _state = 7;
@@ -266,6 +273,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult AskTheAudience()
         {
+            Console.WriteLine("FP9: Asking the audience for a new target value.");
             float? newTarget = null;
             do
             {

@@ -145,7 +145,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
 
             // Make a new addend and put it in the bottom row.
             var newAddend = GetNextAddend();
-            Console.WriteLine($"New addend: {newAddend}");
+            Console.WriteLine($"New addend: {newAddend}, accumulator: {newAccumulator}");
             WriteFloatToRow(newAddend, 99, out _);
         }
 
@@ -220,7 +220,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 }
             }
 
-            var unbiasedExponent = isNormal ? BitIndexToExponent(firstSetBitIndex.Value) : -126;
+            var unbiasedExponent = isNormal ? BitIndexToExponent(firstSetBitIndex.Value) : -127;
             var exponent = unbiasedExponent + 127;
             var intRepresentation = (exponent << 23) | (mantissa & 0x007F_FFFF);
             return BitConverter.Int32BitsToSingle(intRepresentation);

@@ -106,6 +106,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Initial, State.ShowScientificNotation)]
         private void ShowScientificNotation()
         {
+            Console.WriteLine("FP8: Shows the float in scientific notation.");
             var scientificNotation = new TextBlock("#scientificNotation")
             {
                 Text = ScientificNotation,
@@ -123,6 +124,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowScientificNotation, State.ShowDecimalValue)]
         private void ShowDecimalValue()
         {
+            Console.WriteLine("FP8: Shows the float in its exact decimal value.");
             var scientificNotationAnchor = (BasisPoint)QueryBasis("#scientificNotationAnchor").Single();
             var scientificNotationInitialPosition = scientificNotationAnchor.Point;
             var scientificNotationTargetPosition = TopCenter.Down(Size.Height / 3f);
@@ -148,6 +150,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowDecimalValue, State.MantissaSweep)]
         private void MantissaSweep()
         {
+            Console.WriteLine("FP8: Sweeps the mantissa from 0 to max, then to min, and back to 0.");
             var scientificNotationElement = (TextBlock)Query("#scientificNotation").Single();
             var decimalValueElement = (TextBlock)Query("#decimalValue").Single();
 
@@ -161,7 +164,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 return (int)(sine * MaxMantissa);
             };
 
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(4d), p =>
+            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(20d), p =>
             {
                 var mantissa = sweepFunction(p);
                 if (mantissa < 0)
@@ -183,6 +186,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.MantissaSweep, State.ExponentSweep)]
         private void ExponentSweep()
         {
+            Console.WriteLine("FP8: Sweeps the exponent from 0 to max, then to min, and back to 0.");
             var scientificNotationElement = (TextBlock)Query("#scientificNotation").Single();
             var decimalValueElement = (TextBlock)Query("#decimalValue").Single();
             var exponentRange = MaxExponent - MinExponent;
@@ -196,7 +200,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 var exponentOffset = (int)(sine * exponentRange);
                 return (exponentOffset + MinExponent + MaxExponent) / 2; // Center the sweep around the midpoint of the exponent range
             };
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(4d), p =>
+            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(20d), p =>
             {
                 _exponent = sweepFunction(p);
                 scientificNotationElement.Text = ScientificNotation;

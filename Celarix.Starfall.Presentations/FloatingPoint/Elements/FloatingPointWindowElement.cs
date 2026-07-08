@@ -885,13 +885,11 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                     if (animationFactories.Count != 0)
                     {
                         var nextAnimationFactory = animationFactories.Dequeue();
-                        Console.WriteLine("Starting animation...");
                         _animationContext.ScheduleAnimation(nextAnimationFactory());
                     }
                 }
                 return animationFactories.Count != 0;
             });
-            Console.WriteLine($"Scheduling staggered animation for {animationCount} bits");
             _animationContext.ScheduleContinuingAnimation(staggeredAnimation);
         }
 

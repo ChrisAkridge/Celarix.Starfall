@@ -85,6 +85,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             if (!_elementsCreated)
             {
+                Console.WriteLine($"SF05: Loading elements");
                 var createdBinaryDrawingElement = new BinaryDrawingExampleElement("#binaryDrawingExample")
                 {
                     Position = SPointF.Zero,
@@ -107,6 +108,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 _elementsCreated = true;
             }
 
+            Console.WriteLine($"SF05:  and file {_currentFilePath} ({_currentFileSize:#,###} bytes).");
             var binaryDrawingElement = (BinaryDrawingExampleElement)Query("#binaryDrawingExample").Single();
             binaryDrawingElement.SetDataFromFile(_currentFilePath);
             _state = 1;
@@ -115,6 +117,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult ShowBytes()
         {
+            Console.WriteLine("SF05: Showing bytes");
             var binaryDrawingElement = (BinaryDrawingExampleElement)Query("#binaryDrawingExample").Single();
             binaryDrawingElement.ShowBytes();
             _state = 2;
@@ -123,6 +126,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult ShowBoxes()
         {
+            Console.WriteLine("SF05: Showing boxes");
             var binaryDrawingElement = (BinaryDrawingExampleElement)Query("#binaryDrawingExample").Single();
             binaryDrawingElement.ShowBoxes();
             _state = 3;
@@ -131,6 +135,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult ColorBoxes()
         {
+            Console.WriteLine("SF05: Coloring boxes");
             var binaryDrawingElement = (BinaryDrawingExampleElement)Query("#binaryDrawingExample").Single();
             binaryDrawingElement.ColorBoxes();
             _state = 4;
@@ -139,6 +144,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult MergeBoxes()
         {
+            Console.WriteLine("SF05: Merging boxes");
             var binaryDrawingElement = (BinaryDrawingExampleElement)Query("#binaryDrawingExample").Single();
             binaryDrawingElement.MergeBoxes();
             _state = 5;
@@ -147,6 +153,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult BuildPixelRow()
         {
+            Console.WriteLine("SF05: Building pixel row");
             var binaryDrawingElement = (BinaryDrawingExampleElement)Query("#binaryDrawingExample").Single();
             binaryDrawingElement.BuildPixelRow();
             _state = 6;
@@ -155,6 +162,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult FillImage()
         {
+            Console.WriteLine("SF05: Filling image");
             var binaryDrawingElement = (BinaryDrawingExampleElement)Query("#binaryDrawingExample").Single();
             binaryDrawingElement.FillImage();
 
@@ -168,6 +176,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult CheckForNextImage()
         {
+            Console.WriteLine("SF05: Asking user if they want to load another file");
             Console.Write("Would you like to load another file? (y/n): ");
             var response = Console.ReadLine();
             if (response?.Trim().ToLower() == "y")
@@ -193,6 +202,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             else
             {
                 // User does not want to load another file, can advance to next slide
+                Console.WriteLine("SF05: User does not want to load another file, advancing to next slide");
                 _state = 8;
                 return SlideAdvanceResult.InternalStateChanged;
             }

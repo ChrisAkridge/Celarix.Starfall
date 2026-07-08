@@ -81,6 +81,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
 
             _titlesShown = false;
+            Console.WriteLine("FP1: Hiding titles");
 
             var elements = QueryMultiple("#title", "#subtitle", "#meeting");
             foreach (var element in elements)
@@ -99,6 +100,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
 
             _titlesShown = true;
+            Console.WriteLine("FP1: Showing titles");
 
             var elements = QueryMultiple("#title", "#subtitle", "#meeting");
             foreach (var element in elements)

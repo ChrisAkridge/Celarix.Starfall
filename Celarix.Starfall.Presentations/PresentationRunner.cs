@@ -59,6 +59,7 @@ namespace Celarix.Starfall.Presentations
 
         public void Run()
         {
+            Console.WriteLine("INFO: Running presentation...");
             var engineOptions = new PresentationEngineOptions
             {
                 ErrorLevel = ErrorLevel.Display
@@ -161,6 +162,8 @@ namespace Celarix.Starfall.Presentations
                 // We're changing slides, so reset the rewind flag
                 _rewindOccurred = false;
             }
+
+            Console.WriteLine($"INFO: Switching to slide {slideIndex}: {_slideFactories[slideIndex].Name}");
 
             var slideFactory = _slideFactories[slideIndex];
             var slide = slideFactory.Factory();

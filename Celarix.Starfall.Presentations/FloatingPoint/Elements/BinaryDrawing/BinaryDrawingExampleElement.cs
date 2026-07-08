@@ -479,7 +479,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
             }
             _animationContext.StaggerAnimations(animationFactories, 1, () =>
             {
-                Console.WriteLine("Congratulations, you have wired up the staggered animation system correctly.");
                 _stage = BinaryDrawingStage.BuildPixelRow;
             });
         }

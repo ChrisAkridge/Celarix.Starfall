@@ -46,6 +46,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
             if (_state == 0)
             {
+                Console.WriteLine("SF04: Adding images");
                 for (var i = 0; i < points.Length; i++)
                 {
                     var point = points[i];
@@ -73,6 +74,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
             else if (_state == 1)
             {
+                Console.WriteLine("SF04: Animating images to their final positions");
                 var anchors = new[]
                 {
                     (BasisPoint)QueryBasis("#imageAnchor0").Single(),

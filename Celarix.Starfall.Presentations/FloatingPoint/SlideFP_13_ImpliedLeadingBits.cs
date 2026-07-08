@@ -69,6 +69,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Initial, State.ShowDecimalValues)]
         private void ShowDecimalValues()
         {
+            Console.WriteLine("FP13: Showing 10 decimal values.");
             var hBasisLine = new BasisLine(LeftCenter, RightCenter);
             var leftColumnX = hBasisLine.SplitAndTakeLeft(1f / 2f).Center.X;
             var rightColumnX = hBasisLine.SplitAndTakeRight(1f / 2f).Center.X;
@@ -131,6 +132,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowDecimalValues, State.ColorDecimalValues)]
         private void ColorDecimalValues()
         {
+            Console.WriteLine("FP13: Coloring 10 decimal values.");
             var badText = (TextBlock)Query("#textLeft0").Single();
             var goodText = sourceArray.SelectMany(side => Enumerable.Range(0, 5).Select(i => $"#text{side}{i}"))
                 .Where(id => id != "#textLeft0")
@@ -151,6 +153,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ColorDecimalValues, State.RemoveDecimalValuesAndShowBinaryValues)]
         private void RemoveDecimalValuesAndShowBinaryValues()
         {
+            Console.WriteLine("FP13: Removing 10 decimal values and showing 2 binary values.");
             var elementsToRemove = sourceArray.SelectMany(side => Enumerable.Range(0, 5).Select(i => $"#text{side}{i}"))
                 .Select(id => Query(id).Single())
                 .ToArray();
@@ -186,6 +189,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.RemoveDecimalValuesAndShowBinaryValues, State.ColorBinaryValues)]
         private void ColorBinaryValues()
         {
+            Console.WriteLine("FP13: Coloring 2 binary values.");
             var badText = (TextBlock)Query("#badBinary").Single();
             var goodText = (TextBlock)Query("#goodBinary").Single();
             _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
@@ -199,6 +203,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ColorBinaryValues, State.RemoveBadBinaryValue)]
         private void RemoveBadBinaryValue()
         {
+            Console.WriteLine("FP13: Removing bad binary value.");
             var badText = Query("#badBinary").Single();
             var badAnchor = (BasisPoint)QueryBasis("#anchorBadBinary").Single();
             Remove([badText, badAnchor]);

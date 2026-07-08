@@ -195,6 +195,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private void FloatingPointWindowElement_FallingWindowRectExited(object? sender, EventArgs e)
         {
+            Console.WriteLine("FP14: The floating point window fell off the screen and shattered.");
             UpdateVisibleValues();
             var valuesBlock = (MultilineTextBlock)Query("#values").Single();
             _animationContext.ScheduleAnimation(FixedDurationAnimation.StartIn(AnimationContext.SecondsToFrames(2d),
@@ -260,6 +261,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult GoToMinimumExponent()
         {
+            Console.WriteLine("FP14: Sliding to the minimum exponent.");
             _exponent = -126;
             _element.SetBit(0, false, bounce: true);
             _element.MoveWindowToExponent(_exponent);
@@ -272,6 +274,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult WriteOneBitToTwoToThe126th()
         {
+            Console.WriteLine("FP14: Writing a one bit to 2^-126.");
             _element.SetBit(-126, true, bounce: true);
             UpdateVisibleValues();
             _state = 2;
@@ -280,6 +283,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult TryToClearThatBit()
         {
+            Console.WriteLine("FP14: Trying to clear the 2^-126 bit.");
             _element.SetBit(-126, true, bounce: true);
             _state = 3;
             return SlideAdvanceResult.InternalStateChanged;
@@ -287,6 +291,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult TryAgain()
         {
+            Console.WriteLine("FP14: Trying again (2 of 4).");
             _element.SetBit(-126, true, bounce: true);
             _state = 4;
             return SlideAdvanceResult.InternalStateChanged;
@@ -294,6 +299,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult TryAThirdTime()
         {
+            Console.WriteLine("FP14: Trying a third time (3 of 4).");
             _element.SetBit(-126, true, bounce: true);
             _state = 5;
             return SlideAdvanceResult.InternalStateChanged;
@@ -301,6 +307,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult TryAFourthTime()
         {
+            Console.WriteLine("FP14: Trying a fourth time (4 of 4).");
             _element.SetBit(-126, true, bounce: true);
             _state = 6;
             return SlideAdvanceResult.InternalStateChanged;
@@ -308,6 +315,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult TryAndSucceed()
         {
+            Console.WriteLine("FP14: Writing a zero bit to 2^-126.");
             _element.SetBit(-126, false, bounce: true);
             _exponent = -127;
             _currentMantissa.Set(0, false);
@@ -318,6 +326,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult BeginAdding()
         {
+            Console.WriteLine("FP14: Starting to add to the mantissa.");
             var valuesBlock = (MultilineTextBlock)Query("#values").Single();
             valuesBlock.Font = new SFontFamily("Consolas", 20f);
 
@@ -340,6 +349,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult GoToTheMaximumExponent()
         {
+            Console.WriteLine("FP14: Sliding to the maximum exponent.");
             _isAddingToMantissa = false;
 
             var valuesBlock = (MultilineTextBlock)Query("#values").Single();
@@ -372,6 +382,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private SlideAdvanceResult ShowCorruptedNaNWindow()
         {
+            Console.WriteLine("FP14: Showing the corrupted NaN window.");
             var random = new Random();
             var valuesBlock = (MultilineTextBlock)Query("#values").Single();
             valuesBlock.Opacity = 0d;

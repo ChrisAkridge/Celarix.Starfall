@@ -81,6 +81,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.Initial, State.ShowBinaryPlaceValues)]
         private void ToBinaryPlaceValues()
         {
+            Console.WriteLine("FP5: Showing binary place values");
             var binaryElement = (FloatingPointWindowElement)Query("#binaryElement").Single();
             binaryElement.SetShowPlaceValues(true);
         }
@@ -88,6 +89,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowBinaryPlaceValues, State.ShowBinaryExponents)]
         private void ToBinaryExponents()
         {
+            Console.WriteLine("FP5: Showing binary exponents");
             var binaryElement = (FloatingPointWindowElement)Query("#binaryElement").Single();
             binaryElement.SetShowExponents(true);
         }
@@ -95,6 +97,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowBinaryExponents, State.ShowDecimalElement)]
         private void ToDecimalElement()
         {
+            Console.WriteLine("FP5: Showing decimal element");
             var binaryAnchor = (BasisPoint)QueryBasis("#binaryAnchor").Single();
             var oldBinaryAnchorPosition = binaryAnchor.Point;
             var newBinaryAnchorPosition = new BasisLine(TopCenter, BottomCenter).SplitAndTakeRight(2f / 3f).Center;
@@ -130,6 +133,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         [StateTransition<State>(State.ShowDecimalElement, State.ShowDecimalPlaceValuesAndExponents)]
         private void ToDecimalPlaceValuesAndExponents()
         {
+            Console.WriteLine("FP5: Showing decimal place values and exponents");
             var decimalElement = (FloatingPointWindowElement)Query("#decimalElement").Single();
             decimalElement.SetShowPlaceValues(true);
             decimalElement.SetShowExponents(true);

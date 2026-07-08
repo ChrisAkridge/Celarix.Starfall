@@ -32,6 +32,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             if (_state == 0)
             {
+                Console.WriteLine("SF02: Adding title");
                 var title = new TextBlock("#title")
                 {
                     Text = "Starfall",
@@ -48,6 +49,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
             else if (_state == 1)
             {
+                Console.WriteLine("SF02: Adding subtitle");
                 var subtitle = new TextBlock("#subtitle")
                 {
                     Text = "Code-first presentations",

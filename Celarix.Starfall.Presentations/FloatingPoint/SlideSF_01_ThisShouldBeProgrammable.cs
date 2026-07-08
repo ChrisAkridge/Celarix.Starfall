@@ -38,6 +38,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             var queryResult = Query("#slideText").Any();
             if (!queryResult)
             {
+                Console.WriteLine("SF01: Adding text");
                 var slideText = new TextBlock("#slideText")
                 {
                     Text = "...this should be programmable.",

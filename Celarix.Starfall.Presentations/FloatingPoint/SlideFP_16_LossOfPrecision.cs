@@ -26,6 +26,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             if (_precisionGridElement == null)
             {
+                Console.WriteLine("FP16: Showing the precision grid.");
                 _precisionGridElement = new PrecisionGridElement("#precisionGrid")
                 {
                     DotsOnRow = 50
