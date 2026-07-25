@@ -1,11 +1,11 @@
 ﻿using AngleSharp.Dom;
-using Celarix.Starfall.Layout.Helium.Delphinus.Tokens;
+using Celarix.Starfall.Delphinus.Tokens;
 using OpenTK.Windowing.Common.Input;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Layout.Helium.Delphinus
+namespace Celarix.Starfall.Delphinus
 {
     internal static class Tokenizer
     {

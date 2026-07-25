@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Celarix.Starfall.Delphinus;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Layout.Helium.Delphinus.Tokens
+namespace Celarix.Starfall.Delphinus.Tokens
 {
     internal sealed class Space : Token
     {

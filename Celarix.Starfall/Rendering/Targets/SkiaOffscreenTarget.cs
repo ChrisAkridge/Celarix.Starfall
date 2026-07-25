@@ -65,6 +65,12 @@ namespace Celarix.Starfall.Rendering.Targets
         public SSizeF MeasureText(string text, SFont font) =>
             SkiaTextRendering.GetFont(font).MeasureShapedText(text);
 
+        public SFontMetrics GetFontMetrics(SFont font)
+        {
+            var f = SkiaTextRendering.GetFont(font).GetFontMetrics(out var skMetrics);
+            return new SFontMetrics(skMetrics.Ascent, skMetrics.Descent, skMetrics.Leading);
+        }
+
         public void Start() { }
 
         public void DrawEllipse(SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle) =>

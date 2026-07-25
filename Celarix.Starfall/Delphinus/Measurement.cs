@@ -1,11 +1,11 @@
-﻿using Celarix.Starfall.Layout.Helium.Delphinus.Tokens;
+﻿using Celarix.Starfall.Delphinus.Tokens;
 using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Layout.Helium.Delphinus
+namespace Celarix.Starfall.Delphinus
 {
     internal static class Measurement
     {

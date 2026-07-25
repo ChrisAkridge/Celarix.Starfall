@@ -54,5 +54,7 @@ namespace Celarix.Starfall.Rendering
             var size = MeasureText(text, font);
             return size.Width / size.Height;
         }
+
+        public SFontMetrics GetFontMetrics(SFont font) => renderTarget.GetFontMetrics(font);
     }
 }

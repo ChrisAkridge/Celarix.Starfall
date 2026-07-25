@@ -206,5 +206,40 @@ namespace Celarix.Starfall.Rendering.Models
             var squareSize = new SSizeF(minDimension, minDimension);
             return new(AlignmentHelper.Align(alignment, this, squareSize), squareSize);
         }
+
+        public static SRectF BoundsOf(IEnumerable<SRectF> rectangles)
+        {
+            var left = double.MaxValue;
+            var right = double.MinValue;
+            var top = double.MaxValue;
+            var bottom = double.MinValue;
+
+            foreach (var rect in rectangles)
+            {
+                if (rect.Left < left) { left = rect.Left; }
+                if (rect.Right > right) { right = rect.Right; }
+                if (rect.Top < top) { top = rect.Top; }
+                if (rect.Bottom > bottom) { bottom = rect.Bottom; }
+            }
+
+            return SRectF.FromSides(top, right, bottom, left);
+        }
+
+        public SPointF GetEdgePoint(Alignment alignment)
+        {
+            return alignment switch
+            {
+                Alignment.TopLeft => TopLeft,
+                Alignment.TopCenter => TopCenter,
+                Alignment.TopRight => TopRight,
+                Alignment.BottomLeft => BottomLeft,
+                Alignment.BottomCenter => BottomCenter,
+                Alignment.BottomRight => BottomRight,
+                Alignment.LeftCenter => CenterLeft,
+                Alignment.RightCenter => CenterRight,
+                Alignment.Center => Center,
+                _ => throw new ArgumentOutOfRangeException(nameof(alignment), alignment, null)
+            };
+        }
     }
 }

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Layout.Helium.Delphinus
+namespace Celarix.Starfall.Delphinus
 {
     internal record RealizedStyleContext(
         SFont Font,

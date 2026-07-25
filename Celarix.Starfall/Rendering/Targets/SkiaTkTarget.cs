@@ -238,5 +238,11 @@ namespace Celarix.Starfall.Rendering.Targets
         public float FitTextToHeight(string text, SFont font, float height) => SkiaTextRendering.FitTextToHeight(text, font, height);
 
         public SSizeF MeasureText(string text, SFont font) => SkiaTextRendering.GetFont(font).MeasureShapedText(text);
+
+        public SFontMetrics GetFontMetrics(SFont font)
+        {
+            var f = SkiaTextRendering.GetFont(font).GetFontMetrics(out var skMetrics);
+            return new SFontMetrics(skMetrics.Ascent, skMetrics.Descent, skMetrics.Leading);
+        }
     }
 }

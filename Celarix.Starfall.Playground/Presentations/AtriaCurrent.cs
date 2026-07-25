@@ -2,6 +2,7 @@
 using Celarix.Starfall.Playground.AtriaTests;
 using Celarix.Starfall.Playground.AtriaTests.CanonicalDecomposition;
 using Celarix.Starfall.Playground.AtriaTests.Operations;
+using Celarix.Starfall.Playground.DelphinusTests;
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Rendering.Targets;
 using OpenTK.Windowing.Common;
@@ -32,8 +33,9 @@ namespace Celarix.Starfall.Playground.Presentations
             // var timeProgressSlide = new GigasecondSlide(1920, 188);
             // var timeProgressSlide = new ByteOperationSlide((x, y) => (byte)(x & y), "x & y", 1280, 720);
             // var timeProgressSlide = new ShortOperationSlide((x, y) => Quadrant(x), "quadrant(x)", 1280, 720);
-            var timeProgressSlide = new CanonicalDecompositionSlide(@"E:\Documents\Files\Pictures\Pictures\S Series\1s Series\1s000335.png",
-                1280, 720);
+            //var timeProgressSlide = new CanonicalDecompositionSlide(@"E:\Documents\Files\Pictures\Pictures\S Series\1s Series\1s000335.png",
+            //    1280, 720);
+            var timeProgressSlide = new DelphinusSlide(1280, 720);
             layoutEngine.AddSlide(timeProgressSlide, "timeProgress");
             layoutEngine.SetCurrentSlide("timeProgress");
             layoutEngine.Start();

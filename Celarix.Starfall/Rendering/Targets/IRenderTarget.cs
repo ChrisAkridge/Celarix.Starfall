@@ -28,6 +28,7 @@ namespace Celarix.Starfall.Rendering.Targets
         float FitTextToWidth(string text, SFont font, float width);
         float FitTextToHeight(string text, SFont font, float height);
         SSizeF MeasureText(string text, SFont font);
+        SFontMetrics GetFontMetrics(SFont font);
 
         IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size);
     }

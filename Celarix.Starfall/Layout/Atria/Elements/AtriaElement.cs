@@ -15,6 +15,15 @@ namespace Celarix.Starfall.Layout.Atria.Elements
         private SPointF? _position;
         private Anchor? _anchor;
 
+        protected Alignment? AnchoredPosition
+        {
+            get
+            {
+                if (_anchor == null) { return null; }
+                return _anchor.AnchoredPoint;
+            }
+        }
+
         public AtriaSlide? Slide { get; set; }
         
         public AtriaId Id { get; protected set; }
