@@ -1,4 +1,6 @@
-﻿using Celarix.Starfall.Rendering.Models;
+﻿using Celarix.Starfall.Layout.Helium;
+using Celarix.Starfall.Mathematics;
+using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -20,13 +22,24 @@ namespace Celarix.Starfall.Libra
             LibraExpression denominator,
             SColor foregroundColor,
             SColor backgroundColor,
-            string? id = null)
+            string? id = null) : base(id)
         {
             Numerator = numerator;
             Denominator = denominator;
             ForegroundColor = foregroundColor;
             BackgroundColor = backgroundColor;
-            Id = id;
+        }
+
+        public FractionExpression(LibraExpression numerator,
+            LibraExpression denominator,
+            SColor foregroundColor,
+            SColor backgroundColor,
+            LibraId libraId) : base(libraId)
+        {
+            Numerator = numerator;
+            Denominator = denominator;
+            ForegroundColor = foregroundColor;
+            BackgroundColor = backgroundColor;
         }
 
         protected internal override LibraLayoutResult Layout(LibraRenderingContext context)
@@ -39,12 +52,10 @@ namespace Celarix.Starfall.Libra
             var denominatorGap = context.Em * DenominatorGapEm;
             var barThickness = context.Em * VinculumThicknessEm;
 
-            var width =
-                Math.Max(numerator.Bounds.Width, denominator.Bounds.Width)
-                + (sidePadding * 2);
+            var width = MathHelpers.PadSides(Math.Max(numerator.Bounds.Width, denominator.Bounds.Width), sidePadding);
 
-            var numeratorX = (width - numerator.Bounds.Width) / 2d;
-            var denominatorX = (width - denominator.Bounds.Width) / 2d;
+            var numeratorX = AlignmentHelper.CenterAlign(width, numerator.Bounds.Width);
+            var denominatorX = AlignmentHelper.CenterAlign(width, denominator.Bounds.Width);
             var barY = numerator.Bounds.Height + numeratorGap;
             var denominatorY = barY + barThickness + denominatorGap;
 
@@ -52,6 +63,7 @@ namespace Celarix.Starfall.Libra
             var mathAxisY = barY + (barThickness / 2d);
 
             var bar = new LibraRectangleRenderable(
+                Id.RenderableKey("vinculum"),
                 new SSizeF(width, barThickness),
                 ForegroundColor)
             {
@@ -73,6 +85,45 @@ namespace Celarix.Starfall.Libra
                 baselineY,
                 mathAxisY
             );
+        }
+
+        protected internal override IReadOnlyList<LibraExpression> GetChildren() => [Numerator, Denominator];
+
+        public override LibraExpression Replace(string querySelector, Func<LibraExpression, LibraExpression> replacementFactory)
+        {
+            var newNumerator = ReplaceChild(Numerator, querySelector, replacementFactory);
+            var newDenominator = ReplaceChild(Denominator, querySelector, replacementFactory);
+
+            if (ReferenceEquals(newNumerator, Numerator)
+                && ReferenceEquals(newDenominator, Denominator))
+            {
+                return this;
+            }
+
+            return WithChildren(newNumerator, newDenominator);
+        }
+
+        private static LibraExpression ReplaceChild(
+            LibraExpression child,
+            string querySelector,
+            Func<LibraExpression, LibraExpression> replacementFactory)
+        {
+            if (child.Id.Matches(querySelector))
+            {
+                return replacementFactory(child);
+            }
+
+            return child.Replace(querySelector, replacementFactory);
+        }
+
+        private FractionExpression WithChildren(LibraExpression newNumerator, LibraExpression newDenominator)
+        {
+            return new FractionExpression(
+                newNumerator,
+                newDenominator,
+                ForegroundColor,
+                BackgroundColor,
+                Id);
         }
     }
 }

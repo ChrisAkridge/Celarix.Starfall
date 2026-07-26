@@ -1,0 +1,104 @@
+﻿using Celarix.Starfall.Layout.Atria;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Celarix.Starfall.Identity
+{
+    public static class Identification
+    {
+        public static TIdentifiable Parse<TIdentifiable>(string idString,
+            Func<string?, IEnumerable<string>, TIdentifiable> factory) where TIdentifiable : IIdentifiable
+        {
+            var parts = idString.Split(['.', '#'], StringSplitOptions.RemoveEmptyEntries);
+            string? id = null;
+            var classes = new List<string>();
+            foreach (var part in parts)
+            {
+                if (id == null && idString.Contains('#' + part))
+                {
+                    id = part;
+                }
+                else
+                {
+                    classes.Add(part);
+                }
+            }
+
+            var result = factory(id, classes);
+            return result;
+        }
+
+        public static bool Matches(IIdentifiable identifiable, string selector)
+        {
+            // Step 1. Remove any whitespace, interior and exterior, from the selector
+            var selectorTrimmed = selector.RemoveWhitespace();
+
+            // Step 2. Accumulate class and ID selectors
+            var state = SelectorAccumulatorState.Default;
+            var selectorBuilder = new StringBuilder();
+            var selectors = new List<(SelectorAccumulatorState Type, string Selector)>();
+
+            for (int i = 0; i < selectorTrimmed.Length; i++)
+            {
+                char c = selectorTrimmed[i];
+                if (c == '#')
+                {
+                    // Flush previous selector if exists
+                    if (selectorBuilder.Length > 0)
+                    {
+                        selectors.Add((state, selectorBuilder.ToString()));
+                        selectorBuilder.Clear();
+                    }
+                    state = SelectorAccumulatorState.IdSelector;
+                }
+                else if (c == '.')
+                {
+                    // Flush previous selector if exists
+                    if (selectorBuilder.Length > 0)
+                    {
+                        selectors.Add((state, selectorBuilder.ToString()));
+                        selectorBuilder.Clear();
+                    }
+                    state = SelectorAccumulatorState.ClassSelector;
+                }
+                else
+                {
+                    selectorBuilder.Append(c);
+                }
+            }
+
+            // Flush any remaining selector
+            if (selectorBuilder.Length > 0)
+            {
+                selectors.Add((state, selectorBuilder.ToString()));
+            }
+
+            // Step 3. For now, we don't actually want any Default selectors, this might change
+            if (selectors.Any(s => s.Type == SelectorAccumulatorState.Default))
+            {
+                throw new ArgumentException($"Selector '{selector}' must contain selectors that are only ID selectors (i.e. #id) or class selectors (i.e. .class).");
+            }
+
+            // Step 4. Check if any selector matches
+            foreach (var (type, sel) in selectors)
+            {
+                if (type == SelectorAccumulatorState.IdSelector)
+                {
+                    if (identifiable.Id == sel)
+                    {
+                        return true;
+                    }
+                }
+                else if (type == SelectorAccumulatorState.ClassSelector)
+                {
+                    if (identifiable.Classes.Contains(sel))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+}

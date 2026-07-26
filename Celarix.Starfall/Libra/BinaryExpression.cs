@@ -15,45 +15,49 @@ namespace Celarix.Starfall.Libra
             LibraExpression right,
             SColor foregroundColor,
             SColor backgroundColor,
-            string? id = null)
+            string? id = null) : base(id)
         {
             Operator = @operator;
             Left = left;
             Right = right;
             ForegroundColor = foregroundColor;
             BackgroundColor = backgroundColor;
-            Id = id;
+        }
+
+        private BinaryExpression(string @operator,
+            LibraExpression left,
+            LibraExpression right,
+            SColor foregroundColor,
+            SColor backgroundColor,
+            LibraId libraId) : base(libraId)
+        {
+            Operator = @operator;
+            Left = left;
+            Right = right;
+            ForegroundColor = foregroundColor;
+            BackgroundColor = backgroundColor;
         }
 
         protected internal override LibraLayoutResult Layout(LibraRenderingContext context)
         {
-            var marginWidth =
-                context.MeasurementService.MeasureText("m", context.Font).Width
-                * MarginWidthMultipleOfFontSize;
+            var marginWidth = context.Em  * MarginWidthMultipleOfFontSize;
 
             var left = Left.Layout(context);
             var right = Right.Layout(context);
+            var op = TextExpression.LayoutText(context, Operator, ForegroundColor, BackgroundColor, Id.RenderableKey("operator"));
+            Console.WriteLine($"In BinaryExpression.Layout: left={left.Bounds}, right={right.Bounds}, op={op.Size}, op id={Id.RenderableKey("operator")}");
 
-            // It's worth using TextExpression internally so operators follow
-            // precisely the same text metric rules as ordinary text.
-            var operatorExpression = new TextExpression(
-                Operator,
-                id: null,
-                foregroundColor: ForegroundColor,
-                backgroundColor: BackgroundColor);
-
-            var op = operatorExpression.Layout(context);
-
+            // TOIMPROVE
             var commonAxisY = Math.Max(
                 left.MathAxisY,
-                Math.Max(op.MathAxisY, right.MathAxisY));
+                Math.Max(TextExpression.MathAxisY(context), right.MathAxisY));
 
             var leftX = 0d;
             var operatorX = left.Bounds.Width + marginWidth;
             var rightX = operatorX + op.Bounds.Width + marginWidth;
 
             var leftY = commonAxisY - left.MathAxisY;
-            var operatorY = commonAxisY - op.MathAxisY;
+            var operatorY = commonAxisY - TextExpression.MathAxisY(context);
             var rightY = commonAxisY - right.MathAxisY;
 
             var renderables = new List<LibraRenderable>();
@@ -62,7 +66,7 @@ namespace Celarix.Starfall.Libra
                 MoveRenderablesCopy(left.Renderables, new SPointF(leftX, leftY)));
 
             renderables.AddRange(
-                MoveRenderablesCopy(op.Renderables, new SPointF(operatorX, operatorY)));
+                MoveRenderablesCopy([op], new SPointF(operatorX, operatorY)));
 
             renderables.AddRange(
                 MoveRenderablesCopy(right.Renderables, new SPointF(rightX, rightY)));
@@ -76,11 +80,7 @@ namespace Celarix.Starfall.Libra
 
             MoveRenderables(renderables, normalizationOffset);
 
-            var normalizedBounds = new SRectF(
-                0,
-                0,
-                rawBounds.Width,
-                rawBounds.Height);
+            var normalizedBounds = rawBounds.At(SPointF.Zero);
 
             var normalizedAxisY = commonAxisY - rawBounds.Top;
 
@@ -92,7 +92,7 @@ namespace Celarix.Starfall.Libra
             var commonBaselineY = Math.Max(
                 leftY + left.BaselineY,
                 Math.Max(
-                    operatorY + op.BaselineY,
+                    operatorY + TextExpression.BaselineY(context),
                     rightY + right.BaselineY));
 
             var normalizedBaselineY = commonBaselineY - rawBounds.Top;
@@ -100,13 +100,53 @@ namespace Celarix.Starfall.Libra
             Console.WriteLine(
                 $"Left: baseline={left.BaselineY}, axis={left.MathAxisY}");
             Console.WriteLine(
-                $"Op: baseline={op.BaselineY}, axis={op.MathAxisY}");
+                $"Op: baseline={TextExpression.BaselineY(context)}, axis={TextExpression.MathAxisY(context)}");
 
             return new LibraLayoutResult(
                 renderables,
                 normalizedBounds,
                 normalizedBaselineY,
                 normalizedAxisY);
+        }
+
+        protected internal override IReadOnlyList<LibraExpression> GetChildren() => [Left, Right];
+
+        public override LibraExpression Replace(string querySelector, Func<LibraExpression, LibraExpression> replacementFactory)
+        {
+            var newLeft = ReplaceChild(Left, querySelector, replacementFactory);
+            var newRight = ReplaceChild(Right, querySelector, replacementFactory);
+
+            if (ReferenceEquals(newLeft, Left)
+                && ReferenceEquals(newRight, Right))
+            {
+                return this;
+            }
+
+            return WithChildren(newLeft, newRight);
+        }
+
+        private static LibraExpression ReplaceChild(
+            LibraExpression child,
+            string querySelector,
+            Func<LibraExpression, LibraExpression> replacementFactory)
+        {
+            if (child.Id.Matches(querySelector))
+            {
+                return replacementFactory(child);
+            }
+
+            return child.Replace(querySelector, replacementFactory);
+        }
+
+        private BinaryExpression WithChildren(LibraExpression newLeft, LibraExpression newRight)
+        {
+            return new BinaryExpression(
+                Operator,
+                newLeft,
+                newRight,
+                ForegroundColor,
+                BackgroundColor,
+                Id);
         }
     }
 }

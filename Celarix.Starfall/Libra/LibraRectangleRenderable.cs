@@ -8,15 +8,15 @@ namespace Celarix.Starfall.Libra
 {
     public sealed class LibraRectangleRenderable : LibraRenderable
     {
-        public LibraRectangleRenderable(SSizeF size, SColor fillColor, string? id = null)
-            : base(fillColor, SColor.Transparent, id)
+        public LibraRectangleRenderable(LibraRenderableKey key, SSizeF size, SColor fillColor)
+            : base(key, fillColor, SColor.Transparent)
         {
             Size = size;
         }
 
         public override LibraRenderable Clone()
         {
-            return new LibraRectangleRenderable(Size, ForegroundColor, Id)
+            return new LibraRectangleRenderable(Key, Size, ForegroundColor)
             {
                 Position = Position,
             };
@@ -25,7 +25,7 @@ namespace Celarix.Starfall.Libra
         public override void RenderAt(IRenderTarget target, SPointF position, double scaleFactor)
         {
             var newBounds = new SRectF(position, Size * scaleFactor);
-            target.DrawRectangle(newBounds, ForegroundColor, SPaintStyle.Fill, SAngle.Zero);
+            target.DrawRectangle(newBounds, ForegroundColor.WithOpacity(Opacity), SPaintStyle.Fill, SAngle.Zero);
         }
     }
 }

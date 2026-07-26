@@ -13,6 +13,7 @@ namespace Celarix.Starfall.Playground.DelphinusTests
     internal sealed class DelphinusSlide : AtriaSlide
     {
         private static readonly SFont _baseFont = new SFontFamily("Calibri", 60f);
+        private int _state = 0;
 
         public DelphinusSlide(int width, int height) : base(width, height)
         {
@@ -23,11 +24,24 @@ namespace Celarix.Starfall.Playground.DelphinusTests
             BackgroundColor = new SColor(8, 0, 130, 255);
 
             var libraElement = new LibraElement(
-                AddExpr(Frac(Text("4"), Text("2")), Text("y", "y")),
-                _baseFont);
+                AddExpr(Text("x", "#x"), Text("y", "#y")),
+                _baseFont, "#libra");
             var anchor = new BasisPoint(Center, "anchor");
             libraElement.AnchorCenterTo(anchor);
             Add([libraElement, anchor]);
+        }
+
+        public override SlideAdvanceResult Advance()
+        {
+            if (_state == 0)
+            {
+                var libraElement = (LibraElement)Query("#libra").Single();
+                libraElement.TransformAnimate(root =>
+                    root.ReplaceFromRoot("#x",
+                        _ => Frac(Text("4"), Text("2"), "#x")), 0.75d);
+                _state = 1;
+            }
+            return SlideAdvanceResult.InternalStateChanged;
         }
     }
 }

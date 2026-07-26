@@ -5,7 +5,7 @@ namespace Celarix.Starfall.Libra
 {
     public abstract class LibraRenderable
     {
-        public string? Id { get; set; }
+        protected internal LibraRenderableKey Key { get; }
         
         public SPointF Position { get; set; }
         public SSizeF Size { get; set; }
@@ -14,16 +14,17 @@ namespace Celarix.Starfall.Libra
         public SColor ForegroundColor { get; set; }
         public SColor BackgroundColor { get; set; }
 
-        public LibraRenderable(string? id = null) : this(SColor.White, SColor.Transparent, id)
-        {
+        public double Opacity { get; set; } = 1.0;
 
+        public LibraRenderable(LibraRenderableKey key, string? id = null) : this(key, SColor.White, SColor.Transparent)
+        {
         }
 
-        public LibraRenderable(SColor foregroundColor, SColor backgroundColor, string? id = null)
+        public LibraRenderable(LibraRenderableKey key, SColor foregroundColor, SColor backgroundColor)
         {
             ForegroundColor = foregroundColor;
             BackgroundColor = backgroundColor;
-            Id = id;
+            Key = key;
         }
 
         public abstract void RenderAt(IRenderTarget target, SPointF position, double scaleFactor);
@@ -35,8 +36,8 @@ namespace Celarix.Starfall.Libra
     {
         public SFont Font { get; set; }
 
-        public LibraFontRenderable(SFont font, SColor foregroundColor, SColor backgroundColor, string? id = null)
-            : base(foregroundColor, backgroundColor, id)
+        public LibraFontRenderable(LibraRenderableKey key, SFont font, SColor foregroundColor, SColor backgroundColor)
+            : base(key, foregroundColor, backgroundColor)
         {
             Font = font;
         }

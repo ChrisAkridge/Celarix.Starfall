@@ -63,6 +63,15 @@ namespace Celarix.Starfall.Layout.Helium
         }
 
         /// <summary>
+        /// Computes the left-aligned position for an inner element within an outer container. The
+        /// inner element will be flush with the left edge of the outer container.
+        /// </summary>
+        /// <param name="outerWidth">The width of the outer container.</param>
+        /// <param name="innerWidth">The width of the inner element.</param>
+        /// <returns>The left-aligned position for the inner element.</returns>
+        public static double LeftAlign(double outerWidth, double innerWidth) => LeftAlign(0d, outerWidth, innerWidth);
+
+        /// <summary>
         /// Calculates the left coordinate required to right-align an inner element within an outer boundary.
         /// </summary>
         /// <remarks>Use this method when positioning an element so that its right edge matches the right
@@ -77,6 +86,15 @@ namespace Celarix.Starfall.Layout.Helium
         {
             return outerRight - innerWidth;
         }
+
+        /// <summary>
+        /// Calculates the left coordinate required to right-align an inner element within an outer boundary.
+        /// </summary>
+        /// <param name="outerWidth">The width of the outer boundary.</param>
+        /// <param name="innerWidth">The width of the inner element to be aligned. Must be non-negative.</param>
+        /// <returns>The left coordinate at which the inner element should be positioned to align its right edge with the outer
+        /// boundary.</returns>
+        public static double RightAlign(double outerWidth, double innerWidth) => RightAlign(0d, outerWidth, innerWidth);
 
         /// <summary>
         /// Calculates the correct coordinate required to center-align an inner element within an outer boundary.
@@ -94,5 +112,17 @@ namespace Celarix.Starfall.Layout.Helium
             var totalSpace = outerRight - outerLeft;
             return outerLeft + (totalSpace - innerWidth) / 2;
         }
+
+        /// <summary>
+        /// Calculates the correct coordinate required to center-align an inner element within an outer boundary.
+        /// </summary>
+        /// <remarks>Use this method when positioning an element so that its center matches the center
+        /// of a container. The returned value does not account for cases where the inner element may not fit
+        /// within the outer boundary.</remarks>
+        /// <param name="outerWidth">The width of the outer boundary.</param>
+        /// <param name="innerWidth">The width of the inner element to be aligned. Must be non-negative.</param>
+        /// <returns>The left coordinate at which the inner element should be positioned to align its center with the outer
+        /// boundary.</returns>
+        public static double CenterAlign(double outerWidth, double innerWidth) => CenterAlign(0d, outerWidth, innerWidth);
     }
 }

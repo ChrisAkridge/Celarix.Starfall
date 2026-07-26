@@ -23,7 +23,13 @@ namespace Celarix.Starfall.Playground.Presentations
             };
             var layoutEngine = new AtriaLayoutEngine(1280, 720);
             var tkTarget = new SkiaTkTarget(1280, 720, 60, "Starfall Playground", layoutEngine);
-            tkTarget.KeyUp += TkTarget_KeyUp;
+            tkTarget.KeyUp += (sender, args) =>
+            {
+                if (args.Key == Keys.Right)
+                {
+                    layoutEngine.AdvanceCurrentSlide();
+                }
+            };
 
             layoutEngine.SetRenderTarget(tkTarget);
             var measurementService = new Rendering.MeasurementService(tkTarget);

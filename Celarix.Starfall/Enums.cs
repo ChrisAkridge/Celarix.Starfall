@@ -176,4 +176,11 @@ namespace Celarix.Starfall
         Color,
         Luminosity
     }
+
+    public enum SelectorAccumulatorState
+    {
+        Default,
+        IdSelector,
+        ClassSelector
+    }
 }

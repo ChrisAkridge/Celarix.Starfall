@@ -28,5 +28,10 @@ namespace Celarix.Starfall.Libra
             var scaledFont = Font.WithSize((Font.Size ?? 12f) * (float)scaleFactor);
             return new LibraRenderingContext(MeasurementService, scaledFont);
         }
+
+        public double ScaleEm(double scaleFactor)
+        {
+            return Em * scaleFactor;
+        }
     }
 }
