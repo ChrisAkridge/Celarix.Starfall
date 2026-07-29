@@ -1,7 +1,7 @@
 ﻿using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 
-namespace Celarix.Starfall.Libra
+namespace Celarix.Starfall.Libra.Renderables
 {
     public abstract class LibraRenderable
     {

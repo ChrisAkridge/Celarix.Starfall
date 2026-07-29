@@ -1,11 +1,12 @@
 ﻿using Celarix.Starfall.Identity;
 using Celarix.Starfall.Layout.Helium;
+using Celarix.Starfall.Libra.Renderables;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Libra
+namespace Celarix.Starfall.Libra.Expressions
 {
     public abstract class LibraExpression
     {

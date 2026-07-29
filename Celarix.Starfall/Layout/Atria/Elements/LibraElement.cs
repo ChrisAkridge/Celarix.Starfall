@@ -1,6 +1,8 @@
 ﻿using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Helium.Renderables;
 using Celarix.Starfall.Libra;
+using Celarix.Starfall.Libra.Expressions;
+using Celarix.Starfall.Libra.Renderables;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;

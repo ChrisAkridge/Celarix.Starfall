@@ -183,4 +183,38 @@ namespace Celarix.Starfall
         IdSelector,
         ClassSelector
     }
+
+    public enum SStrokeCap
+    {
+        /// <summary>
+        /// Begin/end contours with no extension. This is the default behavior.
+        /// </summary>
+        Butt,
+
+        /// <summary>
+        /// Begin/end contours with a semicircular extension.
+        /// </summary>
+        Round,
+
+        /// <summary>
+        /// Begin/end contours with a square extension.
+        /// </summary>
+        Square
+    }
+
+    public enum SStrokeJoin
+    {
+        /// <summary>
+        /// Connect path segments with a sharp join. This is the default behavior.
+        /// </summary>
+        Miter,
+        /// <summary>
+        /// Connect path segments with a rounded join.
+        /// </summary>
+        Round,
+        /// <summary>
+        /// Connect path segments with a beveled join.
+        /// </summary>
+        Bevel
+    }
 }

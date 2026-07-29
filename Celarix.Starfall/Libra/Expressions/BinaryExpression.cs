@@ -1,10 +1,11 @@
-﻿using Celarix.Starfall.Rendering.Models;
+﻿using Celarix.Starfall.Libra.Renderables;
+using Celarix.Starfall.Rendering.Models;
 
-namespace Celarix.Starfall.Libra
+namespace Celarix.Starfall.Libra.Expressions
 {
     public sealed class BinaryExpression : LibraExpression
     {
-        private const double MarginWidthMultipleOfFontSize = 0.75d;
+        private const double MarginWidthEm = 0.75d;
 
         public string Operator { get; set; }
         public LibraExpression Left { get; set; }
@@ -40,7 +41,7 @@ namespace Celarix.Starfall.Libra
 
         protected internal override LibraLayoutResult Layout(LibraRenderingContext context)
         {
-            var marginWidth = context.Em  * MarginWidthMultipleOfFontSize;
+            var marginWidth = context.Em  * MarginWidthEm;
 
             var left = Left.Layout(context);
             var right = Right.Layout(context);
@@ -96,11 +97,6 @@ namespace Celarix.Starfall.Libra
                     rightY + right.BaselineY));
 
             var normalizedBaselineY = commonBaselineY - rawBounds.Top;
-
-            Console.WriteLine(
-                $"Left: baseline={left.BaselineY}, axis={left.MathAxisY}");
-            Console.WriteLine(
-                $"Op: baseline={TextExpression.BaselineY(context)}, axis={TextExpression.MathAxisY(context)}");
 
             return new LibraLayoutResult(
                 renderables,

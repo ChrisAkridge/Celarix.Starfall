@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Rendering.Models;
+﻿using Celarix.Starfall.Libra.Renderables;
+using Celarix.Starfall.Rendering.Models;
 using System.Collections.Immutable;
 
 namespace Celarix.Starfall.Libra

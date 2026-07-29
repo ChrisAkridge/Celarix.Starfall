@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Libra
+namespace Celarix.Starfall.Libra.Renderables
 {
     public readonly record struct LibraRenderableKey(
         Guid ExpressionId,

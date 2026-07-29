@@ -1,11 +1,12 @@
 ﻿using Celarix.Starfall.Layout.Helium;
+using Celarix.Starfall.Libra.Renderables;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Libra
+namespace Celarix.Starfall.Libra.Expressions
 {
     public sealed class FractionExpression : LibraExpression
     {
@@ -72,10 +73,6 @@ namespace Celarix.Starfall.Libra
 
             var numeratorRenderables = MoveRenderablesCopy(numerator.Renderables, new SPointF(numeratorX, 0));
             var denominatorRenderables = MoveRenderablesCopy(denominator.Renderables, new SPointF(denominatorX, denominatorY));
-
-            Console.WriteLine(
-                $"Fraction: baseline={baselineY}, axis={mathAxisY}, " +
-                $"bar center={barY + barThickness / 2d}");
 
             return new LibraLayoutResult(
                 numeratorRenderables

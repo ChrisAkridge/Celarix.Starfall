@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Libra
+namespace Celarix.Starfall.Libra.Renderables
 {
     public sealed class LibraRectangleRenderable : LibraRenderable
     {

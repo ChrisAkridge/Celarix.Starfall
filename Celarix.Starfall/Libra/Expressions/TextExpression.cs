@@ -1,6 +1,7 @@
-﻿using Celarix.Starfall.Rendering.Models;
+﻿using Celarix.Starfall.Libra.Renderables;
+using Celarix.Starfall.Rendering.Models;
 
-namespace Celarix.Starfall.Libra
+namespace Celarix.Starfall.Libra.Expressions
 {
     public sealed class TextExpression : LibraExpression
     {
