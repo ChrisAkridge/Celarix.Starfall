@@ -15,14 +15,6 @@ namespace Celarix.Starfall.Libra.Expressions
             public SRectF PlacedBounds => Layout.Bounds + Offset;
         }
 
-        private const double SuperscriptBaselineRaiseEm = 0.35d;
-        private const double SubscriptBaselineDropEm = 0.20d;
-        private const double HorizontalMarginEm = 0.05d;
-        private const double FontSizeMultiplier = 0.65d;
-        private const double ClearanceEm = 0.05d;
-        private const double ScriptGapEm = 0.10d;
-        private const double SuperscriptSeparationShare = 0.20d;
-
         public LibraExpression BaseExpression { get; set; }
         public LibraExpression? Superscript { get; set; }
         public LibraExpression? Subscript { get; set; }
@@ -106,11 +98,12 @@ namespace Celarix.Starfall.Libra.Expressions
             double baseBaselineY,
             double baseRight)
         {
-            var baselineRaise = SuperscriptBaselineRaiseEm * context.Em;
-            var clearance = ClearanceEm * context.Em;
-            var horizontalMargin = HorizontalMarginEm * context.Em;
+            var metrics = context.Metrics.Scripts;
+            var baselineRaise = metrics.SuperscriptBaselineRaiseEm * context.Em;
+            var clearance = metrics.ClearanceEm * context.Em;
+            var horizontalMargin = metrics.HorizontalMarginEm * context.Em;
 
-            var layout = Superscript!.Layout(context.ScaleFont(FontSizeMultiplier));
+            var layout = Superscript!.Layout(context.ScaleFont(metrics.FontSizeMultiplier));
             var yFromBaselineRaise = baseBaselineY - baselineRaise - layout.BaselineY;
             var yFromBottomClearence = baseBaselineY - clearance - layout.Bounds.Bottom;
 
@@ -124,11 +117,12 @@ namespace Celarix.Starfall.Libra.Expressions
             double baseBaselineY,
             double baseRight)
         {
-            var baselineDrop = SubscriptBaselineDropEm * context.Em;
-            var clearance = ClearanceEm * context.Em;
-            var horizontalMargin = HorizontalMarginEm * context.Em;
+            var metrics = context.Metrics.Scripts;
+            var baselineDrop = metrics.SubscriptBaselineDropEm * context.Em;
+            var clearance = metrics.ClearanceEm * context.Em;
+            var horizontalMargin = metrics.HorizontalMarginEm * context.Em;
 
-            var layout = Subscript!.Layout(context.ScaleFont(FontSizeMultiplier));
+            var layout = Subscript!.Layout(context.ScaleFont(metrics.FontSizeMultiplier));
             var yFromBaselineDrop = baseBaselineY + baselineDrop - layout.BaselineY;
             var yFromTopClearence = baseBaselineY + clearance - layout.Bounds.Top;
             
@@ -140,7 +134,8 @@ namespace Celarix.Starfall.Libra.Expressions
 
         private static void SeparateScripts(LibraRenderingContext context, ref ScriptPlacement superscript, ref ScriptPlacement subscript)
         {
-            var minimumGap = ScriptGapEm * context.Em;
+            var metrics = context.Metrics.Scripts;
+            var minimumGap = metrics.ScriptGapEm * context.Em;
             var superscriptBounds = superscript.Layout.Bounds + superscript.Offset;
             var subscriptBounds = subscript.Layout.Bounds + subscript.Offset;
 
@@ -155,7 +150,7 @@ namespace Celarix.Starfall.Libra.Expressions
             if (currentGap >= minimumGap) { return; }
 
             var requiredSeparation = minimumGap - currentGap;
-            var superscriptAdjustment = requiredSeparation * SuperscriptSeparationShare;
+            var superscriptAdjustment = requiredSeparation * metrics.SuperscriptSeparationShare;
             var subscriptAdjustment = requiredSeparation - superscriptAdjustment;
 
             superscript = superscript with { Offset = new(superscript.Offset.X, superscript.Offset.Y - superscriptAdjustment) };
@@ -185,7 +180,6 @@ namespace Celarix.Starfall.Libra.Expressions
             if (hasNewBase || hasNewSuperscript || hasNewSubscript)
             {
                 return WithChildren(newBase, newSuperscript, newSubscript);
-
             }
             else
             {

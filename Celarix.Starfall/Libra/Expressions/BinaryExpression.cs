@@ -5,8 +5,6 @@ namespace Celarix.Starfall.Libra.Expressions
 {
     public sealed class BinaryExpression : LibraExpression
     {
-        private const double MarginWidthEm = 0.75d;
-
         public string Operator { get; set; }
         public LibraExpression Left { get; set; }
         public LibraExpression Right { get; set; }
@@ -41,7 +39,8 @@ namespace Celarix.Starfall.Libra.Expressions
 
         protected internal override LibraLayoutResult Layout(LibraRenderingContext context)
         {
-            var marginWidth = context.Em  * MarginWidthEm;
+            var metrics = context.Metrics.BinaryExpressions;
+            var marginWidth = context.Em  * metrics.MarginWidthEm;
 
             var left = Left.Layout(context);
             var right = Right.Layout(context);

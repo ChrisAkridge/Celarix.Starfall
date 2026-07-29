@@ -11,6 +11,9 @@ namespace Celarix.Starfall.Libra
         private static readonly SColor FC = SColor.White;
         private static readonly SColor BC = SColor.Transparent;
 
+        public static RowExpression Concat(params LibraExpression[] children) => new(children, 0d);
+        public static RowExpression Concat(string id, params LibraExpression[] children) => new(children, 0d, id);
+
         public static TextExpression Text(string text) => new(text, FC, BC);
         public static TextExpression Text(string text, string id) => new(text, FC, BC, id);
         public static TextExpression Text(string text, SColor foregroundColor, SColor backgroundColor, string? id = null) => new(text, foregroundColor, backgroundColor, id);
@@ -34,9 +37,15 @@ namespace Celarix.Starfall.Libra
         public static FractionExpression Frac(LibraExpression numerator, LibraExpression denominator, SColor foregroundColor, SColor backgroundColor, string? id = null) =>
             new(numerator, denominator, foregroundColor, backgroundColor, id);
 
+        // Binary expressions
         public static BinaryExpression AddExpr(LibraExpression left, LibraExpression right) => new("+", left, right, FC, BC);
         public static BinaryExpression AddExpr(LibraExpression left, LibraExpression right, string? id) => new("+", left, right, FC, BC, id);
         public static BinaryExpression AddExpr(LibraExpression left, LibraExpression right, SColor foregroundColor, SColor backgroundColor, string? id = null) =>
             new("+", left, right, foregroundColor, backgroundColor, id);
+
+        public static BinaryExpression EqualByDef(LibraExpression left, LibraExpression right) => new("≝", left, right, FC, BC);
+        public static BinaryExpression EqualByDef(LibraExpression left, LibraExpression right, string? id) => new("≝", left, right, FC, BC, id);
+        public static BinaryExpression EqualByDef(LibraExpression left, LibraExpression right, SColor foregroundColor, SColor backgroundColor, string? id = null) =>
+            new("≝", left, right, foregroundColor, backgroundColor, id);
     }
 }

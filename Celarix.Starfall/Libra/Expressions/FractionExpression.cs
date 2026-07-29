@@ -10,12 +10,6 @@ namespace Celarix.Starfall.Libra.Expressions
 {
     public sealed class FractionExpression : LibraExpression
     {
-        private const double ScriptScale = 0.8d;
-        private const double SidePaddingEm = 0.12d;
-        private const double NumeratorGapEm = 0.15d;
-        private const double DenominatorGapEm = 0.15d;
-        private const double VinculumThicknessEm = 0.06d;
-
         public LibraExpression Numerator { get; set; }
         public LibraExpression Denominator { get; set; }
 
@@ -45,13 +39,15 @@ namespace Celarix.Starfall.Libra.Expressions
 
         protected internal override LibraLayoutResult Layout(LibraRenderingContext context)
         {
-            var numerator = Numerator.Layout(context.ScaleFont(ScriptScale));
-            var denominator = Denominator.Layout(context.ScaleFont(ScriptScale));
+            var metrics = context.Metrics.Fractions;
 
-            var sidePadding = context.Em * SidePaddingEm;
-            var numeratorGap = context.Em * NumeratorGapEm;
-            var denominatorGap = context.Em * DenominatorGapEm;
-            var barThickness = context.Em * VinculumThicknessEm;
+            var numerator = Numerator.Layout(context.ScaleFont(metrics.ScriptScale));
+            var denominator = Denominator.Layout(context.ScaleFont(metrics.ScriptScale));
+
+            var sidePadding = context.Em * metrics.SidePaddingEm;
+            var numeratorGap = context.Em * metrics.NumeratorGapEm;
+            var denominatorGap = context.Em * metrics.DenominatorGapEm;
+            var barThickness = context.Em * metrics.VinculumThicknessEm;
 
             var width = MathHelpers.PadSides(Math.Max(numerator.Bounds.Width, denominator.Bounds.Width), sidePadding);
 

@@ -8,8 +8,6 @@ namespace Celarix.Starfall.Libra.Expressions
 {
     public sealed class ParenthesizedExpression : LibraExpression
     {
-        private const double InnerMarginEm = 0.225d;
-
         public LibraExpression Expression { get; set; }
 
         public ParenthesizedExpression(LibraExpression expression,
@@ -56,7 +54,8 @@ namespace Celarix.Starfall.Libra.Expressions
 
         protected internal override LibraLayoutResult Layout(LibraRenderingContext context)
         {
-            var innerMargin = context.Em * InnerMarginEm;
+            var metrics = context.Metrics.Fences;
+            var innerMargin = context.Em * metrics.InnerMarginEm;
 
             var leftParen = TextExpression.LayoutText(context, "(", ForegroundColor, BackgroundColor, Id.RenderableKey("left-paren"));
             var expressionLayout = Expression.Layout(context);
@@ -87,7 +86,7 @@ namespace Celarix.Starfall.Libra.Expressions
             var normalizedAxisY = commonAxisY + normalizationOffset.Y;
             var normalizedBaselineY = expressionLayout.BaselineY + normalizationOffset.Y;
 
-            return new LibraLayoutResult(renderables, normalizedBounds, normalizedAxisY, normalizedBaselineY);
+            return new LibraLayoutResult(renderables, normalizedBounds, normalizedBaselineY, normalizedAxisY);
         }
     }
 }

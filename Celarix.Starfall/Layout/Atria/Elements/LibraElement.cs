@@ -2,6 +2,7 @@
 using Celarix.Starfall.Layout.Helium.Renderables;
 using Celarix.Starfall.Libra;
 using Celarix.Starfall.Libra.Expressions;
+using Celarix.Starfall.Libra.Metrics;
 using Celarix.Starfall.Libra.Renderables;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering;
@@ -31,6 +32,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
         private AnimationContext _animationContext;
         private IReadOnlyList<LibraRenderable> _renderables;
         private ExpressionLayoutState _state;
+        private LibraMetrics _metrics;
         private LibraExpression _root;
         private LibraExpression? _rootAfterTransform;
         private SSizeF _layoutSize;
@@ -46,6 +48,13 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             _animationContext = new AnimationContext();
             _renderables = Array.Empty<LibraRenderable>();
             _state = ExpressionLayoutState.Dirty;
+            _metrics = new LibraMetrics
+            {
+                BinaryExpressions = new BinaryExpressionMetrics(),
+                Fences = new FenceMetrics(),
+                Fractions = new FractionMetrics(),
+                Scripts = new ScriptsMetrics()
+            };
 
             if (BaseFont.Size == null)
             {
@@ -89,7 +98,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
                 return;
             }
 
-            var context = new LibraRenderingContext(measurementService, BaseFont);
+            var context = new LibraRenderingContext(measurementService, BaseFont, _metrics);
             var layout = _root.Layout(context);
             _renderables = layout.Renderables;
             _layoutSize = layout.Bounds.Size;
@@ -112,7 +121,8 @@ namespace Celarix.Starfall.Layout.Atria.Elements
 
             var durationInFrames = AnimationContext.SecondsToFrames(duration);
             var renderingContext = new LibraRenderingContext(Slide?.MeasurementService
-                ?? throw new InvalidOperationException("Slide must be set before transforming."), BaseFont);
+                ?? throw new InvalidOperationException("Slide must be set before transforming."), BaseFont,
+                _metrics);
 
             LibraLayoutResult oldLayout = _root.Layout(renderingContext);
             LibraLayoutResult newLayout = _rootAfterTransform.Layout(renderingContext);
