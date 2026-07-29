@@ -24,7 +24,7 @@ namespace Celarix.Starfall.Playground.DelphinusTests
             BackgroundColor = new SColor(8, 0, 130, 255);
 
             var libraElement = new LibraElement(
-                AddExpr(Text("x", "#x"), Text("y", "#y")),
+                Exp(Paren(AddExpr(Text("x", "#x"), Text("y", "#y"))), Text("2")),
                 _baseFont, "#libra");
             var anchor = new BasisPoint(Center, "anchor");
             libraElement.AnchorCenterTo(anchor);
@@ -36,9 +36,9 @@ namespace Celarix.Starfall.Playground.DelphinusTests
             if (_state == 0)
             {
                 var libraElement = (LibraElement)Query("#libra").Single();
-                libraElement.TransformAnimate(root =>
-                    root.ReplaceFromRoot("#x",
-                        _ => Frac(Text("4"), Text("2"), "#x")), 0.75d);
+                //libraElement.TransformAnimate(root =>
+                //    root.ReplaceFromRoot("#x",
+                //        _ => Frac(Text("4"), Text("2"), "#x")), 0.75d);
                 _state = 1;
             }
             return SlideAdvanceResult.InternalStateChanged;
