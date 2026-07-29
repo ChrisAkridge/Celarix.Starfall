@@ -20,6 +20,7 @@ namespace Celarix.Starfall.Libra
         private const double FontSizeMultiplier = 0.65d;
         private const double ClearanceEm = 0.05d;
         private const double ScriptGapEm = 0.10d;
+        private const double SuperscriptSeparationShare = 0.20d;
 
         public LibraExpression BaseExpression { get; set; }
         public LibraExpression? Superscript { get; set; }
@@ -62,14 +63,32 @@ namespace Celarix.Starfall.Libra
             var baseLayout = BaseExpression.Layout(context);
             renderables.AddRange(baseLayout.Renderables);
 
+            ScriptPlacement? superscriptPlacement = null;
+            ScriptPlacement? subscriptPlacement = null;
+            
             if (Superscript != null)
             {
-                renderables.AddRange(LayoutSuperscript(context, baseLayout.BaselineY, baseLayout.Bounds.Right));
+                superscriptPlacement = LayoutSuperscript(context, baseLayout.BaselineY, baseLayout.Bounds.Right);
             }
 
             if (Subscript != null)
             {
-                renderables.AddRange(LayoutSubscript(context, baseLayout.BaselineY, baseLayout.Bounds.Right));
+                subscriptPlacement = LayoutSubscript(context, baseLayout.BaselineY, baseLayout.Bounds.Right);
+            }
+
+            if (superscriptPlacement != null && subscriptPlacement != null)
+            {
+                SeparateScripts(context, ref superscriptPlacement, ref subscriptPlacement);
+            }
+
+            if (superscriptPlacement != null)
+            {
+                renderables.AddRange(MoveRenderablesCopy(superscriptPlacement.Layout.Renderables, superscriptPlacement.Offset));
+            }
+
+            if (subscriptPlacement != null)
+            {
+                renderables.AddRange(MoveRenderablesCopy(subscriptPlacement.Layout.Renderables, subscriptPlacement.Offset));
             }
 
             var rawBounds = SRectF.BoundsOf(renderables.Select(r => r.Bounds));
@@ -82,51 +101,64 @@ namespace Celarix.Starfall.Libra
             return new LibraLayoutResult(renderables, rawBounds + normalizationOffset, baselineY, mathAxisY);
         }
 
-        private IEnumerable<LibraRenderable> LayoutSuperscript(LibraRenderingContext context,
+        private ScriptPlacement LayoutSuperscript(LibraRenderingContext context,
             double baseBaselineY,
             double baseRight)
         {
-            var verticalOffset = SuperscriptBaselineRaiseEm * context.Em;
+            var baselineRaise = SuperscriptBaselineRaiseEm * context.Em;
             var clearance = ClearanceEm * context.Em;
             var horizontalMargin = HorizontalMarginEm * context.Em;
 
-            var superscriptLayout = Superscript!.Layout(context.ScaleFont(FontSizeMultiplier));
-            var targetBaselineY = baseBaselineY - verticalOffset;
-            var superscriptY = targetBaselineY - superscriptLayout.BaselineY;
-            var maximumBottomY = baseBaselineY - clearance;
-            var actualBottomY = superscriptLayout.Bounds.Bottom + superscriptY;
+            var layout = Superscript!.Layout(context.ScaleFont(FontSizeMultiplier));
+            var yFromBaselineRaise = baseBaselineY - baselineRaise - layout.BaselineY;
+            var yFromBottomClearence = baseBaselineY - clearance - layout.Bounds.Bottom;
 
-            if (actualBottomY > maximumBottomY)
-            {
-                superscriptY -= actualBottomY - maximumBottomY;
-            }
+            var y = Math.Min(yFromBaselineRaise, yFromBottomClearence);
+            var x = baseRight + horizontalMargin;
 
-            var superscriptX = baseRight + horizontalMargin;
-
-            return MoveRenderablesCopy(superscriptLayout.Renderables, new(superscriptX, superscriptY));
+            return new ScriptPlacement(layout, new(x, y));
         }
 
-        private IEnumerable<LibraRenderable> LayoutSubscript(LibraRenderingContext context,
+        private ScriptPlacement LayoutSubscript(LibraRenderingContext context,
             double baseBaselineY,
             double baseRight)
         {
-            var verticalOffset = SubscriptBaselineDropEm * context.Em;
+            var baselineDrop = SubscriptBaselineDropEm * context.Em;
             var clearance = ClearanceEm * context.Em;
             var horizontalMargin = HorizontalMarginEm * context.Em;
 
-            var subscriptLayout = Subscript!.Layout(context.ScaleFont(FontSizeMultiplier));
-            var targetBaselineY = baseBaselineY + verticalOffset;
-            var subscriptY = targetBaselineY - subscriptLayout.BaselineY;
-            var minimumTopY = baseBaselineY + clearance;
-            var actualTopY = subscriptLayout.Bounds.Top + subscriptY;
+            var layout = Subscript!.Layout(context.ScaleFont(FontSizeMultiplier));
+            var yFromBaselineDrop = baseBaselineY + baselineDrop - layout.BaselineY;
+            var yFromTopClearence = baseBaselineY + clearance - layout.Bounds.Top;
+            
+            var y = Math.Max(yFromBaselineDrop, yFromTopClearence);
+            var x = baseRight + horizontalMargin;
 
-            if (actualTopY < minimumTopY)
-            {
-                subscriptY += minimumTopY - actualTopY;
-            }
+            return new ScriptPlacement(layout, new(x, y));
+        }
 
-            var subscriptX = baseRight + horizontalMargin;
-            return MoveRenderablesCopy(subscriptLayout.Renderables, new(subscriptX, subscriptY));
+        private static void SeparateScripts(LibraRenderingContext context, ref ScriptPlacement superscript, ref ScriptPlacement subscript)
+        {
+            var minimumGap = ScriptGapEm * context.Em;
+            var superscriptBounds = superscript.Layout.Bounds + superscript.Offset;
+            var subscriptBounds = subscript.Layout.Bounds + subscript.Offset;
+
+            var overlapsHorizontally =
+                superscriptBounds.Right > subscriptBounds.Left
+                && subscriptBounds.Right > superscriptBounds.Left;
+
+            if (!overlapsHorizontally) { return; }
+
+            var currentGap = subscriptBounds.Top - superscriptBounds.Bottom;
+
+            if (currentGap >= minimumGap) { return; }
+
+            var requiredSeparation = minimumGap - currentGap;
+            var superscriptAdjustment = requiredSeparation * SuperscriptSeparationShare;
+            var subscriptAdjustment = requiredSeparation - superscriptAdjustment;
+
+            superscript = superscript with { Offset = new(superscript.Offset.X, superscript.Offset.Y - superscriptAdjustment) };
+            subscript = subscript with { Offset = new(subscript.Offset.X, subscript.Offset.Y + subscriptAdjustment) };
         }
 
         public override LibraExpression Replace(string querySelector, Func<LibraExpression, LibraExpression> replacementFactory)

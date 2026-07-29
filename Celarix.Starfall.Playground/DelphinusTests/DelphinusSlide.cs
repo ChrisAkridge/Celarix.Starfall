@@ -23,8 +23,13 @@ namespace Celarix.Starfall.Playground.DelphinusTests
         {
             BackgroundColor = new SColor(8, 0, 130, 255);
 
+            var baseExpr = Paren(AddExpr(Text("x", "#x"), Text("y", "#y")));
+            var exp = Frac(Text("1"), Text("2"));
+            var sub = Frac(AddExpr(Text("2"), Text("1")), Text("4"));
+            //var exp = Text("2");
+            //var sub = Text("3");
             var libraElement = new LibraElement(
-                Exp(Paren(AddExpr(Text("x", "#x"), Text("y", "#y"))), Text("2")),
+                ExpSub(baseExpr, exp, sub),
                 _baseFont, "#libra");
             var anchor = new BasisPoint(Center, "anchor");
             libraElement.AnchorCenterTo(anchor);
