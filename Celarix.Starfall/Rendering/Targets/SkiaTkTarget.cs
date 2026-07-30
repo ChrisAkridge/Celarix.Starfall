@@ -1,6 +1,7 @@
 ﻿using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Rendering.Initialization;
 using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Models.Path;
 using FastCache;
 using OpenTK.Graphics.ES11;
 using OpenTK.Windowing.Common;
@@ -227,6 +228,12 @@ namespace Celarix.Starfall.Rendering.Targets
         {
             if (surface?.Canvas == null) { return; }
             SkiaCommon.DrawPoint(surface.Canvas, point, color);
+        }
+
+        public void DrawPath(IEnumerable<SPathCommand> pathCommands, SPathStyle pathStyle)
+        {
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.DrawPath(surface.Canvas, pathCommands, pathStyle);
         }
 
         public IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size) => new SkiaOffscreenTarget((int)size.Width, (int)size.Height, grContext);

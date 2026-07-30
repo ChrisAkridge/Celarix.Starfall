@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Models.Path;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
@@ -55,6 +56,9 @@ namespace Celarix.Starfall.Rendering.Targets
 
         public void DrawPoint(SPointF point, SColor color) =>
             SkiaCommon.DrawPoint(_surface.Canvas, point, color);
+
+        public void DrawPath(IEnumerable<SPathCommand> pathCommands, SPathStyle pathStyle) =>
+            SkiaCommon.DrawPath(_surface.Canvas, pathCommands, pathStyle);
 
         public float FitTextToHeight(string text, SFont font, float height) =>
             SkiaTextRendering.FitTextToHeight(text, font, height);

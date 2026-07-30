@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Models.Path;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -24,6 +25,7 @@ namespace Celarix.Starfall.Rendering.Targets
         void DrawImage(SImage image, SRectF bounds, double opacity = 1d, SAngle? rotation = null);
         void DrawCroppedImage(SImage image, SRectF sourceRect, SRectF destRect, double opacity = 1d);
         void DrawPoint(SPointF point, SColor color);
+        void DrawPath(IEnumerable<SPathCommand> pathCommands, SPathStyle pathStyle);
 
         float FitTextToWidth(string text, SFont font, float width);
         float FitTextToHeight(string text, SFont font, float height);

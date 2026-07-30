@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Models.Path;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
@@ -68,6 +69,53 @@ namespace Celarix.Starfall.Rendering.Converters
                 SPaintStyle.Stroke => SKPaintStyle.Stroke,
                 SPaintStyle.StrokeAndFill => SKPaintStyle.StrokeAndFill,
                 _ => throw new ArgumentOutOfRangeException(nameof(paintStyle), $"Unsupported paint style: {paintStyle}")
+            };
+        }
+
+        public static SKPaint ToSKPaint(this SPathStyle pathStyle)
+        {
+            var isStroke = pathStyle.Stroke != null && pathStyle.StrokeWidth > 0;
+
+            if (isStroke)
+            {
+                return new SKPaint
+                {
+                    Color = pathStyle.Stroke?.ToSKColor() ?? SKColors.Transparent,
+                    StrokeWidth = (float)pathStyle.StrokeWidth,
+                    StrokeCap = pathStyle.Cap.ToSKStrokeCap(),
+                    StrokeJoin = pathStyle.Join.ToSKStrokeJoin(),
+                    Style = SKPaintStyle.Stroke
+                };
+            }
+            
+            return new SKPaint
+            {
+                Color = pathStyle.Fill?.ToSKColor() ?? SKColors.Transparent,
+                StrokeWidth = (float)pathStyle.StrokeWidth,
+                StrokeCap = pathStyle.Cap.ToSKStrokeCap(),
+                StrokeJoin = pathStyle.Join.ToSKStrokeJoin()
+            };
+        }
+
+        public static SKStrokeCap ToSKStrokeCap(this SStrokeCap strokeCap)
+        {
+            return strokeCap switch
+            {
+                SStrokeCap.Butt => SKStrokeCap.Butt,
+                SStrokeCap.Round => SKStrokeCap.Round,
+                SStrokeCap.Square => SKStrokeCap.Square,
+                _ => throw new ArgumentOutOfRangeException(nameof(strokeCap), $"Unsupported stroke cap: {strokeCap}")
+            };
+        }
+
+        public static SKStrokeJoin ToSKStrokeJoin(this SStrokeJoin strokeJoin)
+        {
+            return strokeJoin switch
+            {
+                SStrokeJoin.Miter => SKStrokeJoin.Miter,
+                SStrokeJoin.Round => SKStrokeJoin.Round,
+                SStrokeJoin.Bevel => SKStrokeJoin.Bevel,
+                _ => throw new ArgumentOutOfRangeException(nameof(strokeJoin), $"Unsupported stroke join: {strokeJoin}")
             };
         }
     }
