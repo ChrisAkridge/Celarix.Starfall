@@ -84,7 +84,8 @@ namespace Celarix.Starfall.Rendering.Converters
                     StrokeWidth = (float)pathStyle.StrokeWidth,
                     StrokeCap = pathStyle.Cap.ToSKStrokeCap(),
                     StrokeJoin = pathStyle.Join.ToSKStrokeJoin(),
-                    Style = SKPaintStyle.Stroke
+                    Style = SKPaintStyle.Stroke,
+                    IsAntialias = true
                 };
             }
             
@@ -93,7 +94,8 @@ namespace Celarix.Starfall.Rendering.Converters
                 Color = pathStyle.Fill?.ToSKColor() ?? SKColors.Transparent,
                 StrokeWidth = (float)pathStyle.StrokeWidth,
                 StrokeCap = pathStyle.Cap.ToSKStrokeCap(),
-                StrokeJoin = pathStyle.Join.ToSKStrokeJoin()
+                StrokeJoin = pathStyle.Join.ToSKStrokeJoin(),
+                IsAntialias = true
             };
         }
 

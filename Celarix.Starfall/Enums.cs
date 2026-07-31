@@ -217,4 +217,25 @@ namespace Celarix.Starfall
         /// </summary>
         Bevel
     }
+
+    public enum FenceType
+    {
+        Parentheses,
+        SquareBrackets,
+        CurlyBraces,
+        AngleBrackets,
+        SingleVerticalBars,
+        DoubleVerticalBars,
+        Floor,
+        Ceiling,
+        FancyAngleBrackets,
+        FancyDoubleAngleBrackets
+    }
+
+    public enum FenceRenderingMode
+    {
+        Automatic,
+        Glyph,
+        Procedural
+    }
 }

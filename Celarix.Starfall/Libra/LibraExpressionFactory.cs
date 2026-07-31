@@ -13,15 +13,17 @@ namespace Celarix.Starfall.Libra
 
         public static RowExpression Concat(params LibraExpression[] children) => new(children, 0d);
         public static RowExpression Concat(string id, params LibraExpression[] children) => new(children, 0d, id);
+        public static RowExpression Concat(double gapEm, params LibraExpression[] children) => new(children, gapEm);
+        public static RowExpression Concat(string id, double gapEm, params LibraExpression[] children) => new(children, gapEm, id);
 
         public static TextExpression Text(string text) => new(text, FC, BC);
         public static TextExpression Text(string text, string id) => new(text, FC, BC, id);
         public static TextExpression Text(string text, SColor foregroundColor, SColor backgroundColor, string? id = null) => new(text, foregroundColor, backgroundColor, id);
 
-        public static ParenthesizedExpression Paren(LibraExpression expression) => new(expression, FC, BC);
-        public static ParenthesizedExpression Paren(LibraExpression expression, string id) => new(expression, FC, BC, id);
-        public static ParenthesizedExpression Paren(LibraExpression expression, SColor foregroundColor, SColor backgroundColor, string? id = null) =>
-            new(expression, foregroundColor, backgroundColor, id);
+        public static FencedExpression Paren(LibraExpression expression) => new(expression, FenceType.Parentheses, FC, BC);
+        public static FencedExpression Paren(LibraExpression expression, string id) => new(expression, FenceType.Parentheses, FC, BC, id);
+        public static FencedExpression Paren(LibraExpression expression, SColor foregroundColor, SColor backgroundColor, string? id = null) =>
+            new(expression, FenceType.Parentheses, foregroundColor, backgroundColor, id);
 
         public static ScriptsExpression Exp(LibraExpression baseExpression, LibraExpression superscript) => new(baseExpression, superscript, null, null);
         public static ScriptsExpression Exp(LibraExpression baseExpression, LibraExpression superscript, string? id) => new(baseExpression, superscript, null, id);
@@ -42,6 +44,21 @@ namespace Celarix.Starfall.Libra
         public static BinaryExpression AddExpr(LibraExpression left, LibraExpression right, string? id) => new("+", left, right, FC, BC, id);
         public static BinaryExpression AddExpr(LibraExpression left, LibraExpression right, SColor foregroundColor, SColor backgroundColor, string? id = null) =>
             new("+", left, right, foregroundColor, backgroundColor, id);
+
+        public static BinaryExpression Sub(LibraExpression left, LibraExpression right) => new("-", left, right, FC, BC);
+        public static BinaryExpression Sub(LibraExpression left, LibraExpression right, string? id) => new("-", left, right, FC, BC, id);
+        public static BinaryExpression Sub(LibraExpression left, LibraExpression right, SColor foregroundColor, SColor backgroundColor, string? id = null) =>
+            new("-", left, right, foregroundColor, backgroundColor, id);
+
+        public static BinaryExpression Mul(LibraExpression left, LibraExpression right) => new("×", left, right, FC, BC);
+        public static BinaryExpression Mul(LibraExpression left, LibraExpression right, string? id) => new("×", left, right, FC, BC, id);
+        public static BinaryExpression Mul(LibraExpression left, LibraExpression right, SColor foregroundColor, SColor backgroundColor, string? id = null) =>
+            new("×", left, right, foregroundColor, backgroundColor, id);
+
+        public static BinaryExpression Equal(LibraExpression left, LibraExpression right) => new("=", left, right, FC, BC);
+        public static BinaryExpression Equal(LibraExpression left, LibraExpression right, string? id) => new("=", left, right, FC, BC, id);
+        public static BinaryExpression Equal(LibraExpression left, LibraExpression right, SColor foregroundColor, SColor backgroundColor, string? id = null) =>
+            new("=", left, right, foregroundColor, backgroundColor, id);
 
         public static BinaryExpression EqualByDef(LibraExpression left, LibraExpression right) => new("≝", left, right, FC, BC);
         public static BinaryExpression EqualByDef(LibraExpression left, LibraExpression right, string? id) => new("≝", left, right, FC, BC, id);

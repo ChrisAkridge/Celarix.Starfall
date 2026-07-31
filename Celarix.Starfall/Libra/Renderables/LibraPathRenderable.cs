@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Libra.Renderables.Path;
+using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using System;
@@ -51,6 +52,90 @@ namespace Celarix.Starfall.Libra.Renderables
             var sPathCommands = LibraHelpers.ToSPathCommands(LibraHelpers.Translate(_pathCommands, position));
             var sPathStyle = _pathStyle.ToSPathStyle();
             target.DrawPath(sPathCommands, sPathStyle.WithOpacity(Opacity));
+        }
+
+        public LibraPathRenderable MirrorHorizontally(double width)
+        {
+            var mirroredCommands = LibraPathBuilder.MirrorHorizontally(_pathCommands, width);
+            return new LibraPathRenderable(Key, mirroredCommands, _pathStyle)
+            {
+                Position = Position,
+            };
+        }
+
+        public SRectF GetTrueBounds()
+        {
+            var bounds = new PathBoundsBuilder();
+            var current = SPointF.Zero;
+            var subpathStart = SPointF.Zero;
+
+            foreach (var command in _pathCommands)
+            {
+                switch (command)
+                {
+                    case MoveTo move:
+                        current = new SPointF(move.X, move.Y);
+                        subpathStart = current;
+                        bounds.Include(current);
+                        break;
+
+                    case LineTo line:
+                        {
+                            var end = new SPointF(line.X, line.Y);
+                            bounds.Include(current);
+                            bounds.Include(end);
+                            current = end;
+                            break;
+                        }
+
+                    case QuadraticTo quadratic:
+                        {
+                            var control = new SPointF(
+                                quadratic.ControlX,
+                                quadratic.ControlY);
+
+                            var end = new SPointF(
+                                quadratic.X,
+                                quadratic.Y);
+
+                            bounds.IncludeQuadratic(current, control, end);
+                            current = end;
+                            break;
+                        }
+
+                    case CubicTo cubic:
+                        {
+                            var control1 = new SPointF(
+                                cubic.Control1X,
+                                cubic.Control1Y);
+
+                            var control2 = new SPointF(
+                                cubic.Control2X,
+                                cubic.Control2Y);
+
+                            var end = new SPointF(
+                                cubic.X,
+                                cubic.Y);
+
+                            bounds.IncludeCubic(
+                                current,
+                                control1,
+                                control2,
+                                end);
+
+                            current = end;
+                            break;
+                        }
+
+                    case ClosePath:
+                        bounds.Include(current);
+                        bounds.Include(subpathStart);
+                        current = subpathStart;
+                        break;
+                }
+            }
+
+            return bounds.Bounds;
         }
     }
 }

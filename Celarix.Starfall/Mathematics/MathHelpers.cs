@@ -137,5 +137,25 @@ namespace Celarix.Starfall.Mathematics
         {
             return (a + b) / 2;
         }
+
+        public static IEnumerable<double> SolveQuadratic(double a, double b, double c)
+        {
+            var discriminant = (b * b) - (4 * a * c);
+            if (discriminant < 0)
+            {
+                throw new InvalidOperationException("No real roots exist for the given quadratic equation.");
+            }
+            var sqrtDiscriminant = Math.Sqrt(discriminant);
+            var root1 = (-b + sqrtDiscriminant) / (2 * a);
+            var root2 = (-b - sqrtDiscriminant) / (2 * a);
+            yield return root1;
+            yield return root2;
+        }
+
+        public static double EvaluateQuadraticBezier(SPointF p0, SPointF p1, SPointF p2, double t)
+        {
+            var mt = 1 - t;
+            return (mt * mt * p0.X) + (2 * mt * t * p1.X) + (t * t * p2.X);
+        }
     }
 }

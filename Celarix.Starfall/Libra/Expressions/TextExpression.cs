@@ -54,6 +54,19 @@ namespace Celarix.Starfall.Libra.Expressions
             return renderable;
         }
 
+        public static LibraLayoutResult LayoutTextResult(LibraRenderingContext context,
+            string text,
+            SColor foregroundColor,
+            SColor backgroundColor,
+            LibraRenderableKey key)
+        {
+            var renderable = LayoutText(context, text, foregroundColor, backgroundColor, key);
+            return new LibraLayoutResult([renderable],
+                new SRectF(0, 0, renderable.Size.Width, renderable.Size.Height),
+                BaselineY(context),
+                MathAxisY(context));
+        }
+
         // Have them here so if we ever want to change the default behavior for all text expressions, we can do it in one place.
         public static double BaselineY(LibraRenderingContext context) => context.BaselineY;
         public static double MathAxisY(LibraRenderingContext context) => DefaultMathAxisY(context);

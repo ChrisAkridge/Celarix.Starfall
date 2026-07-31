@@ -3,6 +3,7 @@ using Celarix.Starfall.Layout.Helium.Renderables;
 using Celarix.Starfall.Libra;
 using Celarix.Starfall.Libra.Expressions;
 using Celarix.Starfall.Libra.Metrics;
+using Celarix.Starfall.Libra.Metrics.Symbols;
 using Celarix.Starfall.Libra.Renderables;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering;
@@ -51,7 +52,10 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             _metrics = new LibraMetrics
             {
                 BinaryExpressions = new BinaryExpressionMetrics(),
-                Fences = new FenceMetrics(),
+                Fences = new FenceMetrics
+                {
+                    ParenthesesMetrics = new ParenthesesMetrics(),
+                },
                 Fractions = new FractionMetrics(),
                 Scripts = new ScriptsMetrics()
             };
@@ -98,7 +102,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
                 return;
             }
 
-            var context = new LibraRenderingContext(measurementService, BaseFont, _metrics);
+            var context = new LibraRenderingContext(measurementService, BaseFont, _metrics, FenceRenderingMode.Procedural);
             var layout = _root.Layout(context);
             _renderables = layout.Renderables;
             _layoutSize = layout.Bounds.Size;
