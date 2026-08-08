@@ -50,6 +50,8 @@ Most of this should be straightforward passthrough work.
 
 ## 1.1 Confirm the retained path model
 
+**Complete.**
+
 A backend-independent path can consist of commands such as:
 
 ```csharp
@@ -92,6 +94,8 @@ Do not add arc support until an actual symbol needs it. Cubic curves can cover a
 
 ## 1.2 Add path styling
 
+**Complete.**
+
 A path renderable needs explicit stroke and fill information.
 
 ```csharp
@@ -127,6 +131,8 @@ A path may be stroke-only, fill-only, or both.
 
 ## 1.3 Add a path renderable
 
+**Complete.**
+
 Possible shape:
 
 ```csharp
@@ -147,6 +153,8 @@ That is clean for cloning, animation, and translation. The renderable must repor
 
 ## 1.4 Extend `IRenderTarget`
 
+**Complete.**
+
 The simplest useful API may be one retained call:
 
 ```csharp
@@ -159,6 +167,8 @@ void DrawPath(
 Keep the interface backend-independent. Do not expose `SKPath`, `SKPaint`, or `SKCanvas` above the Skia-specific layer.
 
 ## 1.5 Implement the Skia passthrough
+
+**Complete.**
 
 The Skia side should mostly translate Libra commands directly:
 
@@ -210,6 +220,8 @@ private static SKPath CreateSkiaPath(LibraPath path)
 Then configure `SKPaint` from `LibraPathStyle`.
 
 ## 1.6 Add a path builder helper
+
+**Complete.**
 
 Raw command lists will become annoying quickly.
 
@@ -270,6 +282,8 @@ Immediate targets:
 Braces can wait until the basic path system feels comfortable.
 
 ## 2.1 Establish shared drawing metrics
+
+**Complete.**
 
 Add metric groups when implementing their first consumer.
 
@@ -371,6 +385,8 @@ The child expression should never be rewritten to inject combining Unicode chara
 
 ## 2.4 Generalize `ParenthesizedExpression` into `FencedExpression`
 
+**Complete.**
+
 Likely shape:
 
 ```csharp
@@ -440,6 +456,8 @@ Two diagonal segments. Metrics: height, width, stroke width, and center relative
 One or two vertical lines. Metrics: height, inter-bar gap, stroke width, and vertical padding.
 
 ### Parentheses
+
+**Complete.**
 
 Use cubic Bézier curves only when needed. Important geometry:
 
