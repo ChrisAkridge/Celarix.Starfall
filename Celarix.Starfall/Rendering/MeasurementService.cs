@@ -1,21 +1,34 @@
 ﻿using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
+using FastCache;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace Celarix.Starfall.Rendering
 {
     public sealed class MeasurementService
     {
+        private static readonly double DefaultCacheDurationMinutes = 60d;
         private readonly IRenderTarget renderTarget;
+        private readonly string renderTargetCacheKey;
 
         public MeasurementService(IRenderTarget renderTarget)
         {
             this.renderTarget = renderTarget;
+            renderTargetCacheKey = $"{renderTarget.GetType().FullName}|{RuntimeHelpers.GetHashCode(renderTarget)}";
         }
 
-        public SSizeF MeasureText(string text, SFont font) => renderTarget.MeasureText(text, font);
+        public SSizeF MeasureText(string text, SFont font)
+        {
+            var cacheKey = $"{renderTargetCacheKey}|text|{text}|font|{font.ToCacheKey()}";
+            if (Cached<SSizeF>.TryGet(cacheKey, out var cachedSize))
+            {
+                return cachedSize;
+            }
+
+            var measuredSize = renderTarget.MeasureText(text, font);
+            return cachedSize.Save(measuredSize, TimeSpan.FromMinutes(DefaultCacheDurationMinutes));
+        }
 
         public float FontSizeForDesiredWidth(string text, SFont font, float width)
         {
