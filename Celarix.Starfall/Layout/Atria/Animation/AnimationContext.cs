@@ -10,6 +10,7 @@ namespace Celarix.Starfall.Layout.Atria.Animation
         private readonly AnimationContextRegistry? _registry;
         private readonly List<FixedDurationAnimation> _fixedDurationAnimations = [];
         private readonly List<ContinuingAnimation> _continuingAnimations = [];
+        private readonly List<AnimationSlot> _slots = [];
         private int? _lastUpdatedFrame;
         private bool _disposed;
 
@@ -39,6 +40,14 @@ namespace Celarix.Starfall.Layout.Atria.Animation
         {
             ThrowIfDisposed();
             _continuingAnimations.Add(animation);
+        }
+
+        public AnimationSlot CreateSlot(string? debugName = null)
+        {
+            ThrowIfDisposed();
+            var slot = new AnimationSlot(this, debugName);
+            _slots.Add(slot);
+            return slot;
         }
 
         public void StaggerAnimations(Queue<Func<FixedDurationAnimation>> animationFactories, int frameDelay,
@@ -94,10 +103,49 @@ namespace Celarix.Starfall.Layout.Atria.Animation
         public void Dispose()
         {
             if (_disposed) { return; }
+            ForceFinishAll();
             _fixedDurationAnimations.Clear();
             _continuingAnimations.Clear();
+            _slots.Clear();
             _disposed = true;
             _registry?.Unregister(this);
+        }
+
+        public void ForceFinishAll()
+        {
+            ThrowIfDisposed();
+
+            foreach (var slot in _slots.ToArray())
+            {
+                try
+                {
+                    slot.FinishNow();
+                }
+                catch
+                {
+                    // Disposal and force-finish paths should keep trying to finish the rest.
+                }
+            }
+
+            ForceFinishAnimations(_continuingAnimations);
+            ForceFinishAnimations(_fixedDurationAnimations);
+            _continuingAnimations.RemoveAll(a => a.Completed);
+            _fixedDurationAnimations.RemoveAll(a => a.Completed);
+        }
+
+        internal void RemoveAnimation(FixedDurationAnimation animation)
+        {
+            _fixedDurationAnimations.Remove(animation);
+        }
+
+        internal void RemoveAnimation(ContinuingAnimation animation)
+        {
+            _continuingAnimations.Remove(animation);
+        }
+
+        internal void RemoveSlot(AnimationSlot slot)
+        {
+            _slots.Remove(slot);
         }
 
         private void ThrowIfDisposed()
@@ -105,6 +153,57 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             if (_disposed)
             {
                 throw new ObjectDisposedException(nameof(AnimationContext));
+            }
+        }
+
+        private static void ForceFinishAnimations<TAnimation>(List<TAnimation> animations)
+            where TAnimation : class
+        {
+            var forceFinishCount = 0;
+            while (animations.Any(a => !IsCompleted(a)))
+            {
+                foreach (var animation in animations.Where(a => !IsCompleted(a)).ToArray())
+                {
+                    try
+                    {
+                        ForceFinish(animation);
+                    }
+                    catch
+                    {
+                        // Keep force-finishing the rest even if one animation's completion code fails.
+                    }
+                }
+
+                forceFinishCount += 1;
+                if (forceFinishCount > 10000)
+                {
+                    return;
+                }
+            }
+        }
+
+        private static bool IsCompleted<TAnimation>(TAnimation animation)
+            where TAnimation : class
+        {
+            return animation switch
+            {
+                FixedDurationAnimation fixedDurationAnimation => fixedDurationAnimation.Completed,
+                ContinuingAnimation continuingAnimation => continuingAnimation.Completed,
+                _ => true
+            };
+        }
+
+        private static void ForceFinish<TAnimation>(TAnimation animation)
+            where TAnimation : class
+        {
+            switch (animation)
+            {
+                case FixedDurationAnimation fixedDurationAnimation:
+                    fixedDurationAnimation.ForceFinish();
+                    break;
+                case ContinuingAnimation continuingAnimation:
+                    continuingAnimation.ForceFinish();
+                    break;
             }
         }
 

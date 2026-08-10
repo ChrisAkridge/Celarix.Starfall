@@ -6,6 +6,7 @@ namespace Celarix.Starfall.Layout.Atria.Animation
 {
     public class ContinuingAnimation
     {
+        private const int MaxForceFinishIterations = 10000;
         private readonly Func<bool> _updateAction;
         private readonly Action<Exception?>? _onError;
 
@@ -42,6 +43,37 @@ namespace Celarix.Starfall.Layout.Atria.Animation
                 if (!shouldContinue)
                 {
                     Completed = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _onError?.Invoke(ex);
+                Completed = true;
+            }
+        }
+
+        public virtual void ForceFinish()
+        {
+            if (Completed) { return; }
+
+            try
+            {
+                var iterations = 0;
+                while (!Completed)
+                {
+                    var shouldContinue = _updateAction();
+                    if (!shouldContinue)
+                    {
+                        Completed = true;
+                        return;
+                    }
+
+                    iterations += 1;
+                    if (iterations >= MaxForceFinishIterations)
+                    {
+                        Completed = true;
+                        return;
+                    }
                 }
             }
             catch (Exception ex)

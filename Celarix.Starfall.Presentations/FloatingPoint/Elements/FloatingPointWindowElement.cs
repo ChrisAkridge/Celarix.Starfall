@@ -211,6 +211,17 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         private readonly SSizeF _negativeTextSize;
         private readonly MeasurementService _measurementService;
         private float _baseFontSize;
+        private AnimationSlot? _scrollSlot;
+        private AnimationSlot? _windowSlot;
+        private AnimationSlot? _arrowMoveSlot;
+        private AnimationSlot? _arrowOpacitySlot;
+        private AnimationSlot? _negativeFlagSlot;
+
+        private AnimationSlot ScrollSlot => _scrollSlot ??= Animations.CreateSlot("floating-point-window.scroll");
+        private AnimationSlot WindowSlot => _windowSlot ??= Animations.CreateSlot("floating-point-window.window");
+        private AnimationSlot ArrowMoveSlot => _arrowMoveSlot ??= Animations.CreateSlot("floating-point-window.arrow.move");
+        private AnimationSlot ArrowOpacitySlot => _arrowOpacitySlot ??= Animations.CreateSlot("floating-point-window.arrow.opacity");
+        private AnimationSlot NegativeFlagSlot => _negativeFlagSlot ??= Animations.CreateSlot("floating-point-window.negative-flag");
 
         public float BaseFontSize
         {
@@ -534,14 +545,16 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 throw new InvalidOperationException("Unreachable: Invalid bitExponent: " + bitExponent);
             }
 
-            var originalCenteredX = CenteredX;
-            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
-                p =>
-                {
-                    var newCenteredX = originalCenteredX + ((wantedBitCenter - originalCenteredX) * Easings.Smoothstep(p));
-                    CenteredX = newCenteredX;
-                });
-            Animations.ScheduleAnimation(animation);
+            ScrollSlot.Replace(() =>
+            {
+                var originalCenteredX = CenteredX;
+                return FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+                    p =>
+                    {
+                        var newCenteredX = originalCenteredX + ((wantedBitCenter - originalCenteredX) * Easings.Smoothstep(p));
+                        CenteredX = newCenteredX;
+                    });
+            });
         }
 
         // - SetBit: Sets a bit value and optionally queues a Bounce animation for it
@@ -684,11 +697,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             // Calculate target width (handles binary point automatically)
             var (targetWidth, targetBinaryPointFactor) = CalculateWindowWidthForPosition(targetLeftX, mantissaBits);
             
-            // Capture starting values
-            var startLeftX = WindowLeftX;
-            var startWidth = WindowWidthInBits;
-            var startBinaryPointFactor = BinaryPointWidthFactor;
-
             if (Math.Abs(WindowOpacity) < 0.001d)
             {
                 // We can't see the window, just instantly move it without animating.
@@ -698,16 +706,20 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 return;
             }
 
-            var animation = FixedDurationAnimation.StartNow(
-                AnimationContext.SecondsToFrames(durationSeconds),
-                p =>
-                {
-                    WindowLeftX = startLeftX + (targetLeftX - startLeftX) * p;
-                    WindowWidthInBits = startWidth + (targetWidth - startWidth) * p;
-                    BinaryPointWidthFactor = startBinaryPointFactor + (targetBinaryPointFactor - startBinaryPointFactor) * p;
-                });
-            
-            Animations.ScheduleAnimation(animation);
+            WindowSlot.Replace(() =>
+            {
+                var startLeftX = WindowLeftX;
+                var startWidth = WindowWidthInBits;
+                var startBinaryPointFactor = BinaryPointWidthFactor;
+                return FixedDurationAnimation.StartNow(
+                    AnimationContext.SecondsToFrames(durationSeconds),
+                    p =>
+                    {
+                        WindowLeftX = startLeftX + (targetLeftX - startLeftX) * p;
+                        WindowWidthInBits = startWidth + (targetWidth - startWidth) * p;
+                        BinaryPointWidthFactor = startBinaryPointFactor + (targetBinaryPointFactor - startBinaryPointFactor) * p;
+                    });
+            });
         }
 
         // - SetShowNegativeFlag: Shows/hides the negative flag with a fade-in/out animation
@@ -723,7 +735,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 {
                     NegativeFlagOpacity = Easings.Land(show ? p : 1 - p);
                 });
-            Animations.ScheduleAnimation(animation);
+            NegativeFlagSlot.Replace(animation);
         }
 
         public void SetShowArrow(bool show)
@@ -733,7 +745,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 {
                     ArrowOpacity = Easings.Land(show ? p : 1 - p);
                 });
-            Animations.ScheduleAnimation(animation);
+            ArrowOpacitySlot.Replace(animation);
         }
 
         // - SetArrowBit: Queues a FixedDurationAnimation to move the arrow to point at a specific bit
@@ -742,8 +754,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             var bitIndex = 127 - exponent;
             var bitRect = _bits[bitIndex].Position.WithSize(RowBit._bitTextSize);
             var wantedArrowCenterX = bitRect.Center.X;
-            var originalArrowCenterX = ArrowCenterX;
-
             if (Math.Abs(ArrowOpacity) < 0.001d)
             {
                 // We can't see the arrow, just instantly move it without animating.
@@ -751,27 +761,32 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 return;
             }
 
-            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.8d),
-                p =>
-                {
-                    var newArrowCenterX = originalArrowCenterX + ((wantedArrowCenterX - originalArrowCenterX) * Easings.Smoothstep(p));
-                    ArrowCenterX = newArrowCenterX;
-                });
-            Animations.ScheduleAnimation(animation);
+            ArrowMoveSlot.Replace(() =>
+            {
+                var originalArrowCenterX = ArrowCenterX;
+                return FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.8d),
+                    p =>
+                    {
+                        var newArrowCenterX = originalArrowCenterX + ((wantedArrowCenterX - originalArrowCenterX) * Easings.Smoothstep(p));
+                        ArrowCenterX = newArrowCenterX;
+                    });
+            });
         }
 
         // - CenterOnArrow: Queues a FixedDurationAnimation to scroll the bits such that the arrow is centered in the element
         public void CenterOnArrow()
         {
             var wantedCenteredX = RowXToScreenX(ArrowCenterX);
-            var originalCenteredX = CenteredX;
-            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.8d),
-                p =>
-                {
-                    var newCenteredX = originalCenteredX + ((wantedCenteredX - originalCenteredX) * Easings.Smoothstep(p));
-                    CenteredX = newCenteredX;
-                });
-            Animations.ScheduleAnimation(animation);
+            ScrollSlot.Replace(() =>
+            {
+                var originalCenteredX = CenteredX;
+                return FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.8d),
+                    p =>
+                    {
+                        var newCenteredX = originalCenteredX + ((wantedCenteredX - originalCenteredX) * Easings.Smoothstep(p));
+                        CenteredX = newCenteredX;
+                    });
+            });
         }
 
         // - ComedicallyDropWindow: Hides the window and sets the falling window properties to drop a rectangle from the window's last position with a rotation
