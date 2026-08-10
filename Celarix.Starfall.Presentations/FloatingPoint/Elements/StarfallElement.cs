@@ -82,7 +82,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         private readonly List<CloudCircle> _clouds = new();
         private readonly List<FallingStar> _fallingStars = new();
         private readonly Random _random = new();
-        private readonly AnimationContext _animationContext = new();
         private double _cloudDrawYOffset = -400d;
 
         static StarfallElement()
@@ -112,7 +111,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
 
         public override void Update(double deltaTime)
         {
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
 
             if (_clouds.Count == 0)
             {
@@ -184,7 +183,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             // Check to see if we need to move the clouds down.
             if (_cloudDrawYOffset == -400d)
             {
-                _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d), p =>
+                Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d), p =>
                 {
                     _cloudDrawYOffset = MathHelpers.Ease(-400d, 0d, p, Easings.Land);
                 }));

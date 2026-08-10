@@ -30,7 +30,6 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             AnimatingTransform
         }
 
-        private AnimationContext _animationContext;
         private IReadOnlyList<LibraRenderable> _renderables;
         private ExpressionLayoutState _state;
         private LibraMetrics _metrics;
@@ -46,7 +45,6 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             _root = root;
             BaseFont = baseFont;
             ScaleFactor = 1d;
-            _animationContext = new AnimationContext();
             _renderables = Array.Empty<LibraRenderable>();
             _state = ExpressionLayoutState.Dirty;
             _metrics = new LibraMetrics
@@ -75,7 +73,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
                 UpdateRenderables(Slide?.MeasurementService ?? throw new InvalidOperationException("Slide must be set before updating renderables."));
             }
 
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
             base.Update(deltaTime);
         }
 
@@ -183,7 +181,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
                 durationInFrames,
                 BuildCompositeAnimation(allAnimations),
                 () => OnCompleted(newLayoutSize));
-            _animationContext.ScheduleAnimation(fixedDurationAnimation);
+            Animations.ScheduleAnimation(fixedDurationAnimation);
         }
 
         private void InitializeEnteringRenderable(LibraRenderable renderable)

@@ -1,27 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Celarix.Starfall.Layout.Atria.Animation
 {
-    public sealed class AnimationContext
+    public sealed class AnimationContext : IDisposable
     {
+        private readonly AnimationContextRegistry? _registry;
         private readonly List<FixedDurationAnimation> _fixedDurationAnimations = [];
         private readonly List<ContinuingAnimation> _continuingAnimations = [];
+        private int? _lastUpdatedFrame;
+        private bool _disposed;
+
+        public object? Owner { get; }
+        public bool IsAnimating => _fixedDurationAnimations.Any(a => !a.Completed)
+            || _continuingAnimations.Any(a => !a.Completed);
+        public int RunningAnimationCount => _fixedDurationAnimations.Count(a => !a.Completed)
+            + _continuingAnimations.Count(a => !a.Completed);
+
+        public AnimationContext()
+        {
+        }
+
+        internal AnimationContext(AnimationContextRegistry registry, object owner)
+        {
+            _registry = registry;
+            Owner = owner;
+        }
 
         public void ScheduleAnimation(FixedDurationAnimation animation)
         {
+            ThrowIfDisposed();
             _fixedDurationAnimations.Add(animation);
         }
         
         public void ScheduleContinuingAnimation(ContinuingAnimation animation)
         {
+            ThrowIfDisposed();
             _continuingAnimations.Add(animation);
         }
 
         public void StaggerAnimations(Queue<Func<FixedDurationAnimation>> animationFactories, int frameDelay,
             Action? onCompleted = null)
         {
+            ThrowIfDisposed();
             onCompleted ??= () => { };
 
             var globalFrameRemainder = AtriaLayoutEngine.GlobalFrameNumber % frameDelay;
@@ -57,8 +80,32 @@ namespace Celarix.Starfall.Layout.Atria.Animation
 
         public void Update(int currentFrame)
         {
+            ThrowIfDisposed();
+            if (_lastUpdatedFrame == currentFrame)
+            {
+                return;
+            }
+
+            _lastUpdatedFrame = currentFrame;
             UpdateFixedDurationAnimations(currentFrame);
             UpdateContinuingAnimations(currentFrame);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) { return; }
+            _fixedDurationAnimations.Clear();
+            _continuingAnimations.Clear();
+            _disposed = true;
+            _registry?.Unregister(this);
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(AnimationContext));
+            }
         }
 
         private void UpdateFixedDurationAnimations(int currentFrame)

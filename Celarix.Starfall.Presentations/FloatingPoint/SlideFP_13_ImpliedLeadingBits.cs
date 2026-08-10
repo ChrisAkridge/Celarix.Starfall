@@ -23,7 +23,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         }
 
         private StateMachine<State> _stateMachine;
-        private AnimationContext _animationContext = new();
         internal static readonly string[] sourceArray = ["Left", "Right"];
 
         public SlideFP_13_ImpliedLeadingBits(int width, int height) : base(width, height)
@@ -39,7 +38,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         public override void Update(double deltaTime)
         {
             base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
         }
 
         public override SlideAdvanceResult Advance()
@@ -139,7 +138,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 .Select(id => (TextBlock)Query(id).Single())
                 .ToArray();
 
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
                 p =>
                 {
                     badText.Color = MathHelpers.InterpolateColor(SColor.White, SColor.Red, p);
@@ -192,7 +191,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             Console.WriteLine("FP13: Coloring 2 binary values.");
             var badText = (TextBlock)Query("#badBinary").Single();
             var goodText = (TextBlock)Query("#goodBinary").Single();
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
                 p =>
                 {
                     badText.Color = MathHelpers.InterpolateColor(SColor.White, SColor.Red, p);

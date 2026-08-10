@@ -21,7 +21,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private readonly Random _random = new();
         private int _state;
-        private AnimationContext _animationContext = new();
 
         public SlideSF_04_NoAbsolutePositioning(int width, int height) : base(width, height)
         {
@@ -35,7 +34,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         public override void Update(double deltaTime)
         {
             base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
         }
 
         public override SlideAdvanceResult Advance()
@@ -98,7 +97,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
                 foreach (var transformFunc in transformFuncs)
                 {
-                    _animationContext.ScheduleAnimation(transformFunc);
+                    Animations.ScheduleAnimation(transformFunc);
                 }
                 _state = 2;
                 return SlideAdvanceResult.InternalStateChanged;

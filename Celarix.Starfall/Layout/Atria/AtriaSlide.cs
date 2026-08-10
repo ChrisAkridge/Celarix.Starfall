@@ -10,14 +10,16 @@ using System.Text;
 
 namespace Celarix.Starfall.Layout.Atria
 {
-    public abstract class AtriaSlide
+    public abstract class AtriaSlide : IDisposable
     {
         private readonly List<AtriaElement> _elements = new();
         private readonly List<BasisElement> _basisElements = new();
-        private readonly List<ActiveAnimation> _activeAnimations = new();
+        private bool _disposed;
 
-        public MeasurementService MeasurementService { get; private set; }
-        public DebugMode DebugMode { get; private set; }
+        public MeasurementService MeasurementService { get; private set; } = null!;
+        public DebugMode DebugMode { get; private set; } = null!;
+        public AnimationContextRegistry AnimationContexts { get; private set; } = null!;
+        protected AnimationContext Animations { get; private set; } = null!;
         public SColor BackgroundColor { get; set; }
         public SSizeF Size { get; }
 
@@ -40,26 +42,20 @@ namespace Celarix.Starfall.Layout.Atria
             Size = new SSizeF(width, height);
         }
 
-        internal void SetProtectedProperties(MeasurementService measurementService, DebugMode debugMode)
+        internal void SetProtectedProperties(MeasurementService measurementService,
+            DebugMode debugMode,
+            AnimationContextRegistry animationContexts)
         {
             MeasurementService = measurementService;
             DebugMode = debugMode;
+            AnimationContexts = animationContexts;
+            Animations = animationContexts.CreateFor(this);
         }
 
         public abstract void Initialize();
 
         public virtual void Update(double deltaTime)
         {
-            for (int i = _activeAnimations.Count - 1; i >= 0; i--)
-            {
-                var animation = _activeAnimations[i];
-                animation.Update(deltaTime);
-                if (animation.IsCompleted)
-                {
-                    _activeAnimations.RemoveAt(i);
-                }
-            }
-
             foreach (var element in _elements)
             {
                 element.Update(deltaTime);
@@ -116,6 +112,7 @@ namespace Celarix.Starfall.Layout.Atria
                 if (removeable is AtriaElement element)
                 {
                     _elements.Remove(element);
+                    element.Dispose();
                 }
                 else if (removeable is BasisElement basisElement)
                 {
@@ -160,9 +157,17 @@ namespace Celarix.Starfall.Layout.Atria
             return matchedElements;
         }
 
-        internal void AddAnimation(ActiveAnimation animation)
+        public virtual void Dispose()
         {
-            _activeAnimations.Add(animation);
+            if (_disposed) { return; }
+
+            foreach (var element in _elements)
+            {
+                element.Dispose();
+            }
+
+            AnimationContexts?.DisposeOwnedBy(this);
+            _disposed = true;
         }
     }
 }

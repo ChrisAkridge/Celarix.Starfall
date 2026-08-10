@@ -202,7 +202,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         private GradientProvider _windowBitGradientProvider = new GradientProvider(RowBit.SecondaryTextColor, RowBit.PrimaryTextColor);
         private readonly RowBit[] _bits = new RowBit[RowBit.TotalSinglePrecisionBits];
 
-        private AnimationContext _animationContext = new();
         private bool _showingExponents = false;
         private bool _showingPlaceValues = false;
         private bool _isJitteringWindow;
@@ -464,7 +463,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
 
         public override void Update(double deltaTime)
         {
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
 
             if (ShowFallingWindowRect)
             {
@@ -542,7 +541,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                     var newCenteredX = originalCenteredX + ((wantedBitCenter - originalCenteredX) * Easings.Smoothstep(p));
                     CenteredX = newCenteredX;
                 });
-            _animationContext.ScheduleAnimation(animation);
+            Animations.ScheduleAnimation(animation);
         }
 
         // - SetBit: Sets a bit value and optionally queues a Bounce animation for it
@@ -559,7 +558,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                         var bounceHeight = Math.Sin(p * Math.PI) * 10;
                         _bits[bitIndex].BounceHeight = (int)bounceHeight;
                     }, () => _bits[bitIndex].BounceHeight = 0);
-                _animationContext.ScheduleAnimation(animation);
+                Animations.ScheduleAnimation(animation);
             }
         }
 
@@ -577,7 +576,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             //        var wantedArrowCenterX = nextBitPosition.X + (RowBit.BitSize.Width / 2d);
             //        ArrowCenterX = ArrowCenterX + ((wantedArrowCenterX - ArrowCenterX) * Easings.Smoothstep(p));
             //    });
-            //_animationContext.ScheduleAnimation(animation);
+            //Animations.ScheduleAnimation(animation);
             SetArrowBit(nextBitExponent);
             ScrollBitToCenter(nextBitExponent);
         }
@@ -708,7 +707,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                     BinaryPointWidthFactor = startBinaryPointFactor + (targetBinaryPointFactor - startBinaryPointFactor) * p;
                 });
             
-            _animationContext.ScheduleAnimation(animation);
+            Animations.ScheduleAnimation(animation);
         }
 
         // - SetShowNegativeFlag: Shows/hides the negative flag with a fade-in/out animation
@@ -724,7 +723,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 {
                     NegativeFlagOpacity = Easings.Land(show ? p : 1 - p);
                 });
-            _animationContext.ScheduleAnimation(animation);
+            Animations.ScheduleAnimation(animation);
         }
 
         public void SetShowArrow(bool show)
@@ -734,7 +733,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 {
                     ArrowOpacity = Easings.Land(show ? p : 1 - p);
                 });
-            _animationContext.ScheduleAnimation(animation);
+            Animations.ScheduleAnimation(animation);
         }
 
         // - SetArrowBit: Queues a FixedDurationAnimation to move the arrow to point at a specific bit
@@ -758,7 +757,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                     var newArrowCenterX = originalArrowCenterX + ((wantedArrowCenterX - originalArrowCenterX) * Easings.Smoothstep(p));
                     ArrowCenterX = newArrowCenterX;
                 });
-            _animationContext.ScheduleAnimation(animation);
+            Animations.ScheduleAnimation(animation);
         }
 
         // - CenterOnArrow: Queues a FixedDurationAnimation to scroll the bits such that the arrow is centered in the element
@@ -772,7 +771,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                     var newCenteredX = originalCenteredX + ((wantedCenteredX - originalCenteredX) * Easings.Smoothstep(p));
                     CenteredX = newCenteredX;
                 });
-            _animationContext.ScheduleAnimation(animation);
+            Animations.ScheduleAnimation(animation);
         }
 
         // - ComedicallyDropWindow: Hides the window and sets the falling window properties to drop a rectangle from the window's last position with a rotation
@@ -893,12 +892,12 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                     if (animationFactories.Count != 0)
                     {
                         var nextAnimationFactory = animationFactories.Dequeue();
-                        _animationContext.ScheduleAnimation(nextAnimationFactory());
+                        Animations.ScheduleAnimation(nextAnimationFactory());
                     }
                 }
                 return animationFactories.Count != 0;
             });
-            _animationContext.ScheduleContinuingAnimation(staggeredAnimation);
+            Animations.ScheduleContinuingAnimation(staggeredAnimation);
         }
 
         private (double widthInBits, double binaryPointFactor) CalculateWindowWidthForPosition(double leftX, int mantissaBits)

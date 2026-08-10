@@ -19,7 +19,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private int _state;
         private FloatingPointWindowElement _element;
         private SingleBinaryViewElement _binaryView;
-        private readonly AnimationContext _animationContext = new();
 
         private bool _isNegative;
         private int _exponent = 0;
@@ -130,7 +129,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         public override void Update(double deltaTime)
         {
             base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
         }
 
         public override SlideAdvanceResult Advance()
@@ -173,7 +172,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 _element.SetShowPlaceValues(show: true);
                 _state = 2;
             });
-            _animationContext.ScheduleAnimation(fontSizeAnimation);
+            Animations.ScheduleAnimation(fontSizeAnimation);
             return SlideAdvanceResult.InternalStateChanged;
         }
 
@@ -190,7 +189,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 _element.MoveWindowToExponent(0);
                 _state = 3;
             });
-            _animationContext.ScheduleAnimation(fontSizeAnimation);
+            Animations.ScheduleAnimation(fontSizeAnimation);
             return SlideAdvanceResult.InternalStateChanged;
         }
 
@@ -201,7 +200,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             {
                 _element.WindowOpacity = p;
             }, () => _state = 4);
-            _animationContext.ScheduleAnimation(windowAnimation);
+            Animations.ScheduleAnimation(windowAnimation);
             return SlideAdvanceResult.InternalStateChanged;
         }
 
@@ -234,7 +233,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             {
                 _element.ArrowOpacity = p;
             }, () => _state = 6);
-            _animationContext.ScheduleAnimation(arrowAnimation);
+            Animations.ScheduleAnimation(arrowAnimation);
 
             SetTarget((float)Math.PI);
 

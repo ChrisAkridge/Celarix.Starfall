@@ -10,10 +10,12 @@ using System.Text;
 
 namespace Celarix.Starfall.Layout.Atria.Elements
 {
-    public abstract class AtriaElement : IAtriaIdentified, ISlideAddable
+    public abstract class AtriaElement : IAtriaIdentified, ISlideAddable, IDisposable
     {
         private SPointF? _position;
         private Anchor? _anchor;
+        private AnimationContext? _animations;
+        private bool _disposed;
 
         protected Alignment? AnchoredPosition
         {
@@ -25,6 +27,8 @@ namespace Celarix.Starfall.Layout.Atria.Elements
         }
 
         public AtriaSlide? Slide { get; set; }
+        protected AnimationContext Animations => _animations ??= (Slide?.AnimationContexts.CreateFor(this)
+            ?? throw new InvalidOperationException("Slide must be set before creating an animation context."));
         
         public AtriaId Id { get; protected set; }
         public SPointF Position
@@ -70,8 +74,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
 
         public void Animate<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector, Easing easing, double duration, TProp from, TProp to)
         {
-            var animation = new ActiveAnimation<TProp>(this, propertySelector, easing, duration, from, to);
-            Slide?.AddAnimation(animation);
+            SchedulePropertyAnimation(propertySelector, easing, duration, delay: 0d, from, to);
         }
 
         public void AnimateTo<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector, Easing easing, double duration, TProp to)
@@ -93,11 +96,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
 
         public void AnimateWithDelay<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector, Easing easing, double duration, double delay, TProp from, TProp to)
         {
-            var animation = new ActiveAnimation<TProp>(this, propertySelector, easing, duration, from, to)
-            {
-                Delay = delay
-            };
-            Slide?.AddAnimation(animation);
+            SchedulePropertyAnimation(propertySelector, easing, duration, delay, from, to);
         }
 
         public void AnimateToWithDelay<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector, Easing easing, double duration, double delay, TProp to)
@@ -117,6 +116,43 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             AnimateToWithDelay(propertySelector, Easings.Linear, duration, delay, to);
         }
 
+        private void SchedulePropertyAnimation<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector,
+            Easing easing,
+            double duration,
+            double delay,
+            TProp from,
+            TProp to)
+        {
+            var interpolator = Interpolators.Get<TProp>();
+            var setter = CreateSetterExpression(propertySelector).Compile();
+            var durationFrames = Math.Max(1, AnimationContext.SecondsToFrames(duration));
+            var delayFrames = Math.Max(0, AnimationContext.SecondsToFrames(delay));
+            var animation = FixedDurationAnimation.StartIn(delayFrames, durationFrames, progress =>
+            {
+                var easedProgress = easing(progress);
+                var currentValue = interpolator.Interpolate(from, to, easedProgress);
+                setter(this, currentValue);
+            });
+
+            Animations.ScheduleAnimation(animation);
+        }
+
+        private static Expression<Action<AtriaElement, TProp>> CreateSetterExpression<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector)
+        {
+            if (propertySelector.Body is MemberExpression memberExpr && memberExpr.Member is System.Reflection.PropertyInfo propInfo)
+            {
+                var parameter = Expression.Parameter(typeof(TProp), "value");
+                var setMethod = propInfo.GetSetMethod() ?? throw new InvalidOperationException("The property must have a setter.");
+                var setterCall = Expression.Call(
+                    Expression.Convert(propertySelector.Parameters[0], typeof(AtriaElement)),
+                    setMethod,
+                    parameter
+                );
+                return Expression.Lambda<Action<AtriaElement, TProp>>(setterCall, propertySelector.Parameters[0], parameter);
+            }
+            throw new InvalidOperationException("Property selector must be a simple property access.");
+        }
+
         public void AnchorTopLeftTo(BasisPoint point) => Anchor(point, Alignment.TopLeft);
         public void AnchorTopCenterTo(BasisPoint point) => Anchor(point, Alignment.TopCenter);
         public void AnchorTopRightTo(BasisPoint point) => Anchor(point, Alignment.TopRight);
@@ -126,5 +162,12 @@ namespace Celarix.Starfall.Layout.Atria.Elements
         public void AnchorBottomLeftTo(BasisPoint point) => Anchor(point, Alignment.BottomLeft);
         public void AnchorBottomCenterTo(BasisPoint point) => Anchor(point, Alignment.BottomCenter);
         public void AnchorBottomRightTo(BasisPoint point) => Anchor(point, Alignment.BottomRight);
+
+        public virtual void Dispose()
+        {
+            if (_disposed) { return; }
+            _animations?.Dispose();
+            _disposed = true;
+        }
     }
 }

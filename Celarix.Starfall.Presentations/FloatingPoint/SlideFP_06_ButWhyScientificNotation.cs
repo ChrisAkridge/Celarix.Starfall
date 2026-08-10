@@ -15,11 +15,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private const string InitialPlanckLengthText = "0.00000000000000000000000000000000001616255";
 
         private int _state;
-        private AnimationContext _animationContext;
 
         public SlideFP_06_ButWhyScientificNotation(int width, int height) : base(width, height)
         {
-            _animationContext = new AnimationContext();
         }
 
         public override void Initialize()
@@ -59,7 +57,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         public override void Update(double deltaTime)
         {
             base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
         }
 
         private Action<TextBlock, TextBlock>[] GetStateMethods()
@@ -150,7 +148,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             Console.WriteLine("FP6: NEXT: Shows one Planck length in meters on the bottom.");
 
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(
+            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(
                 AnimationContext.SecondsToFrames(0.5d),
                 p => bigNumberElement.Opacity = p
             ));
@@ -161,7 +159,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             Console.WriteLine("FP6: NEXT: Divides Avogadro's constant by 10.");
 
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(
+            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(
                 AnimationContext.SecondsToFrames(0.5d),
                 p => smallNumberElement.Opacity = p
             ));

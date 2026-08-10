@@ -22,7 +22,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         }
 
         private StateMachine<State> _stateMachine;
-        private AnimationContext _animationContext;
 
         public SlideFP_05_ButWellJustPickBinary(int width, int height) : base(width, height)
         {
@@ -32,7 +31,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             BackgroundColor = Constants.FloatingPointBackground;
             _stateMachine = new StateMachine<State>(this, State.Initial);
-            _animationContext = new AnimationContext();
 
             var binaryElement = new FloatingPointWindowElement("#binaryElement", MeasurementService)
             {
@@ -73,7 +71,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         public override void Update(double deltaTime)
         {
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
             base.Update(deltaTime);
         }
 
@@ -126,8 +124,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 decimalAnchor.Point = MathHelpers.Ease(oldDecimalAnchorPosition, newDecimalAnchorPosition, p, Easings.Land);
             });
 
-            _animationContext.ScheduleAnimation(moveBinaryAnchorAnimation);
-            _animationContext.ScheduleAnimation(moveDecimalAnchorAnimation);
+            Animations.ScheduleAnimation(moveBinaryAnchorAnimation);
+            Animations.ScheduleAnimation(moveDecimalAnchorAnimation);
         }
 
         [StateTransition<State>(State.ShowDecimalElement, State.ShowDecimalPlaceValuesAndExponents)]

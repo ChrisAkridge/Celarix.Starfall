@@ -27,7 +27,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         private double _leftXOf2ToThe0Bit = 0d;
         private double _drawnWindowLeftX;
         private double? _desiredWindowLeftX;
-        private AnimationContext _animationContext = new AnimationContext();
         private readonly Random _random = new Random();
 
         public double DotsOnRow { get; set; }
@@ -115,7 +114,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
 
         public override void Update(double deltaTime)
         {
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
 
             if (!AnimationRunning || (AtriaLayoutEngine.GlobalFrameNumber % FramesBetweenUpdates != 0)) { return; }
 
@@ -129,7 +128,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 _windowLeftExponent = newExponent;
                 _desiredWindowLeftX = ExponentToScreenX(_windowLeftExponent);
                 var oldWindowLeftX = _drawnWindowLeftX;
-                _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(FramesBetweenUpdates, p =>
+                Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(FramesBetweenUpdates, p =>
                 {
                     _drawnWindowLeftX = MathHelpers.Ease(oldWindowLeftX, _desiredWindowLeftX.Value, p, Easings.Linear);
                 }, () => _desiredWindowLeftX = null));

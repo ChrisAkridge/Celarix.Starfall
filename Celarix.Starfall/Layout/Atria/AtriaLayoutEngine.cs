@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Rendering;
+﻿using Celarix.Starfall.Layout.Atria.Animation;
+using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using System;
@@ -15,6 +16,7 @@ namespace Celarix.Starfall.Layout.Atria
         private Dictionary<string, AtriaSlide> _slides = new();
         private string? _currentSlideName;
         private DebugMode _debugMode;
+        private readonly AnimationContextRegistry _animationContextRegistry = new();
 
         public event EventHandler<Exception>? OnException;
 
@@ -23,6 +25,7 @@ namespace Celarix.Starfall.Layout.Atria
         private AtriaSlide? CurrentSlide => _currentSlideName != null && _slides.TryGetValue(_currentSlideName, out var slide) ? slide : null;
         
         public MeasurementService? MeasurementService { get; set; }
+        public AnimationContextRegistry AnimationContexts => _animationContextRegistry;
         public string? CurrentSlideName => _currentSlideName;
 
         public AtriaLayoutEngine(int viewportWidth, int viewportHeight)
@@ -41,8 +44,17 @@ namespace Celarix.Starfall.Layout.Atria
         public void AddSlide(AtriaSlide slide, string name)
         {
             slide.SetProtectedProperties(MeasurementService ?? throw new InvalidOperationException("MeasurementService must be set on the layout engine before adding slides."),
-                _debugMode);
-            slide.Initialize();
+                _debugMode,
+                _animationContextRegistry);
+            try
+            {
+                slide.Initialize();
+            }
+            catch
+            {
+                slide.Dispose();
+                throw;
+            }
             // TODO: check for duplicate names and throw if one is found
             _slides.Add(name, slide);
         }
@@ -53,7 +65,9 @@ namespace Celarix.Starfall.Layout.Atria
             {
                 throw new ArgumentException($"No slide with the name '{name}' exists in this layout engine.", nameof(name));
             }
+            var slide = _slides[name];
             _slides.Remove(name);
+            slide.Dispose();
 
             if (_currentSlideName?.Equals(name, StringComparison.OrdinalIgnoreCase) == true)
             {
@@ -81,6 +95,7 @@ namespace Celarix.Starfall.Layout.Atria
         public void Update(AtriaSlide slide, double deltaTime)
         {
             GlobalFrameNumber += 1;
+            _animationContextRegistry.UpdateAll(GlobalFrameNumber);
             slide.Update(deltaTime);
         }
 
