@@ -21,6 +21,18 @@ namespace Celarix.Starfall.Rendering.Targets
             canvas.Clear(color.ToSKColor());
         }
 
+        public static void PushTransform(SKCanvas canvas, STransform2D transform)
+        {
+            canvas.Save();
+            canvas.Translate((float)transform.Translation.X, (float)transform.Translation.Y);
+            canvas.Scale((float)transform.Scale.Width, (float)transform.Scale.Height);
+        }
+
+        public static void PopTransform(SKCanvas canvas)
+        {
+            canvas.Restore();
+        }
+
         public static void DrawRectangle(SKCanvas canvas, SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle angle)
         {
             SKRect rect = bounds.ToSKRect();

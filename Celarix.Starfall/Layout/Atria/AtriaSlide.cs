@@ -69,6 +69,14 @@ namespace Celarix.Starfall.Layout.Atria
             {
                 element.Render(target);
             }
+
+            if (DebugMode.ShowAnchors)
+            {
+                foreach (var basisElement in _basisElements)
+                {
+                    basisElement.RenderDebug(target);
+                }
+            }
         }
 
         public virtual SlideAdvanceResult Rewind()
@@ -83,7 +91,12 @@ namespace Celarix.Starfall.Layout.Atria
             return SlideAdvanceResult.CanAdvance;
         }
 
-        public AddedElementOptions Add(IEnumerable<ISlideAddable> addables)
+        public virtual AddedElementOptions Add(IEnumerable<ISlideAddable> addables)
+        {
+            return AddCore(addables);
+        }
+
+        protected AddedElementOptions AddCore(IEnumerable<ISlideAddable> addables)
         {
             var newAddables = addables.ToArray();
             var newElements = new List<AtriaElement>();
@@ -105,7 +118,7 @@ namespace Celarix.Starfall.Layout.Atria
             return new AddedElementOptions(this, [.. newElements], [.. newBasisElements]);
         }
 
-        public void Remove(IEnumerable<ISlideAddable> removeables)
+        public virtual void Remove(IEnumerable<ISlideAddable> removeables)
         {
             foreach (var removeable in removeables)
             {

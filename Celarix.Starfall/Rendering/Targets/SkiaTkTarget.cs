@@ -167,6 +167,18 @@ namespace Celarix.Starfall.Rendering.Targets
             SkiaCommon.Clear(surface.Canvas, color);
         }
 
+        public void PushTransform(STransform2D transform)
+        {
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.PushTransform(surface.Canvas, transform);
+        }
+
+        public void PopTransform()
+        {
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.PopTransform(surface.Canvas);
+        }
+
         public void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation)
         {
             // TODO: Implement rotation

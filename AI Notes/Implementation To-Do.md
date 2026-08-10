@@ -17,10 +17,10 @@ This list tracks implementation status across the AI Notes design threads.
 ## Current Priority
 
 - [ ] Layers, transforms, and render context as the next larger phase.
-  - [ ] Define STransform2D or equivalent friendly transform helper.
-  - [ ] Decide the render-target push/pop API for transform and clipping scopes.
-  - [ ] Add layer model, likely LayeredAtriaSlide<TLayer>.
-  - [ ] Let layers pan/zoom independently.
+  - [x] Define STransform2D or equivalent friendly transform helper.
+  - [x] Decide the render-target push/pop API for transform and clipping scopes.
+  - [x] Add layer model, likely LayeredAtriaSlide<TLayer>.
+  - [x] Let layers pan/zoom independently.
   - [ ] Pass viewport/render context information down to AtriaElement.Render.
   - [ ] Add geometry helpers needed for transformed viewport visibility.
 

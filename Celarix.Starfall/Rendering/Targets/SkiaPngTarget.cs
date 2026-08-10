@@ -37,6 +37,10 @@ namespace Celarix.Starfall.Rendering.Targets
 
         public void Clear(SColor color) => SkiaCommon.Clear(_canvas, color);
 
+        public void PushTransform(STransform2D transform) => SkiaCommon.PushTransform(_canvas, transform);
+
+        public void PopTransform() => SkiaCommon.PopTransform(_canvas);
+
         public void Complete()
         {
             using var image = SKImage.FromBitmap(_bitmap);

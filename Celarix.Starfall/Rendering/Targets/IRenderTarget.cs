@@ -14,6 +14,9 @@ namespace Celarix.Starfall.Rendering.Targets
         void Start();
         void Complete();
 
+        void PushTransform(STransform2D transform);
+        void PopTransform();
+
         void Clear(SColor color);
         void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation);
         void DrawEllipse(SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle);

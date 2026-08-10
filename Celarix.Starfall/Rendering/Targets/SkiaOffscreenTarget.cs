@@ -25,6 +25,10 @@ namespace Celarix.Starfall.Rendering.Targets
 
         public void Clear(SColor color) => SkiaCommon.Clear(_surface.Canvas, color);
 
+        public void PushTransform(STransform2D transform) => SkiaCommon.PushTransform(_surface.Canvas, transform);
+
+        public void PopTransform() => SkiaCommon.PopTransform(_surface.Canvas);
+
         public void Complete()
         {
             Snapshot?.Dispose();
