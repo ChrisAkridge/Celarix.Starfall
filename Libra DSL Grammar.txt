@@ -1,0 +1,56 @@
+(* Libra DSL eBNF-style Grammar *)
+(* Character ranges use "..". *)
+
+ascii_letter = "A".."Z" | "a".."z";
+ascii_digit = "0".."9";
+
+suffix =
+	  identifier_suffix
+	| property_block_suffix;
+
+identifier_suffix = "@", identifier, { identifier };
+identifier = class_identifier | id_identifier;
+class_identifier = ".", identifier_name;
+id_identifier = "#", identifier_name;
+identifier_name = identifier_name_first_character, { identifier_name_character };
+identifier_name_first_character: ascii_letter | "_";
+identifier_name_character: ascii_letter | ascii_digit | "_";
+
+property_block_suffix = "[", property_list, "]";
+property_list = property, { ",", property };
+property = property_key, "=", property_value;
+property_key = property_key_first_character, { property_key_character };
+property_key_first_character = ascii_letter | "_";
+property_key_character = ascii_letter | ascii_digit | "_";
+property_value = property_value_character, { property_value_character };
+property_value_character = ascii_letter | ascii_digit | "." | "-";
+
+substitution = "[[", substitution_name, "]]";
+substitution_name = substitution_name_first_character, { substitution_name_character };
+substitution_name_first_character: ascii_letter | "_";
+substitution_name_character: ascii_letter | ascii_digit | "_";
+
+text_literal = """, { text_literal_character }, """;
+text_literal_character = (* all Unicode characters except " *) | escaped_literal_double_quote;
+escaped_literal_double_quote = "\\", "\"";
+
+expr = primary, { suffix };
+
+primary =
+	  bare_word
+	| substitution
+	| text_literal
+	| paren_expr
+	| reserved_name
+	| reserved_call;
+
+bare_word_character = ascii_letter | ascii_digit;
+bare_word = bare_word_character, { bare_word_character };
+
+sequence = expr, { ",", expr };
+
+paren_expr = "(", expr, ")";
+
+reserved_name_character: ascii_letter | ascii_digit | "_";
+reserved_name = "__", reserved_name_character, { reserved_name_character };
+reserved_call = reserved_name, "(", sequence, ")";

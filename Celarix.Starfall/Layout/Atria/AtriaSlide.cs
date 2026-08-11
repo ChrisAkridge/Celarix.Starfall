@@ -174,6 +174,8 @@ namespace Celarix.Starfall.Layout.Atria
         {
             if (_disposed) { return; }
 
+            GC.SuppressFinalize(this);
+
             foreach (var element in _elements)
             {
                 element.Dispose();

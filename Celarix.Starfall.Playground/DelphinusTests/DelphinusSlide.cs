@@ -11,7 +11,7 @@ using Celarix.Starfall.Rendering.Targets;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using static Celarix.Starfall.Libra.LibraExpressionFactory;
+using static Celarix.Starfall.Libra.LibraExpressions;
 
 namespace Celarix.Starfall.Playground.DelphinusTests
 {

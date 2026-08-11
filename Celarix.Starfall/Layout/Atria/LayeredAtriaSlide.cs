@@ -27,6 +27,13 @@ namespace Celarix.Starfall.Layout.Atria
 
         protected AtriaLayer FrontmostLayer => _orderedLayers[^1];
 
+        /// <summary>
+        /// Gets or sets a value indicating whether <see cref="Render(IRenderTarget)"/> draws its own
+        /// background color. Set this to false in order to draw your own background in a derived class.
+        /// Defaults to <see cref="true"/>.
+        /// </summary>
+        protected bool RenderOwnBackground { get; set; } = true;
+
         internal AddedElementOptions Add(AtriaLayer layer, IEnumerable<ISlideAddable> addables)
         {
             var newAddables = addables.ToArray();
@@ -66,7 +73,10 @@ namespace Celarix.Starfall.Layout.Atria
 
         public override void Render(IRenderTarget target)
         {
-            target.Clear(BackgroundColor);
+            if (RenderOwnBackground)
+            {
+                target.Clear(BackgroundColor);
+            }
 
             foreach (var layer in _orderedLayers)
             {
