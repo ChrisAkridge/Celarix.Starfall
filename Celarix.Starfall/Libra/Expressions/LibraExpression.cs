@@ -1,5 +1,7 @@
 ﻿using Celarix.Starfall.Identity;
 using Celarix.Starfall.Layout.Helium;
+using Celarix.Starfall.Libra.Parsing;
+using Celarix.Starfall.Libra.Parsing.Syntax;
 using Celarix.Starfall.Libra.Renderables;
 using Celarix.Starfall.Rendering.Models;
 using System;
@@ -39,6 +41,12 @@ namespace Celarix.Starfall.Libra.Expressions
         }
 
         public abstract LibraExpression Replace(string querySelector, Func<LibraExpression, LibraExpression> replacementFactory);
+
+        public static LibraBuildContext Parse(string expression)
+        {
+            return new LibraBuildContext(expression,
+                SColor.White, SColor.Transparent, 1.0, null, new Dictionary<string, Func<LibraExpression>>());
+        }
 
         internal static IReadOnlyList<LibraExpression> GetDescendants(LibraExpression root)
         {

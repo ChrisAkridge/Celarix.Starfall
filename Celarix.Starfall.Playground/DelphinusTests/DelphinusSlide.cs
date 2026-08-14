@@ -2,6 +2,7 @@
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Libra;
+using Celarix.Starfall.Libra.Expressions;
 using Celarix.Starfall.Libra.Metrics;
 using Celarix.Starfall.Libra.Metrics.Symbols;
 using Celarix.Starfall.Libra.Renderables;
@@ -34,6 +35,9 @@ namespace Celarix.Starfall.Playground.DelphinusTests
             //var _2 = Frac(_1, Text("2"));
             //var _3 = Concat(Text("sumtorial"), Paren(Text("x")));
             //var _4 = EqualByDef(_3, _2);
+
+            var expr = LibraExpression.Parse(";catEm(2, mt = 1 - t, (mt^2 * X_0) + (2 * mt * t * X_1) + (t^2 * X_2))")
+                .Build();
 
             var _0 = Text("mt");
             var _1 = Sub(Text("1"), Text("t"));

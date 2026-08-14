@@ -201,6 +201,8 @@ namespace Celarix.Starfall.Playground.MathFun
             return result;
         }
 
+        private ReplacementList StepBinarySearch() => throw new NotImplementedException();
+
         // Internal Libra factories
         private LibraExpression SquareRoot(double value) => Concat(Text("sqrt"), Paren(Text(value.ToString())));
     }

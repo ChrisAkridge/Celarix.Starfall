@@ -6,11 +6,22 @@ namespace Celarix.Starfall.Libra.Parsing
 {
     internal enum TokenKind
     {
-        None,
-        Unresolved,
-        TextLiteral,
-        UnseparatedIdentifier,
-        UnseparatedPropertyBlock,
+        EndOfInput,
+
+        Text,
+        String,
+        ReservedName,
         Substitution,
+
+        Operator,
+        OpenParen,
+        CloseParen,
+        OpenBrace,
+        CloseBrace,
+
+        Comma,
+        
+        IdentifierBlock,
+        PropertyBlock
     }
 }

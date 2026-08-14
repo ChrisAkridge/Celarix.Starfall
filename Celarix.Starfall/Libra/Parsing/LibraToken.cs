@@ -4,21 +4,17 @@ using System.Text;
 
 namespace Celarix.Starfall.Libra.Parsing
 {
-    internal abstract class LibraToken
+    internal readonly record struct LibraToken
     {
-        
-    }
-
-    internal sealed class FlatToken : LibraToken
-    {
-        // Represents a token that is not made of other tokens, at least at this time.
         public TokenKind Kind { get; }
         public string Text { get; }
+        public TextSpan Span { get; }
 
-        public FlatToken(TokenKind kind, string text)
+        public LibraToken(TokenKind kind, string text, TextSpan span)
         {
             Kind = kind;
-            Text = text;
+            Text = text.Trim();
+            Span = span;
         }
     }
 }
