@@ -48,6 +48,15 @@ public sealed class LibraParserTests
     }
 
     [Fact]
+    public void Parse_ReservedOperator_BindsAsInfixOperator()
+    {
+        var binary = AssertBinary(Parse("x;equaldef y"), ";equaldef");
+
+        AssertText(binary.Left, "x");
+        AssertText(binary.Right, "y");
+    }
+
+    [Fact]
     public void Parse_ParenthesesOverrideBinaryPrecedence()
     {
         var binary = AssertBinary(Parse("(x+y)*z"), "*");

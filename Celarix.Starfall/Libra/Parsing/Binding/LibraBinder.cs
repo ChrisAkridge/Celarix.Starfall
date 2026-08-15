@@ -70,8 +70,15 @@ namespace Celarix.Starfall.Libra.Parsing.Binding
             }
             else if (syntax is PropertyBlockSyntax propertyBlock)
             {
-                var newContext = ParsePropertyBlock(propertyBlock.PropertyBlock, Context);
-                return WithContext(newContext).BindExpression(propertyBlock.Expression);
+                var result = PropertyRegistry.BindProperties(propertyBlock, Context, this);
+                if (result.FenceTypeSpan is not null
+                    && propertyBlock.Expression is not ParenthesizedExpressionSyntax)
+                {
+                    throw CreateValidationException(result.FenceTypeSpan,
+                        "Property 'fencetype' can only be attached to a parenthesized expression.");
+                }
+
+                return WithContext(result.Context).BindExpression(propertyBlock.Expression);
             }
             else if (syntax is SubstitutionSyntax substitution)
             {
@@ -143,46 +150,48 @@ namespace Celarix.Starfall.Libra.Parsing.Binding
             throw CreateValidationException(syntax, "Expected a numeric literal.");
         }
 
+        public SColor BindColor(PropertyEntry entry)
+        {
+            if (!IsValidHtmlColor(entry.Value))
+            {
+                throw CreateValidationException(entry.ValueSpan,
+                    $"Property '{entry.Key}' expects an HTML color value with 3, 4, 6, or 8 hex digits.");
+            }
+
+            return SColor.FromHtmlAttribute(entry.Value, SColor.Transparent);
+        }
+
+        public FenceType BindFenceType(PropertyEntry entry)
+        {
+            if (!Enum.TryParse<FenceType>(entry.Value, true, out var fenceType))
+            {
+                throw CreateValidationException(entry.ValueSpan,
+                    $"Property '{entry.Key}' expects a valid {nameof(FenceType)} value.");
+            }
+
+            return fenceType;
+        }
+
         public LibraParseException CreateValidationException(ExpressionSyntax syntax,
             string message)
         {
             return new LibraParseException(new(message, syntax.Span));
         }
 
+        public LibraParseException CreateValidationException(TextSpan span,
+            string message)
+        {
+            return new LibraParseException(new(message, span));
+        }
+
         private LibraBinder WithContext(LibraBuildContext context) => new(context, LibraId);
 
         private LibraBinder WithId(string? libraId) => new(Context, libraId);
 
-        private static LibraBuildContext ParsePropertyBlock(string propertyBlock,
-            LibraBuildContext context)
+        private static bool IsValidHtmlColor(string value)
         {
-            var newContext = context;
-            var properties = propertyBlock.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            foreach (var property in properties)
-            {
-                var parts = property.Split('=', StringSplitOptions.TrimEntries);
-                var key = parts[0].Trim();
-                var value = parts[1].Trim();
-                switch (key.ToLowerInvariant())
-                {
-                    case "foreground":
-                        newContext = newContext with { ForegroundColor = SColor.FromHtmlAttribute(value, SColor.White) };
-                        break;
-                    case "background":
-                        newContext = newContext with { BackgroundColor = SColor.FromHtmlAttribute(value, SColor.Black) };
-                        break;
-                    case "fencetype":
-                        if (!Enum.TryParse<FenceType>(value, true, out var fenceType))
-                        {
-                            throw new InvalidOperationException($"Invalid fence type: '{value}'");
-                        }
-                        newContext = newContext with { FenceType = fenceType };
-                        break;
-                    default:
-                        throw new InvalidOperationException($"Unknown property key: '{key}'");
-                }
-            }
-            return newContext;
+            return value.Length is 3 or 4 or 6 or 8
+                && value.All(Uri.IsHexDigit);
         }
     }
 }

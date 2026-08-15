@@ -100,7 +100,7 @@ namespace Celarix.Starfall.Libra.Parsing
         {
             switch (token.Kind)
             {
-                case TokenKind.Operator:
+                case TokenKind.Operator or TokenKind.ReservedName:
                     return OperatorRegistry.TryGetWhenSome(token.Text, OperatorKind.Infix, out rule);
                 case TokenKind.IdentifierBlock:
                     rule = _identifierRule;

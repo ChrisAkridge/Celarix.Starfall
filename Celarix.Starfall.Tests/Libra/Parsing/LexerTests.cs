@@ -69,6 +69,18 @@ public sealed class LexerTests
     }
 
     [Fact]
+    public void Parse_ReservedOperator_IncludesSemicolonInTokenText()
+    {
+        var tokens = Lex("x;equaldef y");
+
+        AssertTokens(tokens,
+            (TokenKind.Text, "x"),
+            (TokenKind.ReservedName, ";equaldef"),
+            (TokenKind.Text, "y"),
+            (TokenKind.EndOfInput, ""));
+    }
+
+    [Fact]
     public void Parse_LongestOperator_UsesSingleOperatorToken()
     {
         var tokens = Lex("a<=b");

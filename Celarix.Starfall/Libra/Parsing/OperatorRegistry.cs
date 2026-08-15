@@ -33,6 +33,7 @@ namespace Celarix.Starfall.Libra.Parsing
                 new("^", "", OperatorKind.Infix, null, new ScriptOperatorRule()),
                 new("_", "", OperatorKind.Infix, null, new ScriptOperatorRule()),
                 new("=", "=", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(EqualityBindingPower)),
+                new(";equaldef", "≝", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(EqualityBindingPower)),
                 new("!=", "≠", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(EqualityBindingPower)),
                 new("<", "<", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(RelationalBindingPower)),
                 new(">", ">", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(RelationalBindingPower)),

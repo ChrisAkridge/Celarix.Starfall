@@ -58,7 +58,7 @@ namespace Celarix.Starfall.Libra.Parsing
             }
             else if (expression is PropertyBlockSyntax propertyBlock)
             {
-                ValidatePropertyBlock(propertyBlock);
+                Validate(propertyBlock.Expression);
             }
             else if (expression is SubstitutionSyntax substitution)
             {
@@ -116,39 +116,6 @@ namespace Celarix.Starfall.Libra.Parsing
                 }
 
                 results.Add(new(name, kind));
-            }
-        }
-
-        private static void ValidatePropertyBlock(PropertyBlockSyntax propertyBlock)
-        {
-            if (string.IsNullOrWhiteSpace(propertyBlock.PropertyBlock))
-            {
-                throw new LibraParseException(new("Property block cannot be empty or whitespace", propertyBlock.Span));
-            }
-            
-            var properties = propertyBlock.PropertyBlock.Split(',', StringSplitOptions.TrimEntries);
-            if (properties.Any(p => string.IsNullOrWhiteSpace(p)))
-            {
-                throw new LibraParseException(new("Property block contains empty property or properties", propertyBlock.Span));
-            }
-
-            foreach (var property in properties)
-            {
-                var parts = property.Split('=', StringSplitOptions.TrimEntries);
-                if (parts.Length != 2)
-                {
-                    throw new LibraParseException(new($"Property '{property}' is not in the expected 'key=value' format", propertyBlock.Span));
-                }
-
-                if (!IsValidIdentifier(parts[0]))
-                {
-                    throw new LibraParseException(new($"Property key '{parts[0]}' is not a valid identifier", propertyBlock.Span));
-                }
-
-                if (!IsValidPropertyValue(parts[1]))
-                {
-                    throw new LibraParseException(new($"Property value '{parts[1]}' is not valid", propertyBlock.Span));
-                }
             }
         }
 

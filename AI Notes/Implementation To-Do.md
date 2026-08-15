@@ -40,19 +40,19 @@ This list tracks implementation status across the AI Notes design threads.
     - [x] Add `;catEm(gapInEm, expression1, expression2, ...)` binder with conservative numeric binding for the gap and expression binding for the remaining args.
     - [x] Add binder helper methods only as needed, starting with `BindExpression`, `BindNumber`, and possibly `BindString` / `BindInteger`.
     - [x] Ensure binder diagnostics carry source spans and do not require extracting typed values back out of built `LibraExpression` objects.
-  - [ ] Property block binding pass.
-    - [ ] Define valid property keys in code rather than scattering string switches through the builder.
-    - [ ] Give each property definition an accepted value type and parsing/validation routine.
-    - [ ] Support property values needed by current properties, especially HTML-style colors without # characters such as `ff0000` and enum values such as `FenceType`.
-    - [ ] Produce source-span-aware diagnostics for unknown properties, malformed values, and unsupported value types.
-    - [ ] Keep property validation/binding aligned with the future binder model so the parser only recognizes property-block syntax.
+  - [x] Property block binding pass.
+    - [x] Define valid property keys in code rather than scattering string switches through the builder.
+    - [x] Give each property definition an accepted value type and parsing/validation routine.
+    - [x] Support property values needed by current properties, especially HTML-style colors without # characters such as `ff0000` and enum values such as `FenceType`.
+    - [x] Produce source-span-aware diagnostics for unknown properties, malformed values, and unsupported value types.
+    - [x] Keep property validation/binding aligned with the future binder model so the parser only recognizes property-block syntax.
   - [ ] Libra postfix syntax validation pass.
     - [ ] Reject direct identifier/property postfix blocks on substitutions, such as `[[Substitution]]@#id` or `[[Substitution]][color=red]`.
     - [ ] Allow at most one identifier block and one property block per expression.
     - [ ] Require identifier blocks to contain at most one `#id` and arbitrarily many classes.
     - [ ] Require repeated properties to be expressed inside one property block and diagnose duplicate/conflicting keys through the property binder.
-    - [ ] Diagnose `fencetype` when it is attached to anything other than a parenthesized expression.
-    - [ ] Decide and test whether non-rendering braces may forward `fencetype` to an enclosed parenthesized expression.
+    - [x] Diagnose `fencetype` when it is attached to anything other than a parenthesized expression.
+    - [x] Decide and test whether non-rendering braces may forward `fencetype` to an enclosed parenthesized expression.
   - [x] Libra bare atom lexer rules.
     - [x] Restrict bare text atoms to `[A-Za-z0-9.]+`.
     - [x] Treat whitespace outside strings as syntactic separation and discard it.

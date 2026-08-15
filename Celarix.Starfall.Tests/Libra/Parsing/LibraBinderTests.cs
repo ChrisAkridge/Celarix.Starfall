@@ -1,3 +1,4 @@
+using Celarix.Starfall;
 using Celarix.Starfall.Libra;
 using Celarix.Starfall.Libra.Expressions;
 using Celarix.Starfall.Libra.Parsing;
@@ -31,6 +32,16 @@ public sealed class LibraBinderTests
         var binary = Assert.IsType<BinaryExpression>(Build("x+y"));
 
         Assert.Equal("+", binary.Operator);
+        AssertText(binary.Left, "x");
+        AssertText(binary.Right, "y");
+    }
+
+    [Fact]
+    public void Build_ReservedOperator_BindsInfixOperator()
+    {
+        var binary = Assert.IsType<BinaryExpression>(Build("x;equaldef y"));
+
+        Assert.Equal("≝", binary.Operator);
         AssertText(binary.Left, "x");
         AssertText(binary.Right, "y");
     }
@@ -164,6 +175,122 @@ public sealed class LibraBinderTests
         AssertText(script.BaseExpression, "x");
         AssertText(script.Subscript!, "i");
         AssertText(script.Superscript!, "2");
+    }
+
+    [Fact]
+    public void Build_ForegroundProperty_AppliesHtmlColorToExpression()
+    {
+        var text = AssertText(Build("x[foreground=ff0000]"), "x");
+
+        Assert.Equal(255, text.ForegroundColor.R);
+        Assert.Equal(0, text.ForegroundColor.G);
+        Assert.Equal(0, text.ForegroundColor.B);
+        Assert.Equal(255, text.ForegroundColor.A);
+    }
+
+    [Fact]
+    public void Build_BackgroundProperty_AppliesHtmlColorToExpression()
+    {
+        var text = AssertText(Build("x[background=0000ff]"), "x");
+
+        Assert.Equal(0, text.BackgroundColor.R);
+        Assert.Equal(0, text.BackgroundColor.G);
+        Assert.Equal(255, text.BackgroundColor.B);
+        Assert.Equal(255, text.BackgroundColor.A);
+    }
+
+    [Fact]
+    public void Build_FenceTypePropertyOnParenthesizedExpression_AppliesFenceType()
+    {
+        var fenced = Assert.IsType<FencedExpression>(Build("(x+y)[fencetype=SquareBrackets]"));
+
+        Assert.Equal(FenceType.SquareBrackets, fenced.FenceType);
+        AssertBinary(fenced.Expression, "+");
+    }
+
+    [Fact]
+    public void Build_MultipleProperties_AppliesAllDefinitions()
+    {
+        var text = AssertText(Build("x[foreground=00ff00,background=0000ff]"), "x");
+
+        Assert.Equal(0, text.ForegroundColor.R);
+        Assert.Equal(255, text.ForegroundColor.G);
+        Assert.Equal(0, text.ForegroundColor.B);
+        Assert.Equal(0, text.BackgroundColor.R);
+        Assert.Equal(0, text.BackgroundColor.G);
+        Assert.Equal(255, text.BackgroundColor.B);
+    }
+
+    [Fact]
+    public void Build_UnknownProperty_ThrowsSpanAwareDiagnostic()
+    {
+        var exception = BuildThrows("x[color=ff0000]");
+
+        Assert.Contains("Unknown property 'color'", exception.Diagnostic.Message);
+        Assert.Equal(2, exception.Diagnostic.textSpan?.StartIndex);
+    }
+
+    [Fact]
+    public void Build_EmptyPropertyBlock_ThrowsSpanAwareDiagnostic()
+    {
+        var exception = BuildThrows("x[]");
+
+        Assert.Contains("Property block cannot be empty", exception.Diagnostic.Message);
+        Assert.Equal(1, exception.Diagnostic.textSpan?.StartIndex);
+    }
+
+    [Fact]
+    public void Build_MalformedProperty_ThrowsSpanAwareDiagnostic()
+    {
+        var exception = BuildThrows("x[foreground]");
+
+        Assert.Contains("key=value", exception.Diagnostic.Message);
+        Assert.Equal(2, exception.Diagnostic.textSpan?.StartIndex);
+    }
+
+    [Fact]
+    public void Build_DuplicateProperty_ThrowsSpanAwareDiagnostic()
+    {
+        var exception = BuildThrows("x[foreground=ff0000,foreground=00ff00]");
+
+        Assert.Contains("Duplicate property 'foreground'", exception.Diagnostic.Message);
+        Assert.Equal(20, exception.Diagnostic.textSpan?.StartIndex);
+    }
+
+    [Fact]
+    public void Build_InvalidColorProperty_ThrowsSpanAwareDiagnostic()
+    {
+        var exception = BuildThrows("x[foreground=gg0000]");
+
+        Assert.Contains("expects an HTML color value", exception.Diagnostic.Message);
+        Assert.Equal(13, exception.Diagnostic.textSpan?.StartIndex);
+    }
+
+    [Fact]
+    public void Build_InvalidFenceTypeProperty_ThrowsSpanAwareDiagnostic()
+    {
+        var exception = BuildThrows("(x)[fencetype=Nope]");
+
+        Assert.Contains("expects a valid FenceType value", exception.Diagnostic.Message);
+        Assert.Equal(14, exception.Diagnostic.textSpan?.StartIndex);
+    }
+
+    [Fact]
+    public void Build_FenceTypePropertyOnText_ThrowsTargetDiagnostic()
+    {
+        var exception = BuildThrows("x[fencetype=SquareBrackets]");
+
+        Assert.Contains("can only be attached to a parenthesized expression", exception.Diagnostic.Message);
+        Assert.Equal(2, exception.Diagnostic.textSpan?.StartIndex);
+    }
+
+    [Fact]
+    public void Build_FenceTypePropertyOnBracedExpression_DoesNotForwardThroughBraces()
+    {
+        var exception = BuildThrows("{(x)}[fencetype=SquareBrackets]");
+
+        Assert.Contains("can only be attached to a parenthesized expression", exception.Diagnostic.Message);
+        Assert.Equal(6, exception.Diagnostic.textSpan?.StartIndex);
     }
 
     private static LibraExpression Build(string source)
