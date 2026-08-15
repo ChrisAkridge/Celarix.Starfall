@@ -2,7 +2,9 @@
 
 Date: 2026-08-14
 
-Scope reviewed: `Celarix.Starfall.Libra.Parsing`, the current `Libra DSL Grammar.txt`, the public `LibraExpression.Parse(...).Build()` entry point, and nearby expression/ID/color behavior that the builder relies on.
+Scope reviewed: `Celarix.Starfall.Libra.Parsing`, the public `LibraExpression.Parse(...).Build()` entry point, and nearby expression/ID/color behavior that the builder relies on.
+
+Revision note: the original version of this review treated the root `Libra DSL Grammar.txt` file as current. That file was stale and has since been removed. Findings below have been revised so the code is treated as the active language source of truth. The intended reserved-call sigil is semicolon, for example `;frac(...)`.
 
 ## Executive Summary
 
@@ -12,7 +14,7 @@ The highest priority fixes are:
 
 1. Rewrite or heavily simplify the lexer cursor model.
 2. Fix `TextSpan` so every span is based on the same source identity/string.
-3. Assign `_reservedFunctions` and align reserved-name syntax between grammar and implementation.
+3. Assign `_reservedFunctions` and keep semicolon-prefixed reserved calls consistent across lexer, registry, examples, and tests.
 4. Make suffix lexing actually emit `IdentifierBlock` and `PropertyBlock`.
 5. Fix script parsing so `x^y_z`, `x_y^z`, and rejected chains mean what the rule says they mean.
 6. Add parser tests before extending the DSL further.
@@ -69,14 +71,9 @@ The lexer needs a single convention: either inspect before consuming, or consume
 
 ### 3. Identifier and property suffix states are effectively unreachable
 
-The grammar defines suffixes:
+The parser, validator, and builder all have support for identifier and property suffix syntax, but the lexer does not actually emit those suffix token kinds in normal input.
 
-```text
-identifier_suffix = "@", identifier, { identifier };
-property_block_suffix = "[", property_list, "]";
-```
-
-But the lexer currently throws whenever it sees `@`, both at the start of input and in the middle of a token stream. It also throws for single `[` property blocks unless the sequence is interpreted as a substitution opener.
+The lexer currently throws whenever it sees `@`, both at the start of input and in the middle of a token stream. It also throws for single `[` property blocks unless the sequence is interpreted as a substitution opener.
 
 Relevant code:
 
@@ -117,14 +114,9 @@ Relevant code:
 
 Any path that calls `TryGetKnownReservedFunction` or `TryGetWhenNone` for a reserved function risks a `NullReferenceException`. The compiler already warns about this.
 
-### 6. Reserved names/functions disagree with the grammar and with prior notes
+### 6. Reserved semicolon syntax is the right active direction, but the lexer/registry still disagree operationally
 
-The grammar says reserved names use `__name`:
-
-- `Libra DSL Grammar.txt:54`
-- `Libra DSL Grammar.txt:55`
-
-The parser/registry uses semicolon-prefixed names such as `;frac`:
+The intended syntax is semicolon-prefixed reserved calls such as `;frac(...)`. That is also what the parser/registry and notes are moving toward:
 
 - `Celarix.Starfall/Libra/Parsing/OperatorRegistry.cs:48`
 - `AI Notes/Libra Reserved Call Binding Notes.md` also discusses `;frac(...)` and `;catEm(...)`.
@@ -133,7 +125,7 @@ The playground uses `;catEm(...)`:
 
 - `Celarix.Starfall.Playground/DelphinusTests/DelphinusSlide.cs:39`
 
-Pick one reserved-call syntax and update every layer: grammar, lexer, registry, examples, notes, and tests. Right now a reader cannot tell whether `__frac(...)`, `;frac(...)`, or both are intended.
+The remaining problem is implementation consistency, not the sigil choice. The lexer likely drops the semicolon from token text in some paths, while the registry stores names with the semicolon included. Decide and document whether `ReservedName` token text includes the sigil; then keep that convention through lookup, diagnostics, examples, and tests. Since the current intended user-facing syntax is `;frac(...)`, I would keep semicolon in source text and either normalize token text to `frac` at lex time or store registry keys without punctuation.
 
 ### 7. `LibraParseException.Diagnostic` is never assigned
 
@@ -182,11 +174,11 @@ Relevant code:
 
 The syntax node span is only the close delimiter span, not the full parenthesized/braced expression. That will make diagnostics and later source mapping misleading. It also bypasses `TextSpan.FromBounds`, which is probably why this particular path does not hit the span-composition bug.
 
-### 10. The grammar has only `expr = primary, { suffix }`, but the implementation has binary/prefix/script operators
+### 10. The language contract now lives in code, so tests and registry structure need to carry more weight
 
-`Libra DSL Grammar.txt` does not describe `+`, `-`, `*`, `/`, comparisons, equality, prefix operators, script operators, braces, or operator precedence. The implementation supports all of those.
+With the stale grammar removed, the operator registry and parse rules are the active source of truth for `+`, `-`, `*`, `/`, comparisons, equality, prefix operators, script operators, braces, suffixes, and reserved calls.
 
-This is a language maintenance problem: there is no canonical contract for users, tests, or future parser work. The grammar should become the source of truth for:
+That is viable, but only if tests or generated documentation make the contract visible. Otherwise the language still has no easy way for users or future maintainers to answer:
 
 - prefix operators,
 - infix operators and precedence,
@@ -196,6 +188,8 @@ This is a language maintenance problem: there is no canonical contract for users
 - suffix precedence,
 - text/bare-word token boundaries,
 - whitespace rules.
+
+I would either generate a small Markdown/operator table from the registry, or add a living parser test suite whose case names double as executable language documentation.
 
 ### 11. `ReservedFunctionWhenNoneRule.BindingPower` is unused
 
@@ -211,9 +205,9 @@ This is not breaking by itself, but it is misleading API shape. Either remove `B
 
 ### 12. Comma is globally tokenized but only meaningful inside reserved calls
 
-The parser only handles comma in `ReservedFunctionWhenNoneRule`. A top-level `a,b` will parse `a`, then fail at end-of-input expecting EOF. That may be fine, but the grammar has `sequence = expr, { ",", expr }`, and the implementation has no general sequence syntax node.
+The parser only handles comma in `ReservedFunctionWhenNoneRule`. A top-level `a,b` will parse `a`, then fail at end-of-input expecting EOF. That is the intended direction: commas are valid only inside reserved calls. A rendered comma-delimited sequence should be produced through the upcoming `;seq(...)` reserved call.
 
-Question: should comma sequences exist only as reserved-call argument lists, or should Libra have a row/sequence expression? There is already a `RowExpression`, so this deserves a deliberate decision.
+The lexer/parser should therefore keep comma as a call-argument delimiter and produce a source diagnostic if it appears outside a reserved call, rather than adding a general comma sequence expression.
 
 ## Lexer and Token Model Findings
 
@@ -221,9 +215,16 @@ Question: should comma sequences exist only as reserved-call argument lists, or 
 
 Anything that is not a delimiter/operator becomes `Text`. That includes whitespace, dots, hashes, extra brackets, semicolons in some positions, and possibly Unicode/control characters.
 
-The grammar says `bare_word = ascii_letter | ascii_digit`, but the implementation accepts much more. That may be intentional for display text, but it conflicts with a math DSL where `mt = 1 - t` should probably ignore or normalize layout whitespace around operators.
+The intended model is math-style text rendering:
 
-Question: is bare text meant to be literal text, identifier-like math symbols, or both? If both, the language probably needs separate token kinds for bare symbol identifiers versus quoted text.
+- Bare text atoms have no special symbolic meaning; `mt`, `hello`, and `sin` are all text atoms.
+- `mt` is one single text run, not `m` followed by `t`.
+- Whitespace outside strings is syntactic separation. `x+y`, `x + y`, and `x   + y` should render the same because operator layout controls spacing.
+- Preserved spaces require quoted strings, so `hello world` renders like `helloworld`, while `"hello world"` preserves the space.
+- Punctuation should require quoting unless it is a recognized DSL delimiter/operator/sigil.
+- Decimal points are allowed inside bare atoms because numeric-looking text such as `2.5` matters for binding.
+
+Given that model, bare `Text` tokens should likely be restricted to `[A-Za-z0-9.]+`. The current "consume anything until a delimiter" behavior is too permissive.
 
 ### 14. `LibraToken` trims every token's text
 
@@ -235,7 +236,7 @@ Relevant code:
 
 That silently changes string literals and text content. A DSL for a text layout library probably cannot throw away leading/trailing spaces inside quoted strings. For example, `" x "` should not become `"x"` if literal text matters.
 
-Whitespace handling should be token-kind-specific. Operators and delimiters can ignore surrounding whitespace; string literals should preserve content; bare math identifiers probably should not include spaces at all.
+Whitespace handling should be token-kind-specific. Operators and delimiters can ignore surrounding whitespace; string literals should preserve content; bare text atoms should not include spaces.
 
 ### 15. The lexer has states for property/identifier blocks but no correct transition into them
 
@@ -292,12 +293,7 @@ Decide whether token text includes the sigil. Either way can work, but the lexer
 
 ## Validator Findings
 
-### 20. Property value validation rejects values the grammar and builder need
-
-The grammar allows `.` and `-` in property values:
-
-- `Libra DSL Grammar.txt:25`
-- `Libra DSL Grammar.txt:26`
+### 20. Property value validation rejects values the builder plausibly needs
 
 The validator allows only identifier-continuation characters:
 
@@ -308,7 +304,7 @@ The builder's color parser accepts HTML-style values and trims a leading `#`:
 - `Celarix.Starfall/Rendering/Models/SColor.cs`
 - `Celarix.Starfall/Libra/Parsing/LibraExpressionBuilder.cs:110`
 
-So `[foreground=#ff0000]` is rejected by the validator, `[some=-1.5]` is rejected despite the grammar, and `[foreground=red]` passes validation but falls back to white because `SColor.FromHtmlAttribute` does not parse color names. The layers are not enforcing the same property language.
+So `[foreground=#ff0000]` is rejected by the validator, numeric-ish values such as `[some=-1.5]` are rejected, and `[foreground=red]` passes validation but falls back to white because `SColor.FromHtmlAttribute` does not parse color names. The layers are not enforcing the same property language.
 
 ### 21. Property validation is syntactic, but property building is semantic and throws different exception types
 
@@ -356,23 +352,35 @@ Relevant code:
 
 Either remove it for now or define an `opacity` property and consistently apply `SColor.WithOpacity(...)` at render/build time.
 
-### 25. Substitution resolvers ignore surrounding context and ID
+### 25. Substitutions should reject direct postfix identifier/property blocks
 
 For substitutions, the builder returns `resolver()` directly:
 
 - `Celarix.Starfall/Libra/Parsing/LibraExpressionBuilder.cs:58`
 
-That means a substitution inside `[foreground=red]` will not inherit the foreground unless the resolver manually bakes it in. It also cannot receive the suffix ID being applied. This might be intended for complete prebuilt expression injection, but it is surprising in a layout DSL where property blocks are lexical/contextual.
+That means substitutions are intentionally strong expression injection: the user builds their own `LibraExpression` and tells Libra what it is. They should not inherit surrounding postfix IDs/classes or property blocks directly.
 
-Question: should substitutions produce fully styled expression trees, or should they be syntax-level macros/bound expressions that still receive the current `LibraBuildContext`?
+The parser/validator should therefore reject direct postfix blocks on substitutions, such as `[[Substitution]]@#id` or `[[Substitution]][color=red]`. If users write `{[[Substitution]]}@#id`, the ID applies to the non-rendering brace group/build result boundary rather than modifying the substituted expression itself; that is allowed but not especially useful.
 
-### 26. Property block application order should be specified
+### 26. Only one identifier block and one property block should be allowed per expression
 
 The builder handles `PropertyBlockSyntax` by parsing the property block and building its expression under the new context:
 
 - `Celarix.Starfall/Libra/Parsing/LibraExpressionBuilder.cs:53`
 
-With postfix syntax, `x[foreground=red][background=blue]` should probably apply both properties. With the current AST shape, this likely works if parsed left-associatively, but it needs tests and a spec statement. More importantly, `[fencetype=SquareBrackets]` only has an effect when the property block wraps a parenthesized expression; on plain text it silently survives in context and has no visible effect. That may be acceptable, but it should be documented.
+Separate repeated postfix blocks should be illegal. Instead of:
+
+```text
+x@#id1[color=red]@.class2[color=blue]
+```
+
+users should write one identifier block and one property block:
+
+```text
+x@#id1.class2[color=red,background=blue]
+```
+
+Identifier blocks should allow at most one `#id` and arbitrarily many classes. Property blocks should contain all intended properties in one block, with duplicate/conflicting property keys diagnosed according to the property binder's rules.
 
 ### 27. `FenceType` behavior is clever but surprising
 
@@ -380,7 +388,7 @@ The builder intentionally consumes `FenceType` only at the next parenthesized ex
 
 - `Celarix.Starfall/Libra/Parsing/LibraExpressionBuilder.cs:77`
 
-That is a reasonable model, but syntax like `{(x)}[fencetype=SquareBrackets]` versus `(x)[fencetype=SquareBrackets]` may not behave the way users expect unless suffix binding is precisely specified. Consider whether fence type should be a property on `ParenthesizedExpressionSyntax` specifically rather than an ambient context value.
+That is a reasonable model, but `fencetype` should be diagnosed if attached to anything other than a parenthesized expression. For example, `x[fencetype=SquareBrackets]` should fail instead of silently carrying an inert fence type through context. Syntax like `{(x)}[fencetype=SquareBrackets]` also needs an explicit decision: either diagnose because the immediate target is a braced expression, or define that non-rendering braces can forward fence-only properties to their enclosed parenthesized expression.
 
 ### 28. Reserved-call binding is too expression-only for future built-ins
 
@@ -412,29 +420,22 @@ Even after the reserved-function list assignment is fixed, that sample expressio
 
 ## Language/Syntax Concerns
 
-### 30. The DSL is mixing display text and math identifiers without a clear boundary
+### 30. Bare atom rules should be made explicit in lexer tests
 
-The sample expression `mt = 1 - t` suggests math-like identifiers and operators. The parser's `TextSyntax` model suggests literal rendered text. The lexer currently treats runs of almost anything as text.
+The language decision is now clear: Libra is primarily math-style text rendering. Bare runs such as `mt`, `hello`, and `sin` are text atoms, not identifiers with semantic lookup and not special function/operator names.
 
-This creates ambiguous questions:
+That means the lexer contract should be explicit:
 
-- Is `sin` one text token or a reserved/function-like operator?
-- Is `mt` a multi-letter variable, two variables `m` and `t`, or literal text?
-- Should `2x` be text, implicit multiplication, or invalid?
-- Should whitespace affect rendered output or only separate tokens?
+- bare atoms match `[A-Za-z0-9.]+`,
+- whitespace separates tokens and is otherwise discarded,
+- punctuation requires quoting unless it is one of Libra's operators/delimiters/sigils,
+- quoted strings are the way to render literal prose with spaces or punctuation.
 
-For a text layout library, literal text is necessary. For a math DSL, identifier semantics matter. I would explicitly separate:
+This removes the ambiguity I originally flagged, but it makes the permissive text lexer a real bug rather than a design question.
 
-- quoted literal text,
-- bare math symbols/identifiers,
-- reserved calls,
-- substitutions/macros.
+### 31. Literal semicolons belong in strings
 
-### 31. Reserved sigils should avoid collision with ordinary text
-
-If semicolon remains the reserved-call sigil, text containing semicolons becomes syntactically active unless quoted. That may be acceptable, but it is not obvious for a text layout DSL.
-
-If double-underscore remains the grammar choice, it is less punctuation-heavy but collides with identifier-looking text. Either choice is defensible. The important thing is to choose it deliberately and make escaping/quoting rules obvious.
+Since semicolon is the reserved-call sigil and bare text atoms are restricted to `[A-Za-z0-9.]+`, literal displayed semicolons should occur only inside quoted strings. The lexer should reject an unquoted semicolon unless it starts a valid reserved name/call.
 
 ### 32. Property syntax cannot currently represent enough real values
 
@@ -446,14 +447,14 @@ Possible direction:
 - Parse property values into syntax/value tokens instead of raw strings.
 - Bind properties through a registry with source-span-aware errors.
 
-### 33. Braces as non-rendering grouping need to be in the grammar
+### 33. Braces as non-rendering grouping need to be documented or tested as first-class syntax
 
 The parser supports braces and the builder treats them as non-rendering grouping:
 
 - Parser: `Celarix.Starfall/Libra/Parsing/LibraParser.cs:93`
 - Builder: `Celarix.Starfall/Libra/Parsing/LibraExpressionBuilder.cs:87`
 
-That is useful, especially for scripts and grouped property/ID suffixes. It just needs to be specified. In particular, script examples in error messages recommend `x^{y^z}`, but the grammar does not currently mention braces.
+That is useful, especially for scripts and grouped property/ID suffixes. It just needs to be specified through tests or generated docs. In particular, script examples in error messages recommend `x^{y^z}`, so braces are already user-facing syntax.
 
 ## Testing Gaps
 
@@ -463,16 +464,29 @@ Minimum lexer cases:
 
 - `x`
 - `xy`
+- `2.5`
+- `mt = 1 - t`
+- `hello world` tokenizes as `hello`, `world` with whitespace discarded
 - `"x"`
 - `" x "`
 - `"a\"b"`
+- bare punctuation fails unless quoted
+- literal semicolon fails unless quoted or part of a reserved call
 - `a+b`
 - `a<=b`
-- `;frac(x,y)` or the final chosen reserved syntax
+- `;frac(x,y)`
+- top-level `a,b` fails
 - `[[name]]`
+- `[[name]]@#id` fails
 - `x@.class#id`
+- `x@#id1#id2` fails
+- `x@#id.class1.class2`
 - `x[foreground=#ff0000]`
+- `x@#id[color=red]@.class2` fails
+- `x[color=red][background=blue]` fails
 - `(x)`
+- `(x)[fencetype=SquareBrackets]`
+- `x[fencetype=SquareBrackets]` fails
 - `{x}`
 
 Minimum parser/AST cases:
@@ -493,7 +507,7 @@ Minimum builder cases:
 - property colors actually apply,
 - fence type affects only the intended fenced expression,
 - duplicate IDs are rejected if that is the intended policy,
-- substitutions either inherit context or explicitly do not.
+- substitutions are treated as complete injected expressions and cannot receive direct postfix property/identifier blocks.
 
 ## Suggested Fix Order
 
@@ -501,7 +515,7 @@ Minimum builder cases:
 2. Fix `OperatorRegistry._reservedFunctions = [.. funcInfo];`.
 3. Replace lexer peeking with a clear `Current`, `Peek(offset)`, `Advance()` model and retest every token kind.
 4. Make `TextSpan` source-stable and update all token creation to use the same convention.
-5. Align grammar and code on reserved syntax.
+5. Keep semicolon reserved-call syntax consistent across lexer token text, registry keys, examples, and tests.
 6. Implement suffix tokenization for `@...` and `[...]`.
 7. Fix script parsing with explicit tests for same-precedence scripts.
 8. Move reserved-call binding toward syntax-aware binders, as already described in the reserved-call note.
@@ -510,11 +524,7 @@ Minimum builder cases:
 
 ## Questions
 
-1. Should reserved functions be spelled `;frac(...)` or `__frac(...)`?
-2. Are bare words intended to be literal rendered text, math identifiers, or both?
-3. Should whitespace outside quoted strings render, be ignored, or act only as a separator?
-4. Should substitutions inherit the current property context and postfix ID/class suffixes?
-5. Are IDs required to be unique across a built Libra expression tree?
-6. Should `x^y_z` attach both scripts to `x`, or should it mean `x^(y_z)`?
-7. Should property blocks be general object-style annotations, or only rendering-style context changes?
-
+1. Are IDs required to be unique across a built Libra expression tree?
+2. Should `x^y_z` attach both scripts to `x`, or should it mean `x^(y_z)`?
+3. Should property blocks be general object-style annotations, or only rendering-style context changes?
+4. Should `{(x)}[fencetype=SquareBrackets]` diagnose because the immediate target is braced, or forward fence-only properties through braces to `(x)`?

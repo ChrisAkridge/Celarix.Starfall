@@ -23,6 +23,40 @@ This list tracks implementation status across the AI Notes design threads.
   - [x] Let layers pan/zoom independently.
   - [ ] Pass viewport/render context information down to AtriaElement.Render.
   - [ ] Add geometry helpers needed for transformed viewport visibility.
+- [ ] Findings from the Libra Pratt Parser review
+  - [ ] Reserved function binding pass based on `Libra Reserved Call Binding Notes.md`.
+    - [ ] Introduce a `LibraBinder` layer between `ExpressionSyntax` and `LibraExpression`.
+    - [ ] Keep parser responsibility limited to syntax shape; do not enforce reserved-call existence, arity, or typed arguments in the parser.
+    - [ ] Add `IReservedCallBinder` or equivalent function-specific binder abstraction.
+    - [ ] Add a reserved-call registry mapping semicolon reserved names to binders.
+    - [ ] Move `;frac` construction into a `FractionBinder` that validates arity and binds both arguments as expressions.
+    - [ ] Add `;catEm(gapInEm, expression1, expression2, ...)` binder with conservative numeric binding for the gap and expression binding for the remaining args.
+    - [ ] Add binder helper methods only as needed, starting with `BindExpression`, `BindNumber`, and possibly `BindString` / `BindInteger`.
+    - [ ] Ensure binder diagnostics carry source spans and do not require extracting typed values back out of built `LibraExpression` objects.
+  - [ ] Property block binding pass.
+    - [ ] Define valid property keys in code rather than scattering string switches through the builder.
+    - [ ] Give each property definition an accepted value type and parsing/validation routine.
+    - [ ] Support property values needed by current properties, especially HTML-style colors such as `#ff0000` and enum values such as `FenceType`.
+    - [ ] Produce source-span-aware diagnostics for unknown properties, malformed values, and unsupported value types.
+    - [ ] Keep property validation/binding aligned with the future binder model so the parser only recognizes property-block syntax.
+  - [ ] Libra postfix syntax validation pass.
+    - [ ] Reject direct identifier/property postfix blocks on substitutions, such as `[[Substitution]]@#id` or `[[Substitution]][color=red]`.
+    - [ ] Allow at most one identifier block and one property block per expression.
+    - [ ] Require identifier blocks to contain at most one `#id` and arbitrarily many classes.
+    - [ ] Require repeated properties to be expressed inside one property block and diagnose duplicate/conflicting keys through the property binder.
+    - [ ] Diagnose `fencetype` when it is attached to anything other than a parenthesized expression.
+    - [ ] Decide and test whether non-rendering braces may forward `fencetype` to an enclosed parenthesized expression.
+  - [ ] Libra bare atom lexer rules.
+    - [ ] Restrict bare text atoms to `[A-Za-z0-9.]+`.
+    - [ ] Treat whitespace outside strings as syntactic separation and discard it.
+    - [ ] Require literal semicolons and other punctuation to appear in quoted strings unless they are recognized Libra syntax.
+    - [ ] Add lexer tests for decimal atoms such as `2.5`, whitespace-normalized expressions, quoted punctuation, and unquoted punctuation diagnostics.
+  - [ ] Global Atria/Libra ID system pass.
+    - [ ] Review how `LibraId` relates to `AtriaId` and the shared `Identification` parsing/matching rules.
+    - [ ] Decide where ID uniqueness should be enforced: per Libra expression tree, per Atria slide/layer, globally registered, or some combination.
+    - [ ] Investigate whether IDs/classes should be registered for query, replacement, animation, renderable lookup, or diagnostics.
+    - [ ] Centralize ID parsing/validation behavior so Libra identifier blocks and Atria IDs cannot drift.
+    - [ ] Add tests around duplicate IDs, class matching, ID matching, and cross-system selector behavior.
 
 ## Backburner
 

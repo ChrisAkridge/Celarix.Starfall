@@ -30,7 +30,7 @@ namespace Celarix.Starfall.Libra.Parsing
                 new("-", "-", OperatorKind.Prefix, new PrefixOperatorRule(UnaryPrefixBindingPower), null),
                 new("+", "+", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(AdditiveBindingPower)),
                 new("-", "-", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(AdditiveBindingPower)),
-                new("*", "*", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(MultiplicativeBindingPower)),
+                new("*", "·", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(MultiplicativeBindingPower)),
                 new("/", "÷", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(MultiplicativeBindingPower)),
                 new("^", "", OperatorKind.Infix, null, new ScriptOperatorRule()),
                 new("_", "", OperatorKind.Infix, null, new ScriptOperatorRule()),
