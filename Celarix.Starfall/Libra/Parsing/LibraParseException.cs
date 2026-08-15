@@ -10,6 +10,7 @@ namespace Celarix.Starfall.Libra.Parsing
 
         public LibraParseException(LibraDiagnostic diagnostic) : base(diagnostic.Message)
         {
+            Diagnostic = diagnostic;
         }
     }
 }

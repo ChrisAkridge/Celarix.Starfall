@@ -48,7 +48,7 @@ namespace Celarix.Starfall.Libra.Parsing
             var token = Read();
             if (token.Kind != kind)
             {
-                throw new LibraParseException(new($"Unexpected token '{token.Text}' of kind {token.Kind} at {token.Span}. Expected token of kind {kind}.", token.Span));
+                throw CreateUnexpectedTokenException(token, $"token of kind {kind}");
             }
             return token;
         }
@@ -59,7 +59,7 @@ namespace Celarix.Starfall.Libra.Parsing
             var endOfInputToken = Read();
             if (endOfInputToken.Kind != TokenKind.EndOfInput)
             {
-                throw new LibraParseException(new($"Unexpected token '{endOfInputToken.Text}' of kind {endOfInputToken.Kind} at {endOfInputToken.Span}. Expected end of input.", endOfInputToken.Span));
+                throw CreateUnexpectedTokenException(endOfInputToken, "end of input");
             }
             return expression;
         }
@@ -89,8 +89,8 @@ namespace Celarix.Starfall.Libra.Parsing
             TokenKind.Operator => OperatorRegistry.TryGetWhenNone(token.Text, out var operatorRule)
                 ? operatorRule.Parse(this, token)
                 : throw new LibraParseException(new($"Unexpected operator '{token.Text}' of kind {token.Kind} at {token.Span}.", token.Span)),
-            TokenKind.OpenParen => new ParenthesizedExpressionSyntax(ParseExpression(), Expect(TokenKind.CloseParen).Span),
-            TokenKind.OpenBrace => new BracedExpressionSyntax(ParseExpression(), Expect(TokenKind.CloseBrace).Span),
+            TokenKind.OpenParen => new ParenthesizedExpressionSyntax(ParseExpression(), TextSpan.FromBounds(token.Span, Expect(TokenKind.CloseParen).Span)),
+            TokenKind.OpenBrace => new BracedExpressionSyntax(ParseExpression(), TextSpan.FromBounds(token.Span, Expect(TokenKind.CloseBrace).Span)),
             _ => throw new LibraParseException(new($"Unexpected token '{token.Text}' of kind {token.Kind} at {token.Span}.", token.Span))
         };
 
@@ -111,6 +111,14 @@ namespace Celarix.Starfall.Libra.Parsing
                     rule = null;
                     return false;
             }
+        }
+
+        private static LibraParseException CreateUnexpectedTokenException(LibraToken token,
+            string expected)
+        {
+            return token.Kind == TokenKind.Comma
+                ? new LibraParseException(new("Unexpected comma. Commas are only valid in strings and reserved function calls.", token.Span))
+                : new LibraParseException(new($"Unexpected token '{token.Text}' of kind {token.Kind} at {token.Span}. Expected {expected}.", token.Span));
         }
     }
 }

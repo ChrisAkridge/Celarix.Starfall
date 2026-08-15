@@ -13,19 +13,19 @@ namespace Celarix.Starfall.Libra.Parsing
         {
             if (syntax is TextSyntax text)
             {
-                return new TextExpression(text.Text, context.ForegroundColor, context.BackgroundColor, libraId);
+                return new TextExpression(text.Text, context.ForegroundColor.WithOpacity(context.Opacity), context.BackgroundColor.WithOpacity(context.Opacity), libraId);
             }
             else if (syntax is StringSyntax @string)
             {
-                return new TextExpression(@string.Text, context.ForegroundColor, context.BackgroundColor, libraId);
+                return new TextExpression(@string.Text, context.ForegroundColor.WithOpacity(context.Opacity), context.BackgroundColor.WithOpacity(context.Opacity), libraId);
             }
             else if (syntax is PrefixSyntax prefix)
             {
                 var operand = Build(prefix.Operand, context);
                 return new UnaryPrefixExpression(OperatorRegistry.GetRenderedSymbol(prefix.Operator),
                     operand,
-                    context.ForegroundColor,
-                    context.BackgroundColor,
+                    context.ForegroundColor.WithOpacity(context.Opacity),
+                    context.BackgroundColor.WithOpacity(context.Opacity),
                     libraId);
             }
             else if (syntax is BinarySyntax binary)
@@ -35,8 +35,8 @@ namespace Celarix.Starfall.Libra.Parsing
                 return new BinaryExpression(OperatorRegistry.GetRenderedSymbol(binary.Operator),
                     left,
                     right,
-                    context.ForegroundColor,
-                    context.BackgroundColor,
+                    context.ForegroundColor.WithOpacity(context.Opacity),
+                    context.BackgroundColor.WithOpacity(context.Opacity),
                     libraId);
             }
             else if (syntax is ScriptSyntax script)

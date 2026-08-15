@@ -6,388 +6,306 @@ namespace Celarix.Starfall.Libra.Parsing
 {
     internal sealed class Lexer
     {
-        private enum State
-        {
-            Start,
-            String,
-            Reserved,
-            Substitution,
-            PropertyBlock,
-            Operator,
-            Text,
-            IdentifierBlock,
-            End
-        }
-
         private readonly string _source;
         private readonly List<LibraToken> _tokens = new();
         private readonly StringBuilder _tokenBuilder = new();
         private int _position;
-        private char? _last;
-        private State _state = State.Start;
 
         public Lexer(string source)
         {
             _source = source;
         }
 
-        public IReadOnlyList<LibraToken> Parse()
+        // New Cursor API
+        private bool IsAtEnd => _position >= _source.Length;
+        private char Current => _source[_position];
+        private char? Peek(int offset = 1) => _position + offset < _source.Length ? _source[_position + offset] : null;
+        private char Advance()
         {
-            while (_state != State.End)
+            var current = Current;
+            _position += 1;
+            return current;
+        }
+        private bool Match(char expected)
+        {
+            if (IsAtEnd) return false;
+            if (Current != expected) return false;
+            _position += 1;
+            return true;
+        }
+        private TextSpan SpanFrom(int start) => new TextSpan(_source, start, _source.Length - start);
+        private TextSpan SpanFrom(int start, int length) => new TextSpan(_source, start, length);
+
+        private LibraToken ScanToken()
+        {
+            if (IsAtEnd)
             {
-                switch (_state)
+                return new LibraToken(TokenKind.EndOfInput, "", SpanFrom(_position));
+            }
+
+            while (char.IsWhiteSpace(Current))
+            {
+                Advance();
+            }
+
+            if (Current == '"')
+            {
+                return ScanString();
+            }
+            else if (Current == ';')
+            {
+                return ScanReservedName();
+            }
+            else if (Current == '[')
+            {
+                if (Peek() == '[')
                 {
-                    case State.Start: Start(); break;
-                    case State.String: String(); break;
-                    case State.Reserved: Reserved(); break;
-                    case State.Substitution: Substitution(); break;
-                    case State.PropertyBlock: PropertyBlock(); break;
-                    case State.Operator: Operator(); break;
-                    case State.Text: Text(); break;
-                    case State.IdentifierBlock: IdentifierBlock(); break;
+                    return ScanSubstitution();
                 }
+                return ScanPropertyBlock();
             }
-
-            _tokens.Add(new(TokenKind.EndOfInput, "", new(_source, _position, 0)));
-            return _tokens;
-        }
-
-        private char? PeekNext()
-        {
-            if (_position + 1 < _source.Length)
+            else if (Current == '@')
             {
-                return _source[_position + 1];
+                return ScanIdentifierBlock();
             }
-            return null;
-        }
-
-        private char? PeekAhead(int offset)
-        {
-            if (_position + offset < _source.Length)
+            else if (Current is '(' or '{' or ')' or '}' or ',')
             {
-                return _source[_position + offset];
+                return ScanSingleCharToken();
             }
-            return null;
-        }
-
-        private char? MoveNext()
-        {
-            if (_position < _source.Length)
+            else if (OperatorRegistry.IsOperatorStart(Current.ToString()))
             {
-                _last = _source[_position];
-                _position += 1;
-                return _last;
+                return ScanOperator();
             }
-            return null;
-        }
-
-        private char? MoveNextAndAppend()
-        {
-            var next = MoveNext();
-            if (next != null)
+            else if (IsBareAtomChar(Current))
             {
-                _tokenBuilder.Append(next);
-            }
-            return next;
-        }
-
-        private void AddTokenIfNotEmpty(TokenKind kind)
-        {
-            if (_tokenBuilder.Length > 0)
-            {
-                var tokenText = _tokenBuilder.ToString();
-                var tokenSpan = new TextSpan(tokenText, _position - tokenText.Length, tokenText.Length);
-                var token = new LibraToken(kind, tokenText, tokenSpan);
-                _tokens.Add(token);
-                _tokenBuilder.Clear();
-            }
-        }
-
-        private void ConsumeUntilDelimiter(TokenKind tokenKind)
-        {
-            while (true)
-            {
-                var next = MoveNext();
-                if (next == null)
-                {
-                    AddTokenIfNotEmpty(tokenKind);
-                    _state = State.End;
-                    return;
-                }
-
-                if (TryHandleDelimiter(next.Value, tokenKind))
-                {
-                    return;
-                }
-
-                _tokenBuilder.Append(next.Value);
-            }
-        }
-
-        private bool TryHandleDelimiter(char c, TokenKind currentTokenKind)
-        {
-            switch (c)
-            {
-                case '"':
-                    AddTokenIfNotEmpty(currentTokenKind);
-                    MoveNextAndAppend();
-                    _state = State.String;
-                    return true;
-                case ';':
-                    AddTokenIfNotEmpty(currentTokenKind);
-                    MoveNextAndAppend();
-                    _state = State.Reserved;
-                    return true;
-                case '@':
-                    AddTokenIfNotEmpty(currentTokenKind);
-                    throw CreateException("Cannot start an identifier block in the middle of a token stream.");
-                case '[':
-                    var nextPeek = PeekNext();
-                    if (nextPeek == '[')
-                    {
-                        AddTokenIfNotEmpty(currentTokenKind);
-                        MoveNextAndAppend();
-                        _state = State.Substitution;
-                        return true;
-                    }
-                    else
-                    {
-                        AddTokenIfNotEmpty(currentTokenKind);
-                        throw CreateException("Cannot start a property block in the middle of a token stream.");
-                    }
-                case '(':
-                case '{':
-                case ')':
-                case '}':
-                case ',':
-                    AddTokenIfNotEmpty(currentTokenKind);
-                    _tokens.Add(new(c == '(' ? TokenKind.OpenParen :
-                                    c == '{' ? TokenKind.OpenBrace :
-                                    c == ')' ? TokenKind.CloseParen :
-                                    c == '}' ? TokenKind.CloseBrace :
-                                    c == ',' ? TokenKind.Comma :
-                                    throw new InvalidOperationException($"Unexpected character '{c}'"),
-                                    c.ToString(),
-                                    new TextSpan(c.ToString(), _position - 1, 1)));
-                    _state = State.Text;
-                    return true;
-                default:
-                    if (OperatorRegistry.IsOperatorStart(c.ToString()))
-                    {
-                        AddTokenIfNotEmpty(currentTokenKind);
-                        _tokens.Add(new(TokenKind.Operator, c.ToString(), new TextSpan(c.ToString(), _position - 1, 1)));
-                        _state = State.Text;
-                        return true;
-                    }
-                    break;
-            }
-            return false;
-        }
-
-        private void AddSingleCharToken(TokenKind tokenKind, char c)
-        {
-            _tokens.Add(new(tokenKind, c.ToString(), new TextSpan(c.ToString(), _position - 1, 1)));
-        }
-
-        private LibraParseException CreateException(string message, int length = 1)
-        {
-            var tokenText = _tokenBuilder.ToString();
-            var tokenSpan = new TextSpan(tokenText, _position - tokenText.Length, tokenText.Length);
-            return new LibraParseException(new(message, tokenSpan));
-        }
-
-        private void Start()
-        {
-            var peek = PeekNext();
-            if (peek == null)
-            {
-                _state = State.End;
-                return;
-            }
-
-            var peekValue = peek.Value;
-            if (peekValue == '"')
-            {
-                MoveNextAndAppend();
-                _state = State.String;
-                return;
-            }
-            else if (peekValue == ';')
-            {
-                MoveNextAndAppend();
-                _state = State.Reserved;
-            }
-            else if (peekValue == '@')
-            {
-                throw CreateException("Cannot start an identifier block at the beginning of a token stream.");
-            }
-            else if (peekValue == '[')
-            {
-                var nextPeek = PeekAhead(2);
-                if (nextPeek == '[')
-                {
-                    MoveNextAndAppend();
-                    _state = State.Substitution;
-                }
-                else
-                {
-                    throw CreateException("Cannot start a property block at the beginning of a token stream.");
-                }
-            }
-            else if (peekValue == '(')
-            {
-                MoveNext();
-                AddSingleCharToken(TokenKind.OpenParen, '(');
-                _state = State.Text;
-            }
-            else if (peekValue == '{')
-            {
-                MoveNext();
-                AddSingleCharToken(TokenKind.OpenBrace, '{');
-                _state = State.Text;
-            }
-            else if (peekValue is ')' or '}')
-            {
-                throw CreateException($"Cannot start a token stream with '{peekValue}'.");
-            }
-            else if (OperatorRegistry.IsOperatorStart(peekValue.ToString()))
-            {
-                MoveNextAndAppend();
-                _state = State.Operator;
+                return ScanText();
             }
             else
             {
-                MoveNextAndAppend();
-                _state = State.Text;
+                throw new LibraParseException(new($"Unexpected character '{Current}'", SpanFrom(_position)));
             }
         }
 
-        private void String()
+        private LibraToken ScanString()
         {
+            // Consume the first quote
+            _tokenBuilder.Append(Advance());
+
             while (true)
             {
-                var next = MoveNext() ?? throw CreateException("Unterminated string literal.", _tokenBuilder.Length);
-
-                if (next == '\\' && PeekNext() is '"' or '\\')
+                if (IsAtEnd)
                 {
-                    _tokenBuilder.Append(next);
-                    _tokenBuilder.Append(MoveNext()!.Value); // Consume escaped char
+                    throw new LibraParseException(new("Unterminated string literal", SpanFrom(_position - _tokenBuilder.Length, _tokenBuilder.Length)));
                 }
-                else if (next == '"')
+                else if (Current == '\\')
                 {
-                    AddTokenIfNotEmpty(TokenKind.String);
-                    _state = State.Text;
-                    return;
+                    if (Peek() == '"' || Peek() == '\\')
+                    {
+                        _tokenBuilder.Append(Advance()); // Append the backslash
+                        _tokenBuilder.Append(Advance()); // Append the escaped character
+                    }
+                    else
+                    {
+                        throw new LibraParseException(new($"Invalid escape sequence '\\{Peek()}'", SpanFrom(_position, 2)));
+                    }
+                }
+                else if (Current == '"')
+                {
+                    _tokenBuilder.Append(Advance());
+                    break;
                 }
                 else
                 {
-                    _tokenBuilder.Append(next);
+                    _tokenBuilder.Append(Advance());
                 }
             }
+
+            var tokenText = _tokenBuilder.ToString();
+            _tokenBuilder.Clear();
+
+            if (!tokenText.EndsWith("\""))
+            {
+                throw new LibraParseException(new("Unterminated string literal", SpanFrom(_position - tokenText.Length, tokenText.Length)));
+            }
+
+            return new LibraToken(TokenKind.String, tokenText, SpanFrom(_position - tokenText.Length, tokenText.Length));
         }
 
-        private void Reserved()
+        private LibraToken ScanReservedName()
         {
-            // Takes up [A-Za-z0-9_] characters until a non-matching character is found.
-            while (true)
+            var start = _position;
+            _tokenBuilder.Append(Advance()); // Consume the ';'
+            while (!IsAtEnd && (char.IsLetterOrDigit(Current) || Current == '_'))
             {
-                var next = MoveNext();
-                if (next == null)
+                _tokenBuilder.Append(Advance());
+            }
+            var tokenText = _tokenBuilder.ToString();
+            _tokenBuilder.Clear();
+
+            if (tokenText == ";")
+            {
+                throw new LibraParseException(new("Reserved name cannot be empty", SpanFrom(start, 1)));
+            }
+
+            return new LibraToken(TokenKind.ReservedName, tokenText, SpanFrom(start, tokenText.Length));
+        }
+
+        private LibraToken ScanSubstitution()
+        {
+            var start = _position;
+            // Consume the two opening brackets
+            _tokenBuilder.Append(Advance());
+            _tokenBuilder.Append(Advance());
+            while (!IsAtEnd)
+            {
+                if (Current == ']' && Peek() == ']')
                 {
-                    AddTokenIfNotEmpty(TokenKind.ReservedName);
-                    _state = State.End;
-                    return;
+                    _tokenBuilder.Append(Advance()); // Append the first closing bracket
+                    _tokenBuilder.Append(Advance()); // Append the second closing bracket
+                    break;
                 }
-                else if (char.IsLetterOrDigit(next.Value) || next.Value == '_')
+                else if (char.IsLetterOrDigit(Current) || Current == '_')
                 {
-                    _tokenBuilder.Append(next.Value);
+                    _tokenBuilder.Append(Advance());
                 }
                 else
                 {
-                    AddTokenIfNotEmpty(TokenKind.ReservedName);
-                    _state = State.Text;
-                    return;
+                    throw new LibraParseException(new($"Invalid character '{Current}' in substitution block", SpanFrom(_position)));
                 }
             }
+            var tokenText = _tokenBuilder.ToString();
+            _tokenBuilder.Clear();
+
+            if (!tokenText.EndsWith("]]"))
+            {
+                throw new LibraParseException(new("Unterminated substitution block", SpanFrom(start, tokenText.Length)));
+            }
+
+            return new LibraToken(TokenKind.Substitution, tokenText, SpanFrom(start, tokenText.Length));
         }
 
-        private void Substitution()
+        private LibraToken ScanPropertyBlock()
         {
-            // Takes up [A-Za-z0-9_] characters until a "]]" is found, which ends the substitution block.
-            while (true)
+            var start = _position;
+            // Consume the opening bracket
+            _tokenBuilder.Append(Advance());
+
+            while (!IsAtEnd)
             {
-                var next = MoveNext();
-                if (next == null)
+                if (char.IsLetterOrDigit(Current)
+                    || Current == '_'
+                    || Current == '='
+                    || Current == '.'
+                    || Current == ',')
                 {
-                    throw CreateException("Unterminated substitution block.", _tokenBuilder.Length);
+                    _tokenBuilder.Append(Advance());
                 }
-                else if (char.IsLetterOrDigit(next.Value) || next.Value == '_')
+                else if (Current == ']')
                 {
-                    _tokenBuilder.Append(next.Value);
-                }
-                else if (next.Value == ']' && PeekNext() == ']')
-                {
-                    MoveNextAndAppend(); // Append the second ']'
-                    AddTokenIfNotEmpty(TokenKind.Substitution);
-                    _state = State.Text;
-                    return;
+                    _tokenBuilder.Append(Advance());
+                    break;
                 }
                 else
                 {
-                    throw CreateException($"Invalid character '{next}' in substitution block.", 1);
+                    throw new LibraParseException(new($"Invalid character '{Current}' in property block", SpanFrom(_position)));
                 }
             }
+            var tokenText = _tokenBuilder.ToString();
+            _tokenBuilder.Clear();
+
+            if (!tokenText.EndsWith("]"))
+            {
+                throw new LibraParseException(new("Unterminated property block", SpanFrom(start, tokenText.Length)));
+            }
+
+            return new LibraToken(TokenKind.PropertyBlock, tokenText, SpanFrom(start, tokenText.Length));
         }
 
-        private void PropertyBlock()
+        private LibraToken ScanIdentifierBlock()
         {
-            // Takes up any characters until a "]" is found, which ends the property block.
-            while (true)
+            var start = _position;
+            // Consume the '@'
+            _tokenBuilder.Append(Advance());
+
+            while (!IsAtEnd)
             {
-                var next = MoveNext();
-                if (next == null)
+                if (char.IsLetterOrDigit(Current) || Current == '_' || Current == '.' || Current == '#')
                 {
-                    throw CreateException("Unterminated property block.", _tokenBuilder.Length);
-                }
-                else if (next.Value == ']')
-                {
-                    AddTokenIfNotEmpty(TokenKind.PropertyBlock);
-                    _state = State.Text;
-                    return;
+                    _tokenBuilder.Append(Advance());
                 }
                 else
                 {
-                    _tokenBuilder.Append(next.Value);
+                    break;
                 }
+            }
+            var tokenText = _tokenBuilder.ToString();
+            _tokenBuilder.Clear();
+            return new LibraToken(TokenKind.IdentifierBlock, tokenText, SpanFrom(start, tokenText.Length));
+        }
+
+        private LibraToken ScanSingleCharToken()
+        {
+            var start = _position;
+            var c = Advance();
+            var kind = c switch
+            {
+                '(' => TokenKind.OpenParen,
+                '{' => TokenKind.OpenBrace,
+                ')' => TokenKind.CloseParen,
+                '}' => TokenKind.CloseBrace,
+                ',' => TokenKind.Comma,
+                _ => throw new InvalidOperationException($"Unexpected character '{c}'")
+            };
+            return new LibraToken(kind, c.ToString(), SpanFrom(start, 1));
+        }
+
+        private LibraToken ScanOperator()
+        {
+            var start = _position;
+
+            if (OperatorRegistry.TryMatchLongestOperator(_source, start, out var symbol))
+            {
+                _position += symbol.Length;
+                return new LibraToken(TokenKind.Operator, symbol, SpanFrom(start, symbol.Length));
+
+            }
+            else
+            {
+                throw new LibraParseException(new($"Unknown operator starting with '{Current}'", SpanFrom(start)));
             }
         }
 
-        private void Operator()
+        private LibraToken ScanText()
         {
-            // Takes up any characters that are part of an operator until a non-operator character is found.
+            var start = _position;
+            while (!IsAtEnd && IsBareAtomChar(Current))
+            {
+                _tokenBuilder.Append(Advance());
+            }
+            var tokenText = _tokenBuilder.ToString();
+            _tokenBuilder.Clear();
+            return new LibraToken(TokenKind.Text, tokenText, SpanFrom(start, tokenText.Length));
+        }
+
+        private static bool IsBareAtomChar(char c)
+        {
+            // Matches the regex [A-Za-z0-9.]
+            return char.IsLetterOrDigit(c) || c == '.';
+        }
+
+        public IReadOnlyList<LibraToken> Parse()
+        {
             while (true)
             {
-                var next = MoveNext();
-                if (next == null)
+                var token = ScanToken();
+                _tokens.Add(token);
+                if (token.Kind == TokenKind.EndOfInput)
                 {
-                    AddTokenIfNotEmpty(TokenKind.Operator);
-                    _state = State.End;
-                    return;
-                }
-                else if (OperatorRegistry.IsOperatorStart(_tokenBuilder.ToString() + next.Value))
-                {
-                    _tokenBuilder.Append(next.Value);
-                }
-                else
-                {
-                    AddTokenIfNotEmpty(TokenKind.Operator);
-                    _state = State.Text;
-                    return;
+                    break;
                 }
             }
-        }
 
-        private void Text() => ConsumeUntilDelimiter(TokenKind.Text);
-        private void IdentifierBlock() => ConsumeUntilDelimiter(TokenKind.IdentifierBlock);
+            return _tokens;
+        }
     }
 }

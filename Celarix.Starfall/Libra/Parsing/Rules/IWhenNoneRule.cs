@@ -7,7 +7,6 @@ namespace Celarix.Starfall.Libra.Parsing.Rules
 {
     internal interface IWhenNoneRule
     {
-        int BindingPower { get; }
         ExpressionSyntax Parse(LibraParser parser, LibraToken operatorToken);
     }
 }

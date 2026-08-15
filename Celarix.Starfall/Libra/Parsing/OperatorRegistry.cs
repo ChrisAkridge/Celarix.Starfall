@@ -20,7 +20,7 @@ namespace Celarix.Starfall.Libra.Parsing
         private static readonly IReadOnlyList<OperatorInfo> _operators;
         private static readonly IReadOnlyList<ReservedFunctionInfo> _reservedFunctions;
         private static readonly IReadOnlyList<char> _firstChars;
-        private static TrieNode? _trie;
+        private static readonly TrieNode? _trie;
 
         static OperatorRegistry()
         {
@@ -47,6 +47,7 @@ namespace Celarix.Starfall.Libra.Parsing
             {
                 new(";frac", 2, (context, id, args) => new FractionExpression(args[0], args[1], context.ForegroundColor, context.BackgroundColor, id))
             };
+            _reservedFunctions = [.. funcInfo];
 
             // Get the list of first characters. Don't count anything starting with ; as we parse that
             // as a reserved symbol in the lexer and only need it in the registry for precedence purposes.
@@ -67,6 +68,33 @@ namespace Celarix.Starfall.Libra.Parsing
         {
             // Use the trie to check if the string starts with any operator symbol
             return Trie.Search(_trie!, s, _firstChars);
+        }
+
+        public static bool TryMatchLongestOperator(string source, int start,
+            [NotNullWhen(true)] out string? symbol)
+        {
+            var spanLength = 1;
+            string? longestSeenMatch = null;
+            string? lastSeenMatch = null;
+
+            do
+            {
+                var span = source.Substring(start, spanLength);
+                var trieMatch = Trie.Search(_trie!, span, _firstChars);
+                if (trieMatch)
+                {
+                    lastSeenMatch = span;
+                    longestSeenMatch = lastSeenMatch;
+                    spanLength += 1;
+                }
+                else
+                {
+                    lastSeenMatch = null;
+                }
+            } while (lastSeenMatch != null);
+
+            symbol = longestSeenMatch;
+            return symbol != null;
         }
 
         public static bool IsKnownReservedName(string reservedName)

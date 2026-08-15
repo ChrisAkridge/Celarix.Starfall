@@ -13,7 +13,7 @@ namespace Celarix.Starfall.Libra.Parsing
         public LibraToken(TokenKind kind, string text, TextSpan span)
         {
             Kind = kind;
-            Text = text.Trim();
+            Text = text;
             Span = span;
         }
     }

@@ -6,25 +6,29 @@ Scope reviewed: `Celarix.Starfall.Libra.Parsing`, the public `LibraExpression.Pa
 
 Revision note: the original version of this review treated the root `Libra DSL Grammar.txt` file as current. That file was stale and has since been removed. Findings below have been revised so the code is treated as the active language source of truth. The intended reserved-call sigil is semicolon, for example `;frac(...)`.
 
+2026-08-15 lexer status: the lexer has since been rewritten around an explicit cursor/scanner model, `TextSpan.Text` now uses the source text, `LibraParseException.Diagnostic` is assigned, `_reservedFunctions` is assigned, semicolon is preserved in `ReservedName` token text, suffix tokens are emitted, and the xUnit lexer contract suite passes 21/21. The detailed lexer findings below are kept as historical context, but the remaining active work is now parser/validator/binder behavior.
+
 ## Executive Summary
 
-The parser architecture is heading in a reasonable direction, but the current implementation is not yet reliable enough to treat as a working DSL parser. The biggest problems are not minor Pratt-parser tuning issues; they are tokenization/state-machine errors and span/registry bugs that prevent large parts of the language from parsing at all.
+The parser architecture is heading in a reasonable direction. The original review found severe lexer/span/registry bugs; those foundational lexer issues have now been addressed. The highest-risk remaining issues are parser/validator/binder responsibilities: script binding behavior, reserved-call binding, typed property binding, postfix validation, and ID policy.
 
-The highest priority fixes are:
+The current highest priority fixes are:
 
-1. Rewrite or heavily simplify the lexer cursor model.
-2. Fix `TextSpan` so every span is based on the same source identity/string.
-3. Assign `_reservedFunctions` and keep semicolon-prefixed reserved calls consistent across lexer, registry, examples, and tests.
-4. Make suffix lexing actually emit `IdentifierBlock` and `PropertyBlock`.
-5. Fix script parsing so `x^y_z`, `x_y^z`, and rejected chains mean what the rule says they mean.
-6. Add parser tests before extending the DSL further.
+1. Fix script parsing so `x^y_z`, `x_y^z`, and rejected chains mean what the rule says they mean.
+2. Move reserved-call binding toward syntax-aware binders.
+3. Add typed property binding and source-span-aware diagnostics.
+4. Add postfix validation for substitutions, repeated identifier/property blocks, one `#id`, and `fencetype` targeting.
+5. Review broader Atria/Libra ID policy.
+6. Add parser/validator/binder tests now that lexer contract tests are in place.
 
 ## Build/Verification
 
-`dotnet build Celarix.Starfall/Celarix.Starfall.csproj` succeeds, but it emits warnings that directly confirm two review findings:
+Original verification: `dotnet build Celarix.Starfall/Celarix.Starfall.csproj` succeeded, but emitted warnings that confirmed two findings that are now fixed:
 
-- `OperatorRegistry._reservedFunctions` is never assigned and will always be null.
-- `LibraParseException.Diagnostic` is non-nullable but is never assigned.
+- `OperatorRegistry._reservedFunctions` was not assigned and would always be null.
+- `LibraParseException.Diagnostic` was non-nullable but was not assigned.
+
+Current lexer verification: `dotnet test Celarix.Starfall.Tests/Celarix.Starfall.Tests.csproj` passes 21/21 lexer tests after the rewrite.
 
 `dotnet build Celarix.Starfall.slnx` fails in this Linux environment because `Celarix.Starfall.Presentations` targets Windows and requires `EnableWindowsTargeting=true`. I did not treat that as a Libra parser failure.
 
@@ -32,7 +36,9 @@ The highest priority fixes are:
 
 ### 1. The lexer looks one character ahead while deciding how to handle the current character
 
-In `Lexer.Start`, the code calls `PeekNext()` at startup. `PeekNext()` returns `_source[_position + 1]`, not the current character. The state decision is therefore based on the second character while `MoveNext()` consumes the first character.
+Status: resolved by the 2026-08-15 lexer rewrite. Historical finding follows.
+
+In the old `Lexer.Start`, the code called `PeekNext()` at startup. `PeekNext()` returned `_source[_position + 1]`, not the current character. The state decision was therefore based on the second character while `MoveNext()` consumed the first character.
 
 Relevant code:
 
@@ -51,7 +57,9 @@ This is the first thing I would fix. Most downstream parser behavior is hard to 
 
 ### 2. Delimiter handling repeats the same off-by-one mistake
 
-`ConsumeUntilDelimiter` consumes a character with `MoveNext()` and then asks `TryHandleDelimiter` to inspect it. But several delimiter checks then call `PeekNext()` or `MoveNextAndAppend()` as if the lexer had not already advanced.
+Status: resolved by the 2026-08-15 lexer rewrite. Historical finding follows.
+
+The old `ConsumeUntilDelimiter` consumed a character with `MoveNext()` and then asked `TryHandleDelimiter` to inspect it. But several delimiter checks then called `PeekNext()` or `MoveNextAndAppend()` as if the lexer had not already advanced.
 
 Examples:
 
@@ -71,6 +79,8 @@ The lexer needs a single convention: either inspect before consuming, or consume
 
 ### 3. Identifier and property suffix states are effectively unreachable
 
+Status: resolved by the 2026-08-15 lexer rewrite. `IdentifierBlock` and `PropertyBlock` tokens are now emitted and covered by lexer tests. Historical finding follows.
+
 The parser, validator, and builder all have support for identifier and property suffix syntax, but the lexer does not actually emit those suffix token kinds in normal input.
 
 The lexer currently throws whenever it sees `@`, both at the start of input and in the middle of a token stream. It also throws for single `[` property blocks unless the sequence is interpreted as a substitution opener.
@@ -84,6 +94,8 @@ Relevant code:
 This means the parser has `IdentifierRule` and `PropertyBlockRule`, and the validator/builder support those syntax nodes, but the lexer never produces the corresponding tokens in normal DSL input. As written, IDs/classes and property blocks are dead features.
 
 ### 4. `TextSpan.FromBounds` is incompatible with how token spans are created
+
+Status: resolved for lexer token creation by assigning `TextSpan.Text` from the source text. Keep watching parser-created spans as parser work continues. Historical finding follows.
 
 `TextSpan.FromBounds` requires `left.Text.Equals(right.Text)`. That only works if `TextSpan.Text` means "the full source text" for every span. But most lexer-created spans store the token text in `TextSpan.Text`, while the EOF span stores the full source.
 
@@ -104,6 +116,8 @@ I would change `TextSpan` to store only `StartIndex` and `Length`, or store a st
 
 ### 5. Reserved functions cannot work because `_reservedFunctions` is never assigned
 
+Status: resolved. `_reservedFunctions` is now assigned. Remaining reserved-call work is binder architecture and additional functions such as `;catEm`.
+
 `OperatorRegistry` creates `funcInfo` with `;frac`, but never assigns it to `_reservedFunctions`.
 
 Relevant code:
@@ -115,6 +129,8 @@ Relevant code:
 Any path that calls `TryGetKnownReservedFunction` or `TryGetWhenNone` for a reserved function risks a `NullReferenceException`. The compiler already warns about this.
 
 ### 6. Reserved semicolon syntax is the right active direction, but the lexer/registry still disagree operationally
+
+Status: resolved at the lexer/registry-token convention level. `ReservedName` token text includes the semicolon and the registry uses semicolon-prefixed names. Remaining work is parser/binder handling of unknown reserved names and typed reserved-call arguments.
 
 The intended syntax is semicolon-prefixed reserved calls such as `;frac(...)`. That is also what the parser/registry and notes are moving toward:
 
@@ -129,6 +145,8 @@ The remaining problem is implementation consistency, not the sigil choice. The l
 
 ### 7. `LibraParseException.Diagnostic` is never assigned
 
+Status: resolved. Historical finding follows.
+
 The exception constructor accepts a diagnostic but does not store it.
 
 Relevant code:
@@ -142,7 +160,11 @@ That means any caller catching `LibraParseException` loses span information unle
 
 ### 8. Script parsing does not implement its own intended grouping rules
 
-`ScriptOperatorRule` parses the superscript/subscript operand with `ParseExpression(OperatorRegistry.ScriptBindingPower)`. Since the Pratt loop continues while `rule.LeftBindingPower >= minimumBindingPower`, another script operator at the same precedence is consumed inside the operand before `ScriptOperatorRule` can inspect it.
+Status: resolved in code, parser tests still needed. `ScriptOperatorRule` now parses both superscript and subscript operands with `OperatorRegistry.ScriptBindingPower + 1`, so same-precedence script operators remain visible to the script rule instead of being swallowed by the operand parse.
+
+Historical finding follows.
+
+`ScriptOperatorRule` used to parse the superscript/subscript operand with `ParseExpression(OperatorRegistry.ScriptBindingPower)`. Since the Pratt loop continues while `rule.LeftBindingPower >= minimumBindingPower`, another script operator at the same precedence was consumed inside the operand before `ScriptOperatorRule` could inspect it.
 
 Relevant code:
 
@@ -150,7 +172,7 @@ Relevant code:
 - Script operand parse: `Celarix.Starfall/Libra/Parsing/Rules/ScriptOperatorRule.cs:19`, `Celarix.Starfall/Libra/Parsing/Rules/ScriptOperatorRule.cs:36`
 - Intended chain rejection/checking: `Celarix.Starfall/Libra/Parsing/Rules/ScriptOperatorRule.cs:23`, `Celarix.Starfall/Libra/Parsing/Rules/ScriptOperatorRule.cs:28`, `Celarix.Starfall/Libra/Parsing/Rules/ScriptOperatorRule.cs:40`, `Celarix.Starfall/Libra/Parsing/Rules/ScriptOperatorRule.cs:45`
 
-Likely actual behavior after lexer/span fixes:
+Likely old behavior:
 
 - `x^y_z` becomes `x^(y_z)`, not `x` with both superscript `y` and subscript `z`.
 - `x_y^z` becomes `x_(y^z)`, not `x` with both subscript `y` and superscript `z`.
@@ -160,7 +182,11 @@ If the intent is TeX-like scripts where `x^y_z` attaches both scripts to `x`, pa
 
 ### 9. Parenthesized and braced syntax nodes do not span the opening delimiter
 
-`ParseWhenNone` returns:
+Status: resolved in code. `ParseWhenNone` now uses `TextSpan.FromBounds` from the opening delimiter token through the expected closing delimiter token. Parser tests should still pin this.
+
+Historical finding follows.
+
+`ParseWhenNone` used to return:
 
 ```csharp
 new ParenthesizedExpressionSyntax(ParseExpression(), Expect(TokenKind.CloseParen).Span)
@@ -193,7 +219,11 @@ I would either generate a small Markdown/operator table from the registry, or ad
 
 ### 11. `ReservedFunctionWhenNoneRule.BindingPower` is unused
 
-`IWhenNoneRule` exposes `BindingPower`, and `ReservedFunctionWhenNoneRule` returns `100`, but `LibraParser.ParseWhenNone` ignores binding power for all prefix/null-denotation rules except through each rule's own implementation.
+Status: resolved at the interface level. `IWhenNoneRule` no longer exposes `BindingPower`, which was the important cleanup. `ReservedFunctionWhenNoneRule.BindingPower` still exists as a static member; it can be deleted unless there is a planned near-term use.
+
+Historical finding follows.
+
+`IWhenNoneRule` exposed `BindingPower`, and `ReservedFunctionWhenNoneRule` returned `100`, but `LibraParser.ParseWhenNone` ignored binding power for all prefix/null-denotation rules except through each rule's own implementation.
 
 Relevant code:
 
@@ -209,9 +239,15 @@ The parser only handles comma in `ReservedFunctionWhenNoneRule`. A top-level `a,
 
 The lexer/parser should therefore keep comma as a call-argument delimiter and produce a source diagnostic if it appears outside a reserved call, rather than adding a general comma sequence expression.
 
+Current status: partially addressed, but the current `Expect` implementation only throws the custom comma diagnostic when `Expect(TokenKind.Comma)` reads a comma. That is the opposite of the important case. For `a,b` at top level, `Parse()` reads the comma while expecting end-of-input, so it still needs a comma-specific diagnostic there. Similarly, `(a,b)` should report the comma-specific message when `Expect(TokenKind.CloseParen)` sees a comma, and `{a,b}` should do the same for `CloseBrace`.
+
+Suggested shape: centralize expected-token diagnostics so that any `Expect(expectedKind)` first checks whether the actual token is a comma and `expectedKind != TokenKind.Comma`; if so, report "Commas are only valid in reserved function calls." Then normal expected-token diagnostics handle everything else. Do not make `ParseExpression` track whether it is inside a reserved call.
+
 ## Lexer and Token Model Findings
 
 ### 13. Text tokens are too permissive and too implicit
+
+Status: resolved by lexer contract. Bare text atoms now use `[A-Za-z0-9.]+`, and whitespace outside strings is discarded. Historical/design context follows.
 
 Anything that is not a delimiter/operator becomes `Text`. That includes whitespace, dots, hashes, extra brackets, semicolons in some positions, and possibly Unicode/control characters.
 
@@ -224,9 +260,11 @@ The intended model is math-style text rendering:
 - Punctuation should require quoting unless it is a recognized DSL delimiter/operator/sigil.
 - Decimal points are allowed inside bare atoms because numeric-looking text such as `2.5` matters for binding.
 
-Given that model, bare `Text` tokens should likely be restricted to `[A-Za-z0-9.]+`. The current "consume anything until a delimiter" behavior is too permissive.
+Given that model, bare `Text` tokens are restricted to `[A-Za-z0-9.]+`. The old "consume anything until a delimiter" behavior was too permissive.
 
 ### 14. `LibraToken` trims every token's text
+
+Status: resolved. `LibraToken` no longer globally trims token text. Note that the implemented lexer currently keeps string delimiters and escapes in `String` token text; that is the tested convention for now.
 
 `LibraToken` does `Text = text.Trim()`.
 
@@ -240,6 +278,8 @@ Whitespace handling should be token-kind-specific. Operators and delimiters can 
 
 ### 15. The lexer has states for property/identifier blocks but no correct transition into them
 
+Status: resolved by the direct scanner path. Historical finding follows.
+
 `State.PropertyBlock` and `State.IdentifierBlock` exist, and their methods both call `ConsumeUntilDelimiter(...)`.
 
 Relevant code:
@@ -250,6 +290,8 @@ Relevant code:
 But the transition code throws instead of entering those states. This is a sign the state machine evolved without a locking test suite.
 
 ### 16. Unterminated/invalid diagnostics often have misleading spans
+
+Status: partially resolved by the scanner rewrite and diagnostic tests for unterminated string/substitution/property block. Keep refining diagnostic spans as parser/binder diagnostics are added.
 
 `CreateException` accepts a `length` parameter but ignores it.
 
@@ -272,6 +314,8 @@ If `OperatorRegistry.IsOperatorStart` is accidentally called with a string conta
 
 ### 18. The operator tokenizer does not clearly implement longest-match behavior
 
+Status: resolved for lexer behavior. `a<=b` now emits `<=` as a single `Operator` token and is covered by tests.
+
 The trie contains complete operator symbols and prefix nodes, so `IsOperatorStart("<")` and `IsOperatorStart("<=")` both return true. That supports longest-match scanning for `<=`.
 
 However, `TryHandleDelimiter` immediately emits a single-character operator token for any operator-start character it sees in text mode:
@@ -281,6 +325,8 @@ However, `TryHandleDelimiter` immediately emits a single-character operator toke
 That means `a<=b` can become `<` followed by `=`, not `<=`, depending on path. Operator mode can build multi-character operators, but delimiter handling bypasses it.
 
 ### 19. Reserved-name token text probably drops the reserved sigil
+
+Status: resolved. `;frac` tokenizes as `ReservedName(";frac")`, and unknown reserved-looking input such as `x;y` tokenizes for parser/binder diagnostics.
 
 When `TryHandleDelimiter` sees `;`, it calls `MoveNextAndAppend()` after already consuming `;`, so the token builder begins with the first character after the semicolon. `Reserved()` then appends the rest of the name. The resulting token text is likely `frac`, while the registry stores `;frac`.
 
@@ -299,12 +345,12 @@ The validator allows only identifier-continuation characters:
 
 - `Celarix.Starfall/Libra/Parsing/LibraSyntaxValidator.cs:193`
 
-The builder's color parser accepts HTML-style values and trims a leading `#`:
+The builder's color parser can parse HTML-style hex values, while the current property-block lexer/test convention uses values without `#` in the block text:
 
 - `Celarix.Starfall/Rendering/Models/SColor.cs`
 - `Celarix.Starfall/Libra/Parsing/LibraExpressionBuilder.cs:110`
 
-So `[foreground=#ff0000]` is rejected by the validator, numeric-ish values such as `[some=-1.5]` are rejected, and `[foreground=red]` passes validation but falls back to white because `SColor.FromHtmlAttribute` does not parse color names. The layers are not enforcing the same property language.
+So `[foreground=ff0000]` is the lexer-friendly form for now, numeric-ish values such as `[some=-1.5]` need typed property binding if/when they are real property values, and `[foreground=red]` passes the old identifier-like shape but falls back to white because `SColor.FromHtmlAttribute` does not parse color names. The layers still need a single property-binding language.
 
 ### 21. Property validation is syntactic, but property building is semantic and throws different exception types
 
@@ -439,11 +485,11 @@ Since semicolon is the reserved-call sigil and bare text atoms are restricted to
 
 ### 32. Property syntax cannot currently represent enough real values
 
-Sooner or later properties will want colors, dimensions, fonts, booleans, numbers, enum names, maybe strings. `key=value,key=value` with unquoted identifier-like values is a tight corner.
+Sooner or later properties will want colors, dimensions, fonts, booleans, numbers, enum names, maybe strings. `key=value,key=value` with unquoted raw values is a tight corner.
 
 Possible direction:
 
-- Keep simple values for now, but allow `#`, `.`, `-`, `%`, and maybe quoted strings.
+- Keep simple values for now, but deliberately decide which characters belong in raw property values. The current lexer allows hex colors without `#`; adding `#`, `-`, `%`, or quoted property values should be a property-binding decision, not an accident.
 - Parse property values into syntax/value tokens instead of raw strings.
 - Bind properties through a registry with source-span-aware errors.
 
@@ -458,9 +504,9 @@ That is useful, especially for scripts and grouped property/ID suffixes. It just
 
 ## Testing Gaps
 
-I did not find a test project. Given the lexer state-machine issues, the next investment should be a compact parser test suite. Start with tokenization tests before AST/build tests.
+There is now an xUnit test project, `Celarix.Starfall.Tests`, and the lexer contract suite passes. The next investment should be parser, validator, and binder tests.
 
-Minimum lexer cases:
+Lexer cases now covered or intentionally represented by the passing suite:
 
 - `x`
 - `xy`
@@ -470,23 +516,25 @@ Minimum lexer cases:
 - `"x"`
 - `" x "`
 - `"a\"b"`
-- bare punctuation fails unless quoted
-- literal semicolon fails unless quoted or part of a reserved call
+- raw punctuation such as `:` fails unless quoted or recognized syntax
+- bare `;` fails
+- `x;y` tokenizes as `Text("x")`, `ReservedName(";y")` for parser/binder diagnostics
+- `x!y` tokenizes as `Text("x")`, `Operator("!")`, `Text("y")` for parser diagnostics
 - `a+b`
 - `a<=b`
 - `;frac(x,y)`
-- top-level `a,b` fails
+- top-level `a,b` tokenizes for parser diagnostics
 - `[[name]]`
-- `[[name]]@#id` fails
+- `[[name]]@#id` tokenizes for validator diagnostics
 - `x@.class#id`
-- `x@#id1#id2` fails
+- `x@#id1#id2` should be rejected by validator, not lexer
 - `x@#id.class1.class2`
-- `x[foreground=#ff0000]`
-- `x@#id[color=red]@.class2` fails
-- `x[color=red][background=blue]` fails
+- `x[foreground=ff0000]`
+- `x@#id[color=red]@.class2` tokenizes for validator diagnostics
+- `x[color=red][background=blue]` tokenizes for validator diagnostics
 - `(x)`
 - `(x)[fencetype=SquareBrackets]`
-- `x[fencetype=SquareBrackets]` fails
+- `x[fencetype=SquareBrackets]` tokenizes for binder diagnostics
 - `{x}`
 
 Minimum parser/AST cases:
@@ -511,16 +559,13 @@ Minimum builder cases:
 
 ## Suggested Fix Order
 
-1. Fix `LibraParseException` to store `Diagnostic`.
-2. Fix `OperatorRegistry._reservedFunctions = [.. funcInfo];`.
-3. Replace lexer peeking with a clear `Current`, `Peek(offset)`, `Advance()` model and retest every token kind.
-4. Make `TextSpan` source-stable and update all token creation to use the same convention.
-5. Keep semicolon reserved-call syntax consistent across lexer token text, registry keys, examples, and tests.
-6. Implement suffix tokenization for `@...` and `[...]`.
-7. Fix script parsing with explicit tests for same-precedence scripts.
-8. Move reserved-call binding toward syntax-aware binders, as already described in the reserved-call note.
-9. Expand property validation/binding into one source-span-aware layer.
-10. Add a small test project before adding more operators/functions.
+1. Add parser tests for scripts, parenthesized/braced spans, and comma diagnostics.
+2. Fix comma diagnostics outside reserved calls.
+3. Move reserved-call binding toward syntax-aware binders, as already described in the reserved-call note.
+4. Expand property validation/binding into one source-span-aware layer.
+5. Add postfix validation for substitutions, repeated identifier/property blocks, one `#id`, and `fencetype` targeting.
+6. Review and test broader Atria/Libra ID policy.
+7. Add binder tests after the binder shape stabilizes.
 
 ## Questions
 

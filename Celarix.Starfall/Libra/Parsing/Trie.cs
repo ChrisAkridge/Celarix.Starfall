@@ -23,8 +23,8 @@ namespace Celarix.Starfall.Libra.Parsing
         {
             for (var i = 0; i < value.Length; i++)
             {
-                var index = Celarix.Starfall.Extensions.IReadOnlyListExtensions.IndexOf(alphabet, value[i]);
-                if (node.Children[index] == null)
+                var index = IReadOnlyListExtensions.IndexOf(alphabet, value[i]);
+                if (index == -1 || node.Children[index] == null)
                 {
                     node.Children[index] = new TrieNode(value[..(i + 1)], alphabet.Count);
                 }
@@ -37,8 +37,8 @@ namespace Celarix.Starfall.Libra.Parsing
         {
             for (var i = 0; i < value.Length; i++)
             {
-                var index = Celarix.Starfall.Extensions.IReadOnlyListExtensions.IndexOf(alphabet, value[i]);
-                if (node.Children[index] == null)
+                var index = IReadOnlyListExtensions.IndexOf(alphabet, value[i]);
+                if (index == -1 || node.Children[index] == null)
                 {
                     return false;
                 }

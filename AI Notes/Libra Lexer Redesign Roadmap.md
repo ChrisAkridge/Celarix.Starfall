@@ -4,9 +4,9 @@ Date: 2026-08-14
 
 ## Goal
 
-Replace the current lexer with a simpler scanner whose job is only to recognize source tokens accurately. It should not try to decide whether a suffix is legal on the preceding expression, whether a property applies to the right expression kind, or whether a reserved call has valid arguments. Those are parser, validator, or binder responsibilities.
+Replace the old lexer with a simpler scanner whose job is only to recognize source tokens accurately. It should not try to decide whether a suffix is legal on the preceding expression, whether a property applies to the right expression kind, or whether a reserved call has valid arguments. Those are parser, validator, or binder responsibilities.
 
-The current `MoveNext()` / `PeekNext()` design is too easy to misuse because it cannot cleanly distinguish current-character inspection from lookahead. The replacement should use an explicit cursor model and a small set of token readers.
+Status: implemented on 2026-08-15. The lexer now uses an explicit cursor/scanner path and the xUnit lexer suite passes 21/21. The old state-machine methods may still exist in the file as dead code, but the active `Parse()` path uses the new scanner.
 
 ## Language Rules To Preserve
 
@@ -26,7 +26,7 @@ The current `MoveNext()` / `PeekNext()` design is too easy to misuse because it 
 
 ## Proposed Cursor API
 
-Use a cursor with direct current-character inspection:
+Implemented direction: use a cursor with direct current-character inspection:
 
 ```csharp
 private bool IsAtEnd => _position >= _source.Length;
@@ -62,7 +62,7 @@ Keep the existing broad token categories, but make their recognition precise:
 - delimiters: `(`, `)`, `{`, `}`, `,`
 - `EndOfInput`
 
-The lexer can still return raw text for `IdentifierBlock` and `PropertyBlock`; detailed validation of `#id`, `.class`, property names, duplicate keys, and typed property values can happen later.
+The current implementation returns full source spelling for `String`, `Substitution`, `IdentifierBlock`, and `PropertyBlock` tokens, including their delimiters. Detailed validation of `#id`, `.class`, property names, duplicate keys, and typed property values can happen later.
 
 ## Scanning Loop
 
@@ -111,7 +111,7 @@ Open question for implementation: a lone `.` technically matches `[A-Za-z0-9.]+`
 
 Read from opening `"` to closing `"`.
 
-String token text should be the decoded string content, not including quotes. It should preserve ordinary spaces and punctuation.
+Current convention: string token text keeps the quoted source spelling, including quotes and escape sequences. It preserves ordinary spaces and punctuation within that spelling.
 
 Escapes to support initially:
 
@@ -142,7 +142,7 @@ The lexer should diagnose bare `;` with no following name. Whether the name is k
 
 Read `[[Name]]`.
 
-The emitted token text can be just the substitution name, not the brackets. The lexer should validate the closing `]]` and basic name shape because the delimiters define the token boundary.
+Current convention: substitution token text keeps the full source spelling including `[[` and `]]`. The lexer validates the closing `]]` and basic name shape because the delimiters define the token boundary.
 
 Do not decide whether `[[Name]]@#id` is legal in the lexer. It should tokenize as substitution plus identifier block, then the validator can report "substitutions cannot receive direct postfix blocks" with a better structural diagnostic.
 
@@ -158,7 +158,7 @@ Allowed raw characters inside the block:
 - ASCII digits
 - `_`
 
-The lexer can emit token text without the leading `@`, for example:
+Current convention: identifier-block token text keeps the leading `@`, for example:
 
 ```text
 x@#id.class1.class2
@@ -168,7 +168,7 @@ emits:
 
 ```text
 Text("x")
-IdentifierBlock("#id.class1.class2")
+IdentifierBlock("@#id.class1.class2")
 ```
 
 Detailed rules belong in validation:
@@ -183,17 +183,17 @@ Detailed rules belong in validation:
 
 Read from `[` to the next `]`, except `[[` is substitution.
 
-The emitted token text can be the raw content without brackets:
+Current convention: property-block token text keeps the surrounding brackets:
 
 ```text
-x[foreground=#ff0000,fencetype=SquareBrackets]
+x[foreground=ff0000,fencetype=SquareBrackets]
 ```
 
 emits:
 
 ```text
 Text("x")
-PropertyBlock("foreground=#ff0000,fencetype=SquareBrackets")
+PropertyBlock("[foreground=ff0000,fencetype=SquareBrackets]")
 ```
 
 The lexer should only diagnose missing closing `]`. It should not parse property keys, duplicate properties, colors, enum values, or whether `fencetype` is attached to a parenthesized expression.
@@ -264,17 +264,18 @@ Parser/validator/binder diagnostics should handle structural and semantic rules.
 
 ### Phase 1: Stabilize Token Infrastructure
 
-- Replace `TextSpan` usage so every span is source-stable.
-- Store `LibraParseException.Diagnostic`.
-- Stop trimming all token text in `LibraToken`.
-- Add a small lexer test suite before replacing behavior.
+- [x] Replace `TextSpan` usage so every span is source-stable.
+- [x] Store `LibraParseException.Diagnostic`.
+- [x] Stop trimming all token text in `LibraToken`.
+- [x] Add a small lexer test suite.
 
 ### Phase 2: Replace The Cursor And Scanner
 
-- Implement the explicit cursor API.
-- Replace the state machine with the direct scanning loop.
-- Implement readers for whitespace, text atom, string, reserved name, substitution, identifier block, property block, delimiter, and operator.
-- Add longest-operator matching in `OperatorRegistry`.
+- [x] Implement the explicit cursor API.
+- [x] Replace the active parse path with the direct scanning loop.
+- [x] Implement readers for whitespace, text atom, string, reserved name, substitution, identifier block, property block, delimiter, and operator.
+- [x] Add longest-operator matching in `OperatorRegistry`.
+- [ ] Remove old unused state-machine code from `Lexer.cs`.
 
 ### Phase 3: Lock Down Lexical Rules With Tests
 
@@ -288,7 +289,9 @@ Minimum lexer tests:
 - `"hello world"` preserves the space
 - `"a\"b"`
 - `"a;b"` preserves the semicolon
-- unquoted punctuation fails unless it is recognized syntax
+- unquoted punctuation such as `:` fails unless it is recognized syntax
+- `x;y` tokenizes as unknown reserved-name syntax for parser/binder diagnostics
+- `x!y` tokenizes as unknown/incomplete operator syntax for parser diagnostics
 - bare `;` fails
 - `;frac(x,y)` includes `;frac` as token text
 - `a<=b` emits `<=`
@@ -296,10 +299,12 @@ Minimum lexer tests:
 - `[[name]]`
 - `[[name]]@#id` tokenizes, then validator rejects later
 - `x@#id.class1.class2`
-- `x[foreground=#ff0000]`
+- `x[foreground=ff0000]`
 - `x[color=red][background=blue]` tokenizes, then validator rejects later
 - `(x)[fencetype=SquareBrackets]`
 - `x[fencetype=SquareBrackets]` tokenizes, then validator/binder rejects later
+
+Status: implemented as `Celarix.Starfall.Tests/Libra/Parsing/LexerTests.cs`; currently passing 21/21.
 
 ### Phase 4: Move Structural Checks Outward
 
@@ -329,4 +334,3 @@ The main quality bar is that every reader should be locally understandable:
 - leave `_position` at the first character after the token.
 
 If the scanner follows that invariant, the parser and binder work become much easier to reason about.
-

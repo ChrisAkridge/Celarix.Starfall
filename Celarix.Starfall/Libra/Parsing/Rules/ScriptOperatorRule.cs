@@ -13,17 +13,20 @@ namespace Celarix.Starfall.Libra.Parsing.Rules
         {
             ExpressionSyntax? superscript = null;
             ExpressionSyntax? subscript = null;
+            ExpressionSyntax? lastScript = null;
 
             if (operatorToken.Text == "^")
             {
-                superscript = parser.ParseExpression(OperatorRegistry.ScriptBindingPower);
+                superscript = parser.ParseExpression(OperatorRegistry.ScriptBindingPower + 1);
+                lastScript = superscript;
                 var peek = parser.Peek();
                 if (peek.Kind == TokenKind.Operator)
                 {
                     if (peek.Text == "_")
                     {
                         parser.Expect(TokenKind.Operator);
-                        subscript = parser.ParseExpression(OperatorRegistry.ScriptBindingPower);
+                        subscript = parser.ParseExpression(OperatorRegistry.ScriptBindingPower + 1);
+                        lastScript = subscript;
                     }
                     else if (peek.Text == "^")
                     {
@@ -33,14 +36,16 @@ namespace Celarix.Starfall.Libra.Parsing.Rules
             }
             else if (operatorToken.Text == "_")
             {
-                subscript = parser.ParseExpression(OperatorRegistry.ScriptBindingPower);
+                subscript = parser.ParseExpression(OperatorRegistry.ScriptBindingPower + 1);
+                lastScript = subscript;
                 var peek = parser.Peek();
                 if (peek.Kind == TokenKind.Operator)
                 {
                     if (peek.Text == "^")
                     {
                         parser.Expect(TokenKind.Operator);
-                        superscript = parser.ParseExpression(OperatorRegistry.ScriptBindingPower);
+                        superscript = parser.ParseExpression(OperatorRegistry.ScriptBindingPower + 1);
+                        lastScript = superscript;
                     }
                     else if (peek.Text == "_")
                     {
@@ -49,7 +54,7 @@ namespace Celarix.Starfall.Libra.Parsing.Rules
                 }
             }
 
-            return new ScriptSyntax(left, superscript, subscript, TextSpan.FromBounds(left.Span, (superscript ?? subscript ?? left).Span));
+            return new ScriptSyntax(left, superscript, subscript, TextSpan.FromBounds(left.Span, (lastScript ?? left).Span));
         }
     }
 }
