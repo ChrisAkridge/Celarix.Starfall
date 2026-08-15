@@ -7,8 +7,6 @@ namespace Celarix.Starfall.Libra.Parsing.Rules
 {
     internal sealed class ReservedFunctionWhenNoneRule : IWhenNoneRule
     {
-        public static int BindingPower => 100;
-
         public ExpressionSyntax Parse(LibraParser parser, LibraToken operatorToken)
         {
             parser.Expect(TokenKind.OpenParen);

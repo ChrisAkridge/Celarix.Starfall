@@ -39,35 +39,8 @@ namespace Celarix.Starfall.Playground.DelphinusTests
             var expr = LibraExpression.Parse(";catEm(2, mt = 1 - t, (mt^2 * X_0) + (2 * mt * t * X_1) + (t^2 * X_2))")
                 .Build();
 
-            var _0 = Text("mt");
-            var _1 = Sub(Text("1"), Text("t"));
-            var _1a = Equal(_0, _1);
-
-            var _2 = Exp(Text("mt"), Text("2"));
-            var _3 = Mul(_2, Subscript(Text("X"), Text("0")));
-            var _4 = Paren(_3);
-
-            var _5 = Text("2");
-            var _6 = Text("mt");
-            var _7 = Text("t");
-            var _8 = Subscript(Text("X"), Text("1"));
-            var _9 = Mul(_5, _6);
-            var _10 = Mul(_7, _8);
-            var _11 = Mul(_9, _10);
-            var _12 = Paren(_11);
-
-            var _13 = Exp(Text("t"), Text("2"));
-            var _14 = Subscript(Text("X"), Text("2"));
-            var _15 = Mul(_13, _14);
-            var _16 = Paren(_15);
-
-            var _17 = AddExpr(_4, _12);
-            var _18 = AddExpr(_17, _16);
-
-            var _19 = Concat(2d, [_1a, _18]);
-
             var libraElement = new LibraElement(
-                _19,
+                expr,
                 _baseFont, "#libra");
             var anchor = new BasisPoint(Center, "anchor");
             libraElement.AnchorCenterTo(anchor);

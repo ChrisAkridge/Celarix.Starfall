@@ -1,5 +1,4 @@
-﻿using Celarix.Starfall.Libra.Expressions;
-using Celarix.Starfall.Libra.Parsing.Rules;
+﻿using Celarix.Starfall.Libra.Parsing.Rules;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -18,7 +17,6 @@ namespace Celarix.Starfall.Libra.Parsing
         private const int EqualityBindingPower = 50;
 
         private static readonly IReadOnlyList<OperatorInfo> _operators;
-        private static readonly IReadOnlyList<ReservedFunctionInfo> _reservedFunctions;
         private static readonly IReadOnlyList<char> _firstChars;
         private static readonly TrieNode? _trie;
 
@@ -42,12 +40,6 @@ namespace Celarix.Starfall.Libra.Parsing
                 new(">=", "≥", OperatorKind.Infix, null, BinaryOperatorRule.LeftAssociative(RelationalBindingPower))
             };
             _operators = [.. info];
-
-            var funcInfo = new List<ReservedFunctionInfo>
-            {
-                new(";frac", 2, (context, id, args) => new FractionExpression(args[0], args[1], context.ForegroundColor, context.BackgroundColor, id))
-            };
-            _reservedFunctions = [.. funcInfo];
 
             // Get the list of first characters. Don't count anything starting with ; as we parse that
             // as a reserved symbol in the lexer and only need it in the registry for precedence purposes.
@@ -102,59 +94,67 @@ namespace Celarix.Starfall.Libra.Parsing
             return _operators.Any(op => op.IsReservedName && op.Symbol == reservedName);
         }
 
-        public static bool TryGetKnownReservedFunction(string reservedFunctionName, [NotNullWhen(true)] out ReservedFunctionInfo? info)
-        {
-            info = _reservedFunctions.SingleOrDefault(f => f.Name == reservedFunctionName);
-            return info != null;
-        }
-
         public static bool TryGetWhenSome(string operatorText,
+            OperatorKind kind,
             [NotNullWhen(true)] out IWhenSomeRule? rule)
         {
             rule = null;
 
-            // Find the set of matching operators by the text
-            var matchingOperators = _operators.Where(op => op.Symbol == operatorText).ToList();
-            if (matchingOperators.Count == 0) { return false; }
+            if (!TryGetOperator(operatorText, kind, out var @operator)
+                || @operator.WhenSomeRule == null)
+            {
+                return false;
+            }
 
-            var operatorWithWhenSome = matchingOperators.SingleOrDefault(o => o.WhenSomeRule != null);
-            if (operatorWithWhenSome == null) { return false; }
-
-            rule = operatorWithWhenSome.WhenSomeRule!;
+            rule = @operator.WhenSomeRule;
             return true;
         }
 
         public static bool TryGetWhenNone(string operatorOrReservedText,
+            OperatorKind kind,
             [NotNullWhen(true)] out IWhenNoneRule? rule)
         {
             rule = null;
 
-            if (operatorOrReservedText.StartsWith(';'))
+            if (!TryGetOperator(operatorOrReservedText, kind, out var @operator)
+                || @operator.WhenNoneRule == null)
             {
-                // Reserved function
-                var reservedFunction = _reservedFunctions.SingleOrDefault(f => f.Name == operatorOrReservedText);
-                if (reservedFunction == null) { return false; }
-                rule = reservedFunction.WhenNoneRule;
-                return true;
+                return false;
             }
-            else
-            {
-                // Operator
-                var matchingOperators = _operators.Where(op => op.Symbol == operatorOrReservedText).ToList();
-                if (matchingOperators.Count == 0) { return false; }
-                var operatorWithWhenNone = matchingOperators.SingleOrDefault(o => o.WhenNoneRule != null);
-                if (operatorWithWhenNone == null) { return false; }
-                rule = operatorWithWhenNone.WhenNoneRule!;
-                return true;
-            }
+
+            rule = @operator.WhenNoneRule;
+            return true;
         }
 
-        public static string GetRenderedSymbol(string operatorText)
+        public static string GetRenderedSymbol(string operatorText,
+            OperatorKind kind)
         {
-            var matchingOperator = _operators.SingleOrDefault(op => op.Symbol == operatorText);
-            return matchingOperator == null
-                ? throw new InvalidOperationException($"No operator found for symbol '{operatorText}'")
-                : matchingOperator.RenderedSymbol;
+            return TryGetOperator(operatorText, kind, out var @operator)
+                ? @operator.RenderedSymbol
+                : throw new InvalidOperationException($"No {kind} operator found for symbol '{operatorText}'");
+        }
+
+        private static bool TryGetOperator(string operatorText,
+            OperatorKind kind,
+            [NotNullWhen(true)] out OperatorInfo? @operator)
+        {
+            var matchingOperators = _operators
+                .Where(op => op.Symbol == operatorText && op.Kind == kind)
+                .ToList();
+
+            if (matchingOperators.Count == 0)
+            {
+                @operator = null;
+                return false;
+            }
+
+            if (matchingOperators.Count > 1)
+            {
+                throw new InvalidOperationException($"Multiple {kind} operators registered for symbol '{operatorText}'.");
+            }
+
+            @operator = matchingOperators[0];
+            return true;
         }
     }
 }

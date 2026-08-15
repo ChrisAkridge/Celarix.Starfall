@@ -31,15 +31,15 @@ This list tracks implementation status across the AI Notes design threads.
     - [x] Add parser tests that top-level, parenthesized, and braced commas outside reserved calls produce the comma-specific diagnostic.
     - [x] Fix comma-specific diagnostics outside reserved calls; `Expect(TokenKind.CloseParen)` / `Expect(TokenKind.CloseBrace)` / top-level EOF checks should special-case actual comma tokens.
     - [x] Remove unused `ReservedFunctionWhenNoneRule.BindingPower` unless a concrete use appears.
-  - [ ] Reserved function binding pass based on `Libra Reserved Call Binding Notes.md`.
-    - [ ] Introduce a `LibraBinder` layer between `ExpressionSyntax` and `LibraExpression`.
-    - [ ] Keep parser responsibility limited to syntax shape; do not enforce reserved-call existence, arity, or typed arguments in the parser.
-    - [ ] Add `IReservedCallBinder` or equivalent function-specific binder abstraction.
-    - [ ] Add a reserved-call registry mapping semicolon reserved names to binders.
-    - [ ] Move `;frac` construction into a `FractionBinder` that validates arity and binds both arguments as expressions.
-    - [ ] Add `;catEm(gapInEm, expression1, expression2, ...)` binder with conservative numeric binding for the gap and expression binding for the remaining args.
-    - [ ] Add binder helper methods only as needed, starting with `BindExpression`, `BindNumber`, and possibly `BindString` / `BindInteger`.
-    - [ ] Ensure binder diagnostics carry source spans and do not require extracting typed values back out of built `LibraExpression` objects.
+  - [x] Reserved function binding pass based on `Libra Reserved Call Binding Notes.md`.
+    - [x] Introduce a `LibraBinder` layer between `ExpressionSyntax` and `LibraExpression`.
+    - [x] Keep parser responsibility limited to syntax shape; do not enforce reserved-call existence, arity, or typed arguments in the parser.
+    - [x] Add `IReservedCallBinder` or equivalent function-specific binder abstraction.
+    - [x] Add a reserved-call registry mapping semicolon reserved names to binders.
+    - [x] Move `;frac` construction into a `FractionBinder` that validates arity and binds both arguments as expressions.
+    - [x] Add `;catEm(gapInEm, expression1, expression2, ...)` binder with conservative numeric binding for the gap and expression binding for the remaining args.
+    - [x] Add binder helper methods only as needed, starting with `BindExpression`, `BindNumber`, and possibly `BindString` / `BindInteger`.
+    - [x] Ensure binder diagnostics carry source spans and do not require extracting typed values back out of built `LibraExpression` objects.
   - [ ] Property block binding pass.
     - [ ] Define valid property keys in code rather than scattering string switches through the builder.
     - [ ] Give each property definition an accepted value type and parsing/validation routine.

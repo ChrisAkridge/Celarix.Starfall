@@ -9,6 +9,7 @@ namespace Celarix.Starfall.Libra.Parsing
         private readonly IReadOnlyList<LibraToken> _tokens;
         private readonly IdentifierRule _identifierRule = new();
         private readonly PropertyBlockRule _propertyRule = new();
+        private readonly ReservedFunctionWhenNoneRule _reservedFunctionRule = new();
         private int _position;
 
         public LibraParser(IEnumerable<LibraToken> tokens)
@@ -82,11 +83,11 @@ namespace Celarix.Starfall.Libra.Parsing
         {
             TokenKind.Text => new TextSyntax(token.Text, token.Span),
             TokenKind.String => new StringSyntax(token.Text, token.Span),
-            TokenKind.ReservedName => OperatorRegistry.TryGetWhenNone(token.Text, out var reservedNameRule)
-                ? reservedNameRule.Parse(this, token)
+            TokenKind.ReservedName => Peek().Kind == TokenKind.OpenParen
+                ? _reservedFunctionRule.Parse(this, token)
                 : new ReservedNameSyntax(token.Text, token.Span),
             TokenKind.Substitution => new SubstitutionSyntax(token.Text, token.Span),
-            TokenKind.Operator => OperatorRegistry.TryGetWhenNone(token.Text, out var operatorRule)
+            TokenKind.Operator => OperatorRegistry.TryGetWhenNone(token.Text, OperatorKind.Prefix, out var operatorRule)
                 ? operatorRule.Parse(this, token)
                 : throw new LibraParseException(new($"Unexpected operator '{token.Text}' of kind {token.Kind} at {token.Span}.", token.Span)),
             TokenKind.OpenParen => new ParenthesizedExpressionSyntax(ParseExpression(), TextSpan.FromBounds(token.Span, Expect(TokenKind.CloseParen).Span)),
@@ -100,7 +101,7 @@ namespace Celarix.Starfall.Libra.Parsing
             switch (token.Kind)
             {
                 case TokenKind.Operator:
-                    return OperatorRegistry.TryGetWhenSome(token.Text, out rule);
+                    return OperatorRegistry.TryGetWhenSome(token.Text, OperatorKind.Infix, out rule);
                 case TokenKind.IdentifierBlock:
                     rule = _identifierRule;
                     return true;

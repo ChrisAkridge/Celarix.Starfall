@@ -47,16 +47,6 @@ namespace Celarix.Starfall.Libra.Parsing
             }
             else if (expression is ReservedCallSyntax reservedCall)
             {
-                if (!OperatorRegistry.TryGetKnownReservedFunction(reservedCall.Name, out ReservedFunctionInfo? info))
-                {
-                    throw new LibraParseException(new($"Unknown reserved function '{reservedCall.Name}'", reservedCall.Span));
-                }
-
-                if (reservedCall.Arguments.Count != info.ArgumentCount)
-                {
-                    throw new LibraParseException(new($"Reserved function '{reservedCall.Name}' expects {info.ArgumentCount} arguments, but {reservedCall.Arguments.Count} were provided", reservedCall.Span));
-                }
-
                 foreach (var argument in reservedCall.Arguments)
                 {
                     Validate(argument);
