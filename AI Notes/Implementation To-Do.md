@@ -24,13 +24,13 @@ This list tracks implementation status across the AI Notes design threads.
   - [ ] Pass viewport/render context information down to AtriaElement.Render.
   - [ ] Add geometry helpers needed for transformed viewport visibility.
 - [ ] Findings from the Libra Pratt Parser review
-  - [ ] Parser behavior tests and diagnostics.
-    - [ ] Add parser tests for script grouping: `x^y_z`, `x_y^z`, `x^y^z`, and `x_y_z`.
-    - [ ] Add parser tests that parenthesized and braced syntax spans include both opening and closing delimiters.
-    - [ ] Add parser tests that commas inside reserved calls remain valid argument separators.
-    - [ ] Add parser tests that top-level, parenthesized, and braced commas outside reserved calls produce the comma-specific diagnostic.
-    - [ ] Fix comma-specific diagnostics outside reserved calls; `Expect(TokenKind.CloseParen)` / `Expect(TokenKind.CloseBrace)` / top-level EOF checks should special-case actual comma tokens.
-    - [ ] Remove unused `ReservedFunctionWhenNoneRule.BindingPower` unless a concrete use appears.
+  - [x] Parser behavior tests and diagnostics.
+    - [x] Add parser tests for script grouping: `x^y_z`, `x_y^z`, `x^y^z`, and `x_y_z`.
+    - [x] Add parser tests that parenthesized and braced syntax spans include both opening and closing delimiters.
+    - [x] Add parser tests that commas inside reserved calls remain valid argument separators.
+    - [x] Add parser tests that top-level, parenthesized, and braced commas outside reserved calls produce the comma-specific diagnostic.
+    - [x] Fix comma-specific diagnostics outside reserved calls; `Expect(TokenKind.CloseParen)` / `Expect(TokenKind.CloseBrace)` / top-level EOF checks should special-case actual comma tokens.
+    - [x] Remove unused `ReservedFunctionWhenNoneRule.BindingPower` unless a concrete use appears.
   - [ ] Reserved function binding pass based on `Libra Reserved Call Binding Notes.md`.
     - [ ] Introduce a `LibraBinder` layer between `ExpressionSyntax` and `LibraExpression`.
     - [ ] Keep parser responsibility limited to syntax shape; do not enforce reserved-call existence, arity, or typed arguments in the parser.

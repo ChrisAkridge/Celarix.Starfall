@@ -185,6 +185,15 @@ public sealed class LibraParserTests
     }
 
     [Fact]
+    public void Parse_CommaInsideBraces_ThrowsCommaDiagnostic()
+    {
+        var exception = ParseThrows("{x,y}");
+
+        AssertCommaDiagnostic(exception);
+        Assert.Equal(2, exception.Diagnostic.textSpan?.StartIndex);
+    }
+
+    [Fact]
     public void Parse_MissingCloseParen_ThrowsExpectedCloseParenDiagnostic()
     {
         var exception = ParseThrows("(x+y");
