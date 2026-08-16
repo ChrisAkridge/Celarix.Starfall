@@ -15,5 +15,13 @@ namespace Celarix.Starfall.Rendering.Models
         }
 
         public override readonly string ToString() => $"(Width: {Width}, Height: {Height})";
+
+        public void ThrowIfNotPositive(string? parameterName = null)
+        {
+            if (Width <= 0 || Height <= 0)
+            {
+                throw new ArgumentOutOfRangeException(parameterName, $"Width and Height must be positive. Actual: {this}");
+            }
+        }
     }
 }

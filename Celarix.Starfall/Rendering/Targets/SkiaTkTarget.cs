@@ -136,15 +136,22 @@ namespace Celarix.Starfall.Rendering.Targets
         // Inbound Event Handlers
         // ======
         public event EventHandler<KeyboardKeyEventArgs> KeyUp;
+        public event EventHandler<KeyboardKeyEventArgs> KeyDown;
 
         private void RegisterEventHandlers()
         {
             window.KeyUp += OnKeyUp;
+            window.KeyDown += OnKeyDown;
         }
 
         private void OnKeyUp(KeyboardKeyEventArgs e)
         {
             KeyUp?.Invoke(this, e);
+        }
+
+        private void OnKeyDown(KeyboardKeyEventArgs e)
+        {
+            KeyDown?.Invoke(this, e);
         }
 
         // =======

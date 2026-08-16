@@ -32,6 +32,12 @@ namespace Celarix.Starfall.Rendering.Models
                 Height - (heightAmount * 2));
         }
 
+        public SSizeF ShrinkTowardCenterByFactor(double widthFactor, double heightFactor)
+        {
+            return new SSizeF(Width * (1 - widthFactor),
+                Height * (1 - heightFactor));
+        }
+
         public SSizeF FitAspectRatioInside(double desiredAspectRatio)
         {
             var currentAspectRatio = Width / Height;
@@ -46,6 +52,14 @@ namespace Celarix.Starfall.Rendering.Models
                 // Too tall, reduce height
                 var newHeight = Width / desiredAspectRatio;
                 return new SSizeF(Width, newHeight);
+            }
+        }
+
+        public void ThrowIfNotPositive(string? parameterName = null)
+        {
+            if (Width <= 0 || Height <= 0)
+            {
+                throw new ArgumentOutOfRangeException(parameterName, $"Width and Height must be positive. Actual: {this}");
             }
         }
 

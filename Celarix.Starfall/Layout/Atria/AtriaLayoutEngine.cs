@@ -92,6 +92,16 @@ namespace Celarix.Starfall.Layout.Atria
         // we layer is not a bad idea but can lead to performance issues where two slides that
         // are fine on their own are way too slow together.
 
+        public void KeyDown(SKeyboardEvent keyboardEvent)
+        {
+            CurrentSlide?.KeyDown(keyboardEvent);
+        }
+
+        public void KeyUp(SKeyboardEvent keyboardEvent)
+        {
+            CurrentSlide?.KeyUp(keyboardEvent);
+        }
+
         public void Update(AtriaSlide slide, double deltaTime)
         {
             GlobalFrameNumber += 1;

@@ -54,6 +54,16 @@ namespace Celarix.Starfall.Layout.Atria
 
         public abstract void Initialize();
 
+        public virtual void KeyDown(SKeyboardEvent keyboardEvent)
+        {
+            // Default implementation does nothing. Override in derived classes to handle key down events.
+        }
+
+        public virtual void KeyUp(SKeyboardEvent keyboardEvent)
+        {
+            // Default implementation does nothing. Override in derived classes to handle key up events.
+        }
+
         public virtual void Update(double deltaTime)
         {
             foreach (var element in _elements)
