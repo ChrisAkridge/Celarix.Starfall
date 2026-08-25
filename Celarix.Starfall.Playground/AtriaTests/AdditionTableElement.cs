@@ -11,6 +11,11 @@ namespace Celarix.Starfall.Playground.AtriaTests
 {
     internal sealed class AdditionTableElement : AtriaElement
     {
+        private sealed class AdditionGridCellProvider : IGridCellProvider
+        {
+
+        }
+
         private const string CarryingOneLabel = "carrying a 1";
         private const double CarryingOneLabelMarginYFactor = 0.2d;
 

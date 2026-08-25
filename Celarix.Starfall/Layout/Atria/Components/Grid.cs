@@ -15,6 +15,11 @@ namespace Celarix.Starfall.Layout.Atria.Components
         public SColor GridLineColor { get; set; }
         public SSize GridSizeInCells { get; private set; }
         public SSizeF CellSize { get; private set; }
+        public IGridCellProvider? CellProvider { get; set; }
+        public SFont DefaultFont { get; set; } = new SFontFamily("Calibri", 12f);
+        public SColor DefaultTextColor { get; set; } = SColor.Black;
+        public GridTextScalingMode TextScalingMode { get; set; } = GridTextScalingMode.SizeEqually;
+        public double ContentInsetFactor { get; set; } = 0.15d;
 
         public SSizeF Bounds => new(GridSizeInCells.Width * CellSize.Width, GridSizeInCells.Height * CellSize.Height);
         public SSizeF InnerCellSize => new((Bounds.Width - GridLineWidth * (GridSizeInCells.Width + 1)) / GridSizeInCells.Width,
@@ -35,24 +40,28 @@ namespace Celarix.Starfall.Layout.Atria.Components
         public void Render(IRenderTarget target, MeasurementService measurementService,
             SPointF position)
         {
+            Render(target, measurementService, position, CellProvider);
+        }
+
+        public void Render(IRenderTarget target,
+            MeasurementService measurementService,
+            SPointF position,
+            IGridCellProvider? cellProvider)
+        {
             var positionedBounds = Bounds.At(position);
             var gridVLines = GridSizeInCells.Width + 1;
             var gridHLines = GridSizeInCells.Height + 1;
-            var innerCellWidth = (Bounds.Width - GridLineWidth * gridVLines) / GridSizeInCells.Width;
-            var innerCellHeight = (Bounds.Height - GridLineWidth * gridHLines) / GridSizeInCells.Height;
 
             // Draw the cell colors
             for (var y = 0; y < GridSizeInCells.Height; y++)
             {
                 for (var x = 0; x < GridSizeInCells.Width; x++)
                 {
-                    var cellColor = _cellColors[x, y];
+                    var cell = new SPoint(x, y);
+                    var cellColor = cellProvider?.GetCellColor(cell) ?? _cellColors[x, y];
                     if (cellColor.A > 0) // Only draw if the cell color is not fully transparent
                     {
-                        var cellX = positionedBounds.Left + (x * CellSize.Width) + GridLineWidth;
-                        var cellY = positionedBounds.Top + (y * CellSize.Height) + GridLineWidth;
-                        var cellRect = new SRectF(cellX, cellY, innerCellWidth, innerCellHeight);
-                        target.DrawRectangle(cellRect, cellColor, SPaintStyle.Fill, SAngle.Zero);
+                        target.DrawRectangle(GetInnerCellBounds(position, cell), cellColor, SPaintStyle.Fill, SAngle.Zero);
                     }
                 }
             }
@@ -70,6 +79,11 @@ namespace Celarix.Starfall.Layout.Atria.Components
                 var lineX = positionedBounds.Left + (x * CellSize.Width);
                 target.DrawLine(new SPointF(lineX, positionedBounds.Top), new SPointF(lineX, positionedBounds.Bottom), GridLineColor,
                     (float)GridLineWidth);
+            }
+
+            if (cellProvider is not null)
+            {
+                RenderCellText(target, measurementService, position, cellProvider);
             }
         }
 
@@ -108,12 +122,19 @@ namespace Celarix.Starfall.Layout.Atria.Components
             SetOuterCellSize(new SSizeF(newCellWidth, newCellHeight));
         }
 
+        public SRectF GetOuterCellBounds(SPointF position, SPoint cell)
+        {
+            ThrowIfCellOutOfBounds(cell);
+
+            var positionedBounds = Bounds.At(position);
+            var cellXPos = positionedBounds.Left + (cell.X * CellSize.Width);
+            var cellYPos = positionedBounds.Top + (cell.Y * CellSize.Height);
+            return new SRectF(cellXPos, cellYPos, CellSize.Width, CellSize.Height);
+        }
+
         public SRectF GetInnerCellBounds(SPointF position, SPoint cell)
         {
-            if (cell.X < 0 || cell.X >= GridSizeInCells.Width || cell.Y < 0 || cell.Y >= GridSizeInCells.Height)
-            {
-                throw new ArgumentOutOfRangeException($"Cell coordinates ({cell.X}, {cell.Y}) are out of bounds for grid size {GridSizeInCells}.");
-            }
+            ThrowIfCellOutOfBounds(cell);
 
             var positionedBounds = Bounds.At(position);
             var cellXPos = positionedBounds.Left + (cell.X * CellSize.Width) + GridLineWidth;
@@ -121,6 +142,42 @@ namespace Celarix.Starfall.Layout.Atria.Components
             var innerCellWidth = (positionedBounds.Width - GridLineWidth * (GridSizeInCells.Width + 1)) / GridSizeInCells.Width;
             var innerCellHeight = (positionedBounds.Height - GridLineWidth * (GridSizeInCells.Height + 1)) / GridSizeInCells.Height;
             return new SRectF(cellXPos, cellYPos, innerCellWidth, innerCellHeight);
+        }
+
+        public SRectF GetContentCellBounds(SPointF position, SPoint cell)
+        {
+            return GetContentCellBounds(position, cell, ContentInsetFactor);
+        }
+
+        public SRectF GetContentCellBounds(SPointF position, SPoint cell,
+            double insetFactor)
+        {
+            if (insetFactor < 0d || insetFactor >= 1d)
+            {
+                throw new ArgumentOutOfRangeException(nameof(insetFactor), "Inset factor must be at least 0 and less than 1.");
+            }
+
+            return GetInnerCellBounds(position, cell).ShrinkByFactor(insetFactor, insetFactor);
+        }
+
+        public bool TryGetCellAt(SPointF gridPosition,
+            SPointF point,
+            out SPoint cell)
+        {
+            var gridBounds = Bounds.At(gridPosition);
+            if (point.X < gridBounds.Left
+                || point.X >= gridBounds.Right
+                || point.Y < gridBounds.Top
+                || point.Y >= gridBounds.Bottom)
+            {
+                cell = default;
+                return false;
+            }
+
+            var x = (int)Math.Floor((point.X - gridPosition.X) / CellSize.Width);
+            var y = (int)Math.Floor((point.Y - gridPosition.Y) / CellSize.Height);
+            cell = new SPoint(x, y);
+            return x >= 0 && x < GridSizeInCells.Width && y >= 0 && y < GridSizeInCells.Height;
         }
 
         public void ColorRange(SRect cellRange, SColor color)
@@ -141,8 +198,80 @@ namespace Celarix.Starfall.Layout.Atria.Components
 
         public void ColorCell(SPoint cell, SColor color)
         {
-            cell.ThrowIfOutOfBounds(new SRect(0, 0, GridSizeInCells.Width, GridSizeInCells.Height));
+            ThrowIfCellOutOfBounds(cell);
             _cellColors[cell.X, cell.Y] = color;
+        }
+
+        private void RenderCellText(IRenderTarget target,
+            MeasurementService measurementService,
+            SPointF position,
+            IGridCellProvider cellProvider)
+        {
+            var equalFontSize = TextScalingMode == GridTextScalingMode.SizeEqually
+                ? CalculateEqualFontSize(target, position, cellProvider)
+                : null;
+
+            for (var y = 0; y < GridSizeInCells.Height; y++)
+            {
+                for (var x = 0; x < GridSizeInCells.Width; x++)
+                {
+                    var cell = new SPoint(x, y);
+                    var text = cellProvider.GetText(cell);
+                    if (string.IsNullOrEmpty(text))
+                    {
+                        continue;
+                    }
+
+                    var contentBounds = GetContentCellBounds(position, cell);
+                    var font = cellProvider.GetFont(cell) ?? DefaultFont;
+                    font = TextScalingMode switch
+                    {
+                        GridTextScalingMode.SizeEqually when equalFontSize is not null => font.WithSize(equalFontSize.Value),
+                        GridTextScalingMode.ShrinkCellsToFit => font.WithSize(target.FitTextToWidth(text, font, (float)contentBounds.Width)),
+                        _ => font
+                    };
+                    var textColor = cellProvider.GetTextColor(cell) ?? DefaultTextColor;
+                    target.DrawText(text, font, contentBounds, textColor, SAngle.Zero);
+                }
+            }
+        }
+
+        private float? CalculateEqualFontSize(IRenderTarget target,
+            SPointF position,
+            IGridCellProvider cellProvider)
+        {
+            float? requiredFontSize = null;
+
+            for (var y = 0; y < GridSizeInCells.Height; y++)
+            {
+                for (var x = 0; x < GridSizeInCells.Width; x++)
+                {
+                    var cell = new SPoint(x, y);
+                    var text = cellProvider.GetText(cell);
+                    if (string.IsNullOrEmpty(text))
+                    {
+                        continue;
+                    }
+
+                    var font = cellProvider.GetFont(cell) ?? DefaultFont;
+                    var contentBounds = GetContentCellBounds(position, cell);
+                    var fontSize = target.FitTextToWidth(text, font, (float)contentBounds.Width);
+                    requiredFontSize = requiredFontSize is null
+                        ? fontSize
+                        : Math.Min(requiredFontSize.Value, fontSize);
+                }
+            }
+
+            return requiredFontSize;
+        }
+
+        private void ThrowIfCellOutOfBounds(SPoint cell)
+        {
+            if (cell.X < 0 || cell.X >= GridSizeInCells.Width || cell.Y < 0 || cell.Y >= GridSizeInCells.Height)
+            {
+                throw new ArgumentOutOfRangeException(nameof(cell),
+                    $"Cell coordinates ({cell.X}, {cell.Y}) are out of bounds for grid size {GridSizeInCells}.");
+            }
         }
     }
 }
