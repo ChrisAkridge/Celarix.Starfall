@@ -76,6 +76,22 @@ namespace Celarix.Starfall.Rendering.Models
             return a.Left < b.Right && a.Right > b.Left && a.Top < b.Bottom && a.Bottom > b.Top;
         }
 
+        public static bool AnyIntersection(IReadOnlyList<SRectF> rects)
+        {
+            // Sure, it's O(n^2), but we'll keep it this way until perf kills us
+            for (int i = 0; i < rects.Count; i++)
+            {
+                for (int j = i + 1; j < rects.Count; j++)
+                {
+                    if (Intersects(rects[i], rects[j]))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         public static bool RotatedIntersects(SRectF a, SRectF b, SAngle rotationA, SAngle rotationB)
         {
             var ac = Math.Cos(rotationA.Radians);
@@ -145,12 +161,31 @@ namespace Celarix.Starfall.Rendering.Models
             return new SRectF(newX, newY, newWidth, newHeight);
         }
 
+        public SRectF Shrink(double left, double right, double top, double bottom)
+        {
+            var newX = X + left;
+            var newY = Y + top;
+            var newWidth = Math.Max(0, Width - left - right);
+            var newHeight = Math.Max(0, Height - top - bottom);
+
+            return new SRectF(newX, newY, newWidth, newHeight);
+        }
+
         public SRectF Expand(double horizontalAmount, double verticalAmount)
         {
             var newX = X - horizontalAmount;
             var newY = Y - verticalAmount;
             var newWidth = Width + 2 * horizontalAmount;
             var newHeight = Height + 2 * verticalAmount;
+            return new SRectF(newX, newY, newWidth, newHeight);
+        }
+
+        public SRectF Expand(double left, double right, double top, double bottom)
+        {
+            var newX = X - left;
+            var newY = Y - top;
+            var newWidth = Width + left + right;
+            var newHeight = Height + top + bottom;
             return new SRectF(newX, newY, newWidth, newHeight);
         }
 
@@ -240,6 +275,24 @@ namespace Celarix.Starfall.Rendering.Models
                 Alignment.Center => Center,
                 _ => throw new ArgumentOutOfRangeException(nameof(alignment), alignment, null)
             };
+        }
+
+        public (SRectF First, SRectF Second) SplitHorizontal(SRectF outer, double firstRatio)
+        {
+            var firstWidth = outer.Width * firstRatio;
+            var secondWidth = outer.Width - firstWidth;
+            var firstRect = new SRectF(outer.X, outer.Y, firstWidth, outer.Height);
+            var secondRect = new SRectF(outer.X + firstWidth, outer.Y, secondWidth, outer.Height);
+            return (firstRect, secondRect);
+        }
+
+        public (SRectF First, SRectF Second) SplitVertical(SRectF outer, double firstRatio)
+        {
+            var firstHeight = outer.Height * firstRatio;
+            var secondHeight = outer.Height - firstHeight;
+            var firstRect = new SRectF(outer.X, outer.Y, outer.Width, firstHeight);
+            var secondRect = new SRectF(outer.X, outer.Y + firstHeight, outer.Width, secondHeight);
+            return (firstRect, secondRect);
         }
     }
 }

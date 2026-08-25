@@ -20,7 +20,8 @@ namespace Celarix.Starfall.Playground.Presentations
         private static Func<AtriaSlide>[] _factories = [
             () => new SquareRootSearchSlide(1280, 720),
             () => new DelphinusSlide(1280, 720),
-            () => new MathFunSlide(1280, 720)
+            () => new MathFunSlide(1280, 720),
+            () => new StatsSlide(1280, 720)
         ];
 
         public static void Run()
@@ -51,7 +52,7 @@ namespace Celarix.Starfall.Playground.Presentations
             //var timeProgressSlide = new CanonicalDecompositionSlide(@"E:\Documents\Files\Pictures\Pictures\S Series\1s Series\1s000335.png",
             //    1280, 720);
             //var timeProgressSlide = new DelphinusSlide(1280, 720);
-            var timeProgressSlide = _factories[2]();
+            var timeProgressSlide = _factories[3]();
             layoutEngine.AddSlide(timeProgressSlide, "timeProgress");
             layoutEngine.SetCurrentSlide("timeProgress");
             layoutEngine.Start();

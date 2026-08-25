@@ -63,10 +63,18 @@ namespace Celarix.Starfall.Rendering.Models
             }
         }
 
+        public SSizeF ZeroIfNotPositive()
+        {
+            var width = Width <= 0 ? 0 : Width;
+            var height = Height <= 0 ? 0 : Height;
+            return new SSizeF(width, height);
+        }
+
         public static bool operator ==(SSizeF left, SSizeF right) => left.Equals(right);
         public static bool operator !=(SSizeF left, SSizeF right) => !(left == right);
 
         public static SSizeF operator +(SSizeF a, SSizeF b) => new(a.Width + b.Width, a.Height + b.Height);
         public static SSizeF operator *(SSizeF size, double scalar) => new(size.Width * scalar, size.Height * scalar);
+        public static SSizeF operator *(SSizeF a, SSizeF b) => new(a.Width * b.Width, a.Height * b.Height);
     }
 }
