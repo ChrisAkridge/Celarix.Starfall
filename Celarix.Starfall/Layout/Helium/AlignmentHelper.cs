@@ -124,5 +124,16 @@ namespace Celarix.Starfall.Layout.Helium
         /// <returns>The left coordinate at which the inner element should be positioned to align its center with the outer
         /// boundary.</returns>
         public static double CenterAlign(double outerWidth, double innerWidth) => CenterAlign(0d, outerWidth, innerWidth);
+
+        public static double AlignAxis(double outerSize, double innerSize, Alignment alignment)
+        {
+            return alignment switch
+            {
+                Alignment.TopLeft or Alignment.LeftCenter or Alignment.BottomLeft => LeftAlign(outerSize, innerSize),
+                Alignment.TopRight or Alignment.RightCenter or Alignment.BottomRight => RightAlign(outerSize, innerSize),
+                Alignment.TopCenter or Alignment.Center or Alignment.BottomCenter => CenterAlign(outerSize, innerSize),
+                _ => throw new InvalidOperationException($"Invalid alignment {alignment}.")
+            };
+        }
     }
 }

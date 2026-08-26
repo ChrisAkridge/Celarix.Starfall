@@ -10,4 +10,12 @@ public static class DoubleExtensions
     {
         return Math.Abs(a - b) <= tolerance;
     }
+
+    public static void ThrowIfNotPositive(this double value, string paramName = "value")
+    {
+        if (value <= 0d)
+        {
+            throw new ArgumentOutOfRangeException(paramName, value, "Value must be positive.");
+        }
+    }
 }
