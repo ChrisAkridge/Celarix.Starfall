@@ -238,4 +238,12 @@ namespace Celarix.Starfall
         Glyph,
         Procedural
     }
+
+    public enum AnimatedVisiblity
+    {
+        Invisible,
+        Appearing,
+        Visible,
+        Disappearing
+    }
 }
