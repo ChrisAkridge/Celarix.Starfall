@@ -6,7 +6,11 @@ using System.Text;
 
 namespace Celarix.Starfall.Charts.Models;
 
-public sealed class AxisProperties<T> : ChartProperties
+/// <summary>
+/// A class that encapsulates the properties of an axis in a chart.
+/// </summary>
+/// <typeparam name="T">The numeric type of the axis values.</typeparam>
+public sealed class AxisProperties<T> : ChartPropertyBase
     where T : struct, INumber<T>
 {
     private T _lowestValidMinimum;
@@ -26,94 +30,138 @@ public sealed class AxisProperties<T> : ChartProperties
     private SColor _labelColor;
     private SAngle _labelAngle;
 
-    private Func<T, string> _tickFormatter = v => v.ToString() ?? string.Empty;
+    private Func<T, ChartText> _tickFormatter = v => ChartText.String(v.ToString() ?? string.Empty);
 
+    /// <summary>
+    /// Gets or sets the lowest valid value for the <see cref="Minimum"/> property.
+    /// </summary>
     public T LowestValidMinimum
     {
         get => _lowestValidMinimum;
         set => SetProperty(value, _lowestValidMinimum, v => _lowestValidMinimum = v);
     }
 
+    /// <summary>
+    /// Gets or sets the highest valid value for the <see cref="Minimum"/> property.
+    /// </summary>
     public T HighestValidMinimum
     {
         get => _highestValidMinimum;
         set => SetProperty(value, _highestValidMinimum, v => _highestValidMinimum = v);
     }
 
+    /// <summary>
+    /// Gets or sets the minimum value of the axis.
+    /// </summary>
     public T Minimum
     {
         get => _minimum;
         set => SetProperty(value, _minimum, v => _minimum = v);
     }
 
+    /// <summary>
+    /// Gets or sets the lowest valid value for the <see cref="Maximum"/> property.
+    /// </summary>
     public T LowestValidMaximum
     {
         get => _lowestValidMaximum;
         set => SetProperty(value, _lowestValidMaximum, v => _lowestValidMaximum = v);
     }
 
+    /// <summary>
+    /// Gets or sets the highest valid value for the <see cref="Maximum"/> property.
+    /// </summary>
     public T HighestValidMaximum
     {
         get => _highestValidMaximum;
         set => SetProperty(value, _highestValidMaximum, v => _highestValidMaximum = v);
     }
 
+    /// <summary>
+    /// Gets or sets the maximum value of the axis.
+    /// </summary>
     public T Maximum
     {
         get => _maximum;
         set => SetProperty(value, _maximum, v => _maximum = v);
     }
 
+    /// <summary>
+    /// Gets or sets the style of the gridlines on the axis.
+    /// </summary>
     public GridlineStyle GridlineStyle
     {
         get => _gridlineStyle;
         set => SetProperty(value, _gridlineStyle, v => _gridlineStyle = v);
     }
-
+    
+    /// <summary>
+    /// Gets or sets the thickness of the gridlines on the axis in pixels.
+    /// </summary>
     public double GridlineThickness
     {
         get => _gridlineThickness;
         set => SetProperty(value, _gridlineThickness, v => _gridlineThickness = v);
     }
 
+    /// <summary>
+    /// Gets or sets the color of the gridlines on the axis.
+    /// </summary>
     public SColor GridlineColor
     {
         get => _gridlineColor;
         set => SetProperty(value, _gridlineColor, v => _gridlineColor = v);
     }
 
+    /// <summary>
+    /// Gets or sets the gap between gridlines on the axis, in units of the axis values.
+    /// For example, gaps might be 500 units apart on a numeric axis, or 6 hours apart on a time axis.
+    /// </summary>
     public T GridlineGap
     {
         get => _gridlineGap;
         set => SetProperty(value, _gridlineGap, v => _gridlineGap = v);
     }
 
+    /// <summary>
+    /// Gets or sets the font used for the axis labels.
+    /// </summary>
     public SFont LabelFont
     {
         get => _labelFont;
         set => SetProperty(value, _labelFont, v => _labelFont = v);
     }
 
+    /// <summary>
+    /// Gets or sets the color of the axis labels.
+    /// </summary>
     public SColor LabelColor
     {
         get => _labelColor;
         set => SetProperty(value, _labelColor, v => _labelColor = v);
     }
 
+    /// <summary>
+    /// Gets or sets the angle of the axis labels in degrees. A value of 0 means horizontal, and a value of 90 means vertical,
+    /// top to bottom.
+    /// </summary>
     public SAngle LabelAngle
     {
         get => _labelAngle;
         set => SetProperty(value, _labelAngle, v => _labelAngle = v);
     }
 
-    public Func<T, string> TickFormatter
+    /// <summary>
+    /// Gets or sets the function used to convert numeric values to tick labels.
+    /// </summary>
+    public Func<T, ChartText> TickFormatter
     {
         get => _tickFormatter;
         set => SetProperty(value, _tickFormatter, v => _tickFormatter = v);
     }
 
     public AxisProperties(T minimum, T maximum, GridlineStyle gridlineStyle, double gridlineThickness, SColor gridlineColor,
-        T gridlineGap, SFont labelFont, SColor labelColor, SAngle labelAngle, Func<T, string> tickFormatter)
+        T gridlineGap, SFont labelFont, SColor labelColor, SAngle labelAngle, Func<T, ChartText> tickFormatter)
     {
         _minimum = minimum;
         _lowestValidMinimum = minimum;

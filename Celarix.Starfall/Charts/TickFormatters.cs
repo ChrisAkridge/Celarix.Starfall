@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Celarix.Starfall.Charts.Models;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -7,7 +8,7 @@ namespace Celarix.Starfall.Charts;
 
 public static class TickFormatters
 {
-    public static Func<BigInteger, string> DateOnlyFormatter(DateOnly firstDate, string formatString = "yyyy-MM-dd",
+    public static Func<BigInteger, ChartText> DateOnlyFormatter(DateOnly firstDate, string formatString = "yyyy-MM-dd",
         string outOfBoundsString = "OoB")
     {
         var daysUntilMaxDate = (DateOnly.MaxValue.DayNumber - firstDate.DayNumber);
@@ -17,11 +18,11 @@ public static class TickFormatters
         {
             if (x > daysUntilMaxDate || x < -daysAfterMinDate)
             {
-                return outOfBoundsString;
+                return ChartText.String(outOfBoundsString);
             }
 
             var date = firstDate.AddDays((int)x);
-            return date.ToString(formatString);
+            return ChartText.String(date.ToString(formatString));
         };
     }
 }

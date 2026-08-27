@@ -18,4 +18,12 @@ public static class DoubleExtensions
             throw new ArgumentOutOfRangeException(paramName, value, "Value must be positive.");
         }
     }
+
+    public static void ThrowIfOutOfRange(this double value, double min, double max, string paramName = "value")
+    {
+        if (value < min || value > max)
+        {
+            throw new ArgumentOutOfRangeException(paramName, value, $"Value must be between {min} and {max}.");
+        }
+    }
 }

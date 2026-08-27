@@ -14,4 +14,7 @@ public sealed class ChartText
         SourceString = sourceString;
         UseLibra = useLibra;
     }
+
+    public static ChartText String(string sourceString) => new(sourceString, useLibra: false);
+    public static ChartText Libra(string sourceString) => new(sourceString, useLibra: true);
 }
