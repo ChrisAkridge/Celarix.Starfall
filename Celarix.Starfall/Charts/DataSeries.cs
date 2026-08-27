@@ -1,12 +1,13 @@
 ﻿using Celarix.Starfall.Extensions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 
 namespace Celarix.Starfall.Charts;
 
-public sealed class DataSeries
+public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
 {
     public event EventHandler? DataChanged;
 
@@ -290,5 +291,21 @@ public sealed class DataSeries
             }
         }
         throw new InvalidOperationException("Index not found.");
+    }
+
+    public IEnumerator<KeyValuePair<BigInteger, double>> GetEnumerator()
+    {
+        var sortedData = _data
+            .Where(kvp => kvp.Value.HasValue)
+            .OrderBy(kvp => kvp.Key);
+        foreach (var kvp in sortedData)
+        {
+            yield return new KeyValuePair<BigInteger, double>(kvp.Key, kvp.Value!.Value);
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 }

@@ -13,6 +13,8 @@ namespace Celarix.Starfall.Charts.Models;
 public sealed class AxisProperties<T> : ChartPropertyBase
     where T : struct, INumber<T>
 {
+    private double _sizeRatioOfParent;
+
     private T _lowestValidMinimum;
     private T _highestValidMinimum;
     private T _lowestValidMaximum;
@@ -29,8 +31,19 @@ public sealed class AxisProperties<T> : ChartPropertyBase
     private SFont _labelFont = new SFontFamily("Calibri", 12f);
     private SColor _labelColor;
     private SAngle _labelAngle;
+    private double _labelMarginEm;
 
     private Func<T, ChartText> _tickFormatter = v => ChartText.String(v.ToString() ?? string.Empty);
+
+    /// <summary>
+    /// Gets or sets the size of the axis relative to its parent container.
+    /// Whether this describes the width or height depends on whether the parent draws this axis horizontally or vertically.
+    /// </summary>
+    public double SizeRatioOfParent
+    {
+        get => _sizeRatioOfParent;
+        set => SetProperty(value, _sizeRatioOfParent, v => _sizeRatioOfParent = v);
+    }
 
     /// <summary>
     /// Gets or sets the lowest valid value for the <see cref="Minimum"/> property.
@@ -152,6 +165,15 @@ public sealed class AxisProperties<T> : ChartPropertyBase
     }
 
     /// <summary>
+    /// Gets or sets the margin between the axis labels and the axis itself, in em units. An em unit is equal to the current font size.
+    /// </summary>
+    public double LabelMarginEm
+    {
+        get => _labelMarginEm;
+        set => SetProperty(value, _labelMarginEm, v => _labelMarginEm = v);
+    }
+
+    /// <summary>
     /// Gets or sets the function used to convert numeric values to tick labels.
     /// </summary>
     public Func<T, ChartText> TickFormatter
@@ -161,7 +183,7 @@ public sealed class AxisProperties<T> : ChartPropertyBase
     }
 
     public AxisProperties(T minimum, T maximum, GridlineStyle gridlineStyle, double gridlineThickness, SColor gridlineColor,
-        T gridlineGap, SFont labelFont, SColor labelColor, SAngle labelAngle, Func<T, ChartText> tickFormatter)
+        T gridlineGap, SFont labelFont, SColor labelColor, SAngle labelAngle, double labelMarginEm, Func<T, ChartText> tickFormatter)
     {
         _minimum = minimum;
         _lowestValidMinimum = minimum;
@@ -179,6 +201,7 @@ public sealed class AxisProperties<T> : ChartPropertyBase
         _labelFont = labelFont;
         _labelColor = labelColor;
         _labelAngle = labelAngle;
+        _labelMarginEm = labelMarginEm;
 
         _tickFormatter = tickFormatter;
 
@@ -193,6 +216,12 @@ public sealed class AxisProperties<T> : ChartPropertyBase
         var baseValid = base.Valid(out ex!);
         if (!baseValid)
         {
+            return false;
+        }
+
+        if (_sizeRatioOfParent < 0 || _sizeRatioOfParent > 1)
+        {
+            ex = new InvalidOperationException("Size ratio of parent must be between 0 and 1.");
             return false;
         }
 
@@ -249,6 +278,12 @@ public sealed class AxisProperties<T> : ChartPropertyBase
         if (_labelAngle.Degrees < 0 || _labelAngle.Degrees > 360)
         {
             ex = new InvalidOperationException("Label angle must be between 0 and 360 degrees.");
+            return false;
+        }
+
+        if (_labelMarginEm < 0)
+        {
+            ex = new InvalidOperationException("Label margin cannot be negative.");
             return false;
         }
 
