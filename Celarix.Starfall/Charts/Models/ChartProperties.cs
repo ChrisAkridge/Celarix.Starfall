@@ -35,7 +35,8 @@ public sealed class ChartProperties : ChartPropertyBase
     private SColor _infoPanelLabelColor;
     private SColor _infoPanelValueColor;
     private SColor _infoPanelSecondaryColor;
-    private InfoPanelDisplays _visibleDisplays;
+    private InfoPanelSummaries _visibleDisplays;
+    private double _infoPanelSummaryItemMargin;
     private List<double> _displayedPercentiles;
 
     /// <summary>
@@ -194,10 +195,16 @@ public sealed class ChartProperties : ChartPropertyBase
     /// <summary>
     /// Gets or sets a value specifying which statistical displays are visible in the info panel.
     /// </summary>
-    public InfoPanelDisplays VisibleDisplays
+    public InfoPanelSummaries VisibleDisplays
     {
         get => _visibleDisplays;
         set => SetProperty(value, _visibleDisplays, v => _visibleDisplays = v);
+    }
+
+    public double InfoPanelSummaryItemMargin
+    {
+        get => _infoPanelSummaryItemMargin;
+        set => SetProperty(value, _infoPanelSummaryItemMargin, v => _infoPanelSummaryItemMargin = v);
     }
 
     /// <summary>
@@ -222,7 +229,8 @@ public sealed class ChartProperties : ChartPropertyBase
         SColor infoPanelLabelColor,
         SColor infoPanelValueColor,
         SColor infoPanelSecondaryColor,
-        InfoPanelDisplays visibleDisplays,
+        InfoPanelSummaries visibleDisplays,
+        double visibleDisplayItemMargin,
         IEnumerable<double> displayedPercentiles)
     {
         _titleVisibility = startTitleBarVisible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
@@ -242,6 +250,7 @@ public sealed class ChartProperties : ChartPropertyBase
         _infoPanelValueColor = infoPanelValueColor;
         _infoPanelSecondaryColor = infoPanelSecondaryColor;
         _visibleDisplays = visibleDisplays;
+        _infoPanelSummaryItemMargin = visibleDisplayItemMargin;
         _displayedPercentiles = [.. displayedPercentiles.OrderBy(p => p)];
 
         // Since we gate write access to displayedPercentiles, we have to validate the initial value here.
@@ -255,7 +264,7 @@ public sealed class ChartProperties : ChartPropertyBase
 
     private void PercentileListValidOrThrow(IList<double> percentiles)
     {
-        if (!_visibleDisplays.HasFlag(InfoPanelDisplays.Percentiles))
+        if (!_visibleDisplays.HasFlag(InfoPanelSummaries.Percentiles))
         {
             // If percentiles aren't visible, the list is allowed to be empty.
             if (percentiles.Count == 0)
@@ -330,6 +339,27 @@ public sealed class ChartProperties : ChartPropertyBase
         });
     }
 
+    public void SetInfoPanelVisibility(bool visible, AnimationContext context)
+    {
+        if ((visible && _infoPanelVisibility == AnimatedVisiblity.Visible)
+            || (!visible && _infoPanelVisibility == AnimatedVisiblity.Invisible))
+        {
+            // No change needed.
+            return;
+        }
+        var frames = AnimationContext.SecondsToFrames(AnimationDurationSeconds);
+        var animation = FixedDurationAnimation.StartNow(frames, progress =>
+        {
+            _infoPanelVisibilityToggleProgress = visible ? progress : 1d - progress;
+            OnPropertiesChanged();
+        }, () =>
+        {
+            _infoPanelVisibility = visible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
+            _infoPanelVisibilityToggleProgress = null;
+            OnPropertiesChanged();
+        });
+    }
+
     protected override bool Valid([NotNullWhen(false)] out Exception? ex)
     {
         if (_titleBarHeightRatioOfElement < 0d || _titleBarHeightRatioOfElement > 1d)
@@ -377,6 +407,12 @@ public sealed class ChartProperties : ChartPropertyBase
         if (!Enum.IsDefined(_visibleDisplays))
         {
             ex = new ArgumentOutOfRangeException(nameof(VisibleDisplays), _visibleDisplays, "Value must be a valid InfoPanelDisplays enum value.");
+            return false;
+        }
+
+        if (_infoPanelSummaryItemMargin < 0d)
+        {
+            ex = new ArgumentOutOfRangeException(nameof(InfoPanelSummaryItemMargin), _infoPanelSummaryItemMargin, "Value must be non-negative.");
             return false;
         }
 

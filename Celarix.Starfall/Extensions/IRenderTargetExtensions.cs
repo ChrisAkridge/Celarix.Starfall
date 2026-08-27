@@ -8,6 +8,14 @@ namespace Celarix.Starfall.Extensions;
 
 public static class IRenderTargetExtensions
 {
+    /// <summary>
+    /// Draws a rectangle with the specified thickness by drawing four filled rectangles for the top, bottom, left, and right edges.
+    /// The thickness is applied to the inner edges of the rectangle, so the outer dimensions remain the same as the specified rectangle.
+    /// </summary>
+    /// <param name="renderTarget">The render target on which to draw the rectangle.</param>
+    /// <param name="rect">The rectangle to draw.</param>
+    /// <param name="thickness">The thickness of the rectangle's edges.</param>
+    /// <param name="color">The color of the rectangle's edges.</param>
     public static void DrawRectangleOfThickness(this IRenderTarget renderTarget, SRectF rect, double thickness, SColor color)
     {
         // Top

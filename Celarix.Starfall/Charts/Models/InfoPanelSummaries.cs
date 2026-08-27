@@ -5,7 +5,7 @@ using System.Text;
 namespace Celarix.Starfall.Charts.Models;
 
 [Flags]
-public enum InfoPanelDisplays
+public enum InfoPanelSummaries
 {
     /// <summary>
     /// Displays the last element of the data series (e.g. "Current: 72.3°F").

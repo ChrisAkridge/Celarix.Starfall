@@ -23,6 +23,12 @@ public sealed class LayoutNode
     public SRectF NormalizedBounds { get; }
     public string? Name { get; }
 
+    public LayoutNode()
+    {
+        NormalizedBounds = new SRectF(0d, 0d, 1d, 1d);
+        _divisionType = DivisionType.NotDivided;
+    }
+
     public LayoutNode(SRectF normalizedBounds, string? name = null)
     {
         NormalizedBounds = normalizedBounds;
