@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Charts.Models;
+﻿using Celarix.Starfall.Charts.DataResolution;
+using Celarix.Starfall.Charts.Models;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using System;
@@ -11,6 +12,7 @@ namespace Celarix.Starfall.Charts.Displays;
 public sealed class BarChartDisplay : IChartDisplay
 {
     private readonly DataSeries _dataSeries;
+    private IReadOnlyList<ResolvedDataPoint> _bars;
 
     public BarChartProperties Properties { get; }
     public AxisProperties<BigInteger> XAxisProperties { get; }
@@ -30,9 +32,16 @@ public sealed class BarChartDisplay : IChartDisplay
 
     public void Render(IRenderTarget target, SRectF displayBounds)
     {
+        var drawWithGaps = _bars.Count / displayBounds.Width >= 1d;
+    }
+
+    private void Invalidate(SRectF displayBounds)
+    {
         var barChartBounds = GetBarChartBounds(displayBounds);
-        var visibleSlots = (Properties.XMaximum - Properties.XMinimum) + 1;
-        var slotWidth = barChartBounds.Width / (float)visibleSlots;
+        var totalSlots = (Properties.XMaximum - Properties.XMinimum) + 1;
+        int trueSlots = totalSlots < (BigInteger)barChartBounds.Width ? (int)totalSlots : (int)barChartBounds.Width;
+        var source = new DataSeriesDataSource(_dataSeries, new StandardResolutionStrategy());
+        _bars = DataResolver.Resolve(source, new(Properties.XMinimum, Properties.XMaximum), trueSlots);
     }
 
     private SRectF GetBarChartBounds(SRectF displayBounds)
