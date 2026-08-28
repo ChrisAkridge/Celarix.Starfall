@@ -20,4 +20,29 @@ public readonly record struct XRange
         Minimum = minimum;
         Maximum = maximum;
     }
+
+    public IEnumerable<BigInteger> Sample(BigInteger requestedCount)
+    {
+        if (requestedCount < 0)
+        {
+            yield break;
+        }
+
+        var cardinality = (Maximum - Minimum) + 1;
+        var sampleCount = BigInteger.Min(requestedCount, cardinality);
+
+        if (sampleCount == BigInteger.One)
+        {
+            yield return (Minimum + Maximum) / 2;
+            yield break;
+        }
+
+        var span = Maximum - Minimum;
+
+        for (var i = BigInteger.Zero; i < sampleCount; i++)
+        {
+            var offset = (i * span) / (sampleCount - BigInteger.One);
+            yield return Minimum + offset;
+        }
+    }
 }

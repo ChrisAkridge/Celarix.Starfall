@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Extensions;
+﻿using Celarix.Starfall.Charts.DataResolution;
+using Celarix.Starfall.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -235,6 +236,19 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
     public bool ValueExistsAtX(BigInteger x)
     {
         return _data.ContainsKey(x);
+    }
+
+    public IReadOnlyList<DataPoint> GetPointsInRange(XRange range)
+    {
+        var result = new List<DataPoint>();
+        for (var i = range.Minimum; i <= range.Maximum; i++)
+        {
+            if (_data.TryGetValue(i, out double? y) && y.HasValue)
+            {
+                result.Add(new DataPoint { X = i, Y = y.Value });
+            }
+        }
+        return result;
     }
 
     public (double Lower, double Upper) GetPopulationSigmaRange(double sigma)

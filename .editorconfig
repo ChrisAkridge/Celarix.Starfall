@@ -5,3 +5,9 @@ dotnet_diagnostic.IDE0051.severity = silent
 
 # IDE0052: Remove unread private members
 dotnet_diagnostic.IDE0052.severity = silent
+
+# Set the strict line length limit (e.g., 120 characters)
+max_line_length = 120
+
+# Set the severity so Visual Studio flags it
+dotnet_diagnostic.IDE0055.severity = warning

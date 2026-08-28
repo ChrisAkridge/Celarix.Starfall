@@ -7,7 +7,5 @@ namespace Celarix.Starfall.Charts.DataResolution;
 
 public interface IResolutionStrategy
 {
-    ResolvedDataPoint Resolve(
-        IReadOnlyList<DataPoint> points,
-        XRange range);
+    ResolvedDataPoint Resolve(BucketObservation bucket);
 }

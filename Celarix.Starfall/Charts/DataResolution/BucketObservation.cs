@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Celarix.Starfall.Charts.DataResolution;
 
-public readonly record struct DataResolutionRequest(
-    XRange VisibleRange,
-    int BucketCount
+public sealed record BucketObservation(
+    XRange Range,
+    IReadOnlyList<DataPoint> Points
 );
