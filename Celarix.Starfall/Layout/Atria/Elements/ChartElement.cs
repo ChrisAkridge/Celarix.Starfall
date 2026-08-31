@@ -30,12 +30,14 @@ public sealed class ChartElement : AtriaElement
     {
         Properties = properties;
         _chartDisplay = chartDisplay;
+
         Id = AtriaId.Parse(atriaIdString);
     }
 
     public override void Render(IRenderTarget target)
     {
         // This is more fun than it looks, promise!
+        _chartDisplay.AnimationContext ??= Animations;
 
         // Let's start by figuring out how big the title bar is. It spans the full width of the element.
         var titleBarNaturalHeight = Size.Height * Properties.TitleBarHeightRatioOfElement;

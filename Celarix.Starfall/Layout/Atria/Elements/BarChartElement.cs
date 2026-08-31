@@ -160,7 +160,7 @@ public sealed class BarChartElement : AtriaElement
         _em ??= target.MeasureText("M", _labelFont).Height;
 
         RefreshLayoutIfNeeded(target);
-        
+
         var innerRect = GetChartBounds()!.Value;
         var yRange = YMaximum - YMinimum;
 
