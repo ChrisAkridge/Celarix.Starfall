@@ -107,7 +107,7 @@ public sealed class AxisProperties<T> : ChartPropertyBase
         get => _gridlineStyle;
         set => SetProperty(value, _gridlineStyle, v => _gridlineStyle = v);
     }
-    
+
     /// <summary>
     /// Gets or sets the thickness of the gridlines on the axis in pixels.
     /// </summary>
@@ -182,9 +182,10 @@ public sealed class AxisProperties<T> : ChartPropertyBase
         set => SetProperty(value, _tickFormatter, v => _tickFormatter = v);
     }
 
-    public AxisProperties(T minimum, T maximum, GridlineStyle gridlineStyle, double gridlineThickness, SColor gridlineColor,
+    public AxisProperties(double sizeRatioOfParent, T minimum, T maximum, GridlineStyle gridlineStyle, double gridlineThickness, SColor gridlineColor,
         T gridlineGap, SFont labelFont, SColor labelColor, SAngle labelAngle, double labelMarginEm, Func<T, ChartText> tickFormatter)
     {
+        _sizeRatioOfParent = sizeRatioOfParent;
         _minimum = minimum;
         _lowestValidMinimum = minimum;
         _highestValidMinimum = minimum;

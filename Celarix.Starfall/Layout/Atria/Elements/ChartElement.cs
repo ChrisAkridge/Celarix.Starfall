@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Charts.Models;
+﻿using Celarix.Starfall.Charts.Displays;
+using Celarix.Starfall.Charts.Models;
 using Celarix.Starfall.Extensions;
 using Celarix.Starfall.Layout.Atria.Components;
 using Celarix.Starfall.Layout.Helium;
@@ -19,12 +20,16 @@ public sealed class ChartElement : AtriaElement
 
     // No need to rebuild this every time.
     private readonly LibraMetrics _metrics = LibraMetrics.Default;
+    private readonly IChartDisplay _chartDisplay;
 
     public ChartProperties Properties { get; }
 
-    public ChartElement(ChartProperties properties, string atriaIdString)
+    public ChartElement(ChartProperties properties,
+        IChartDisplay chartDisplay,
+        string atriaIdString)
     {
         Properties = properties;
+        _chartDisplay = chartDisplay;
         Id = AtriaId.Parse(atriaIdString);
     }
 
@@ -35,7 +40,7 @@ public sealed class ChartElement : AtriaElement
         // Let's start by figuring out how big the title bar is. It spans the full width of the element.
         var titleBarNaturalHeight = Size.Height * Properties.TitleBarHeightRatioOfElement;
         var titleBarNaturalBounds = new SRectF(Position, new SSizeF(Size.Width, titleBarNaturalHeight));
-        var titleBarHeight = titleBarNaturalHeight * (Properties.TitleVisibilityToggleProgress ?? 0.0);
+        var titleBarHeight = Size.Height * Properties.CurrentTitleBarHeightRatioOfElement;
         var titleBarBounds = new SRectF(Position, new SSizeF(Size.Width, titleBarHeight));
         var nonTitleSize = new SSizeF(Size.Width, Size.Height - titleBarHeight);
         var nonTitlePosition = new SPointF(Position.X, Position.Y + titleBarHeight);
@@ -46,13 +51,16 @@ public sealed class ChartElement : AtriaElement
         // the full height minus the title bar.
         var infoPanelNaturalWidth = Size.Width * Properties.InfoPanelWidthRatioOfElement;
         var infoPanelNaturalBounds = new SRectF(Size.Width - infoPanelNaturalWidth, Position.Y + titleBarHeight, infoPanelNaturalWidth, nonTitleSize.Height);
-        var infoPanelWidth = infoPanelNaturalWidth * (Properties.InfoPanelVisibilityToggleProgress ?? 0.0);
+        var infoPanelWidth = Size.Width * Properties.CurrentInfoPanelWidthRatioOfElement;
         var infoPanelBounds = new SRectF(Size.Width - infoPanelWidth, titleBarHeight, infoPanelWidth, nonTitleSize.Height)
             + Position;
         var chartSize = new SSizeF(Size.Width - infoPanelWidth, nonTitleSize.Height);
         var chartPosition = new SPointF(Position.X, Position.Y + titleBarHeight);
         var chartBounds = new SRectF(chartPosition, chartSize);
         DrawInfoPanel(infoPanelBounds, infoPanelNaturalBounds, target);
+
+        // Then, the chart itself!
+        _chartDisplay.Render(target, chartBounds);
     }
 
     private void DrawTitleBar(SRectF bounds, SRectF naturalBounds, IRenderTarget target)

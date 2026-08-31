@@ -10,6 +10,8 @@ public readonly record struct XRange
     public BigInteger Minimum { get; }
     public BigInteger Maximum { get; }
 
+    public BigInteger Range => Maximum - Minimum;
+
     public XRange(BigInteger minimum, BigInteger maximum)
     {
         if (minimum > maximum)

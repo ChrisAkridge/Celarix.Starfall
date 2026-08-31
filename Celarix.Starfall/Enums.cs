@@ -67,6 +67,14 @@ namespace Celarix.Starfall
         All = Left | Top | Right | Bottom
     }
 
+    public enum Side
+    {
+        Left,
+        Top,
+        Right,
+        Bottom
+    }
+
     // okay yes this is straight from SkiaSharp
     // but it's the first render target, so it will kind of shape things
     public enum FontWeight

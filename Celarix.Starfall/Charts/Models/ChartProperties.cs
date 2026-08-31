@@ -212,6 +212,51 @@ public sealed class ChartProperties : ChartPropertyBase
     /// </summary>
     public IReadOnlyList<double> DisplayedPercentiles => _displayedPercentiles;
 
+    /// <summary>
+    /// Gets the current height ratio of the title bar relative to the overall chart element,
+    /// taking into account the visibility state and any ongoing animations.
+    /// </summary>
+    public double CurrentTitleBarHeightRatioOfElement
+    {
+        get
+        {
+            if (TitleVisibility == AnimatedVisiblity.Visible)
+            {
+                return _titleBarHeightRatioOfElement;
+            }
+            else if (TitleVisibility is AnimatedVisiblity.Appearing or AnimatedVisiblity.Disappearing)
+            {
+                return _titleBarHeightRatioOfElement * (_titleVisibilityToggleProgress ?? 0.0);
+            }
+            else
+            {
+                return 0.0;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the current width ratio of the info panel relative to the overall chart element,
+    /// </summary>
+    public double CurrentInfoPanelWidthRatioOfElement
+    {
+        get
+        {
+            if (InfoPanelVisibility == AnimatedVisiblity.Visible)
+            {
+                return _infoPanelWidthRatioOfElement;
+            }
+            else if (InfoPanelVisibility is AnimatedVisiblity.Appearing or AnimatedVisiblity.Disappearing)
+            {
+                return _infoPanelWidthRatioOfElement * (_infoPanelVisibilityToggleProgress ?? 0.0);
+            }
+            else
+            {
+                return 0.0;
+            }
+        }
+    }
+
     public ChartProperties(
         bool startTitleBarVisible,
         bool startInfoPanelVisible,

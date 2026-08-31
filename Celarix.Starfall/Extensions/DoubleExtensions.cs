@@ -26,4 +26,9 @@ public static class DoubleExtensions
             throw new ArgumentOutOfRangeException(paramName, value, $"Value must be between {min} and {max}.");
         }
     }
+
+    public static bool InRange(this double value, double min, double max)
+    {
+        return value >= min && value <= max;
+    }
 }

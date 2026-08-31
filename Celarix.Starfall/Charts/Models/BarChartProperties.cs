@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Rendering.Models;
+﻿using Celarix.Starfall.Charts.DataResolution;
+using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -52,6 +53,8 @@ public sealed class BarChartProperties : ChartPropertyBase
         get => _barColorFormatter;
         set => SetProperty(value, _barColorFormatter, v => _barColorFormatter = v);
     }
+
+    public XRange XRange => new(XMinimum, XMaximum);
 
     public BarChartProperties(
         BigInteger xMinimum,

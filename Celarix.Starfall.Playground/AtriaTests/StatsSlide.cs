@@ -1,4 +1,7 @@
-﻿using Celarix.Starfall.Layout.Atria;
+﻿using Celarix.Starfall.Charts;
+using Celarix.Starfall.Charts.Displays;
+using Celarix.Starfall.Charts.Models;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -6,6 +9,7 @@ using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace Celarix.Starfall.Playground.AtriaTests;
@@ -120,24 +124,57 @@ internal sealed class StatsSlide : AtriaSlide
             data.Add((dates[i], calories[i]));
         }
 
-        var barChart = new BarChartElement(data, "#barChart")
-        {
-            Size = new SSizeF(Size.Width * 0.8, Size.Height * 0.8),
-        };
-        var anchor = new BasisPoint(Center, "#barChartAnchor");
-        barChart.AnchorCenterTo(anchor);
-        Add([barChart, anchor])
-            .AnimateBasic(0.5d, AnimationTypes.FadeIn, Easings.Linear);
+        var labelFont = new SFontFamily("Calibri", 12);
+        var yAxisColor = new SColor(128, 128, 128, 255);
+        var dataSeries = new DataSeries(data.Select(d => new DataSeriesPoint(
+            (BigInteger)(d.Item1.DayNumber - DateOnly.Parse("7/12/2026").DayNumber),
+            (double)d.Item2
+        )));
+        var barChartProperties = new BarChartProperties(
+            xMinimum: 0,
+            xMaximum: 42,
+            yMinimum: 0,
+            yMaximum: 5000,
+            barWidthRatioOfSlotWidth: 0.8d,
+            barColorFormatter: y => SColor.White
+        );
+        var xAxisProperties = new AxisProperties<BigInteger>(0.1d, 0, 42, GridlineStyle.Tick, 1d, SColor.White, BigInteger.One, labelFont, SColor.White, SAngle.Zero,
+            0.5d, x => new ChartText(DateOnly.Parse("7/12/2026").AddDays((int)x).ToString("M/d"))
+        );
+        var yAxisProperties = new AxisProperties<double>(0.1d, 0, 5000, GridlineStyle.Gridline, 1d, yAxisColor, 500d, labelFont, yAxisColor, SAngle.Zero,
+            0.5d, y => new ChartText(y.ToString())
+        );
+        var chartProperties = new ChartProperties(
+            startTitleBarVisible: true,
+            startInfoPanelVisible: true,
+            titleBarHeightRatioOfElement: 0.1d,
+            titleText: new ChartText("Calories Consumed"),
+            titleFont: new SFontFamily("Calibri", 16),
+            titleColor: SColor.White,
+            infoPanelWidthRatioOfElement: 0.2d,
+            infoPanelBorderColor: yAxisColor,
+            infoPanelBorderThickness: 1d,
+            infoPanelPaddingRatio: 0.1d,
+            infoPanelBackgroundColor: new SColor(140, 140, 140, 255),
+            infoPanelBaseFont: new SFontFamily("Calibri", 12),
+            infoPanelFontSizeMultiplierStep: 1.2d,
+            infoPanelLabelColor: SColor.White,
+            infoPanelValueColor: SColor.Yellow,
+            infoPanelSecondaryColor: SColor.LightBlue,
+            visibleDisplays: InfoPanelSummaries.CurrentValue,
+            visibleDisplayItemMargin: 0.1d,
+            displayedPercentiles: []
+        );
 
-        var animation = FixedDurationAnimation.StartIn(60, 180,
-            d =>
-            {
-                var max = 1000d;
-                var min = 100d;
-                var newValue = min + (max - min) * d;
-                barChart.YGridlineSpacing = newValue;
-            });
-        Animations.ScheduleAnimation(animation);
+        var barChart = new BarChartDisplay(MeasurementService, dataSeries, barChartProperties, xAxisProperties, yAxisProperties);
+        var chartElement = new ChartElement(chartProperties, barChart, "#chart")
+        {
+            Size = new SSizeF(1100, 700),
+            Opacity = 1d
+        };
+        var chartAnchor = new BasisPoint(Center, "#chartAnchor");
+        chartElement.AnchorCenterTo(chartAnchor);
+        Add([chartElement, chartAnchor]);
     }
 
     public override void Update(double deltaTime)

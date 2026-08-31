@@ -1,6 +1,7 @@
 ﻿using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace Celarix.Starfall.Mathematics
@@ -156,6 +157,16 @@ namespace Celarix.Starfall.Mathematics
         {
             var mt = 1 - t;
             return (mt * mt * p0.X) + (2 * mt * t * p1.X) + (t * t * p2.X);
+        }
+
+        public static double BigIntegerRatioToDouble(BigInteger numerator, BigInteger denominator)
+        {
+            const int precisionBits = 53;
+
+            var scale = BigInteger.One << precisionBits;
+            var scaled = (numerator * scale) / denominator;
+
+            return (double)scaled / (1L << precisionBits);
         }
     }
 }

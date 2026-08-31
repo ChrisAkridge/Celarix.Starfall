@@ -257,7 +257,7 @@ namespace Celarix.Starfall.Rendering.Models
                 if (rect.Bottom > bottom) { bottom = rect.Bottom; }
             }
 
-            return SRectF.FromSides(top, right, bottom, left);
+            return FromSides(top, right, bottom, left);
         }
 
         public SPointF GetEdgePoint(Alignment alignment)
@@ -293,6 +293,22 @@ namespace Celarix.Starfall.Rendering.Models
             var firstRect = new SRectF(outer.X, outer.Y, outer.Width, firstHeight);
             var secondRect = new SRectF(outer.X, outer.Y + firstHeight, outer.Width, secondHeight);
             return (firstRect, secondRect);
+        }
+
+        public static SRectF GetIntersection(SRectF a, SRectF b)
+        {
+            var left = Math.Max(a.Left, b.Left);
+            var right = Math.Min(a.Right, b.Right);
+            var top = Math.Max(a.Top, b.Top);
+            var bottom = Math.Min(a.Bottom, b.Bottom);
+            if (left < right && top < bottom)
+            {
+                return FromSides(top, right, bottom, left);
+            }
+            else
+            {
+                return Empty;
+            }
         }
     }
 }
