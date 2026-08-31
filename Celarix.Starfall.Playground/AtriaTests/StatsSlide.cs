@@ -138,7 +138,7 @@ internal sealed class StatsSlide : AtriaSlide
             yMinimum: 0,
             yMaximum: 5000,
             barWidthRatioOfSlotWidth: 0.8d,
-            barColorFormatter: y => SColor.White
+            barColorFormatter: y => new SColor(128, 128, 128, 255)
         );
         var xAxisProperties = new AxisProperties<BigInteger>(0.1d, 0, 42, GridlineStyle.Tick, 1d, SColor.White, BigInteger.One, labelFont, SColor.White, SAngle.Zero,
             0.5d, x => new ChartText(DateOnly.Parse("7/12/2026").AddDays((int)x).ToString("M/d"))

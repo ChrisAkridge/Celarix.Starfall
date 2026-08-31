@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="1.5.2" />
     <PackageReference Include="AngleSharp.Xml" Version="1.0.0" />
+    <PackageReference Include="ExtendedNumerics.BigDecimal" Version="3003.2.0.161" />
     <PackageReference Include="FastCache.Cached" Version="1.8.2" />
     <PackageReference Include="NAudio" Version="2.3.0" />
     <PackageReference Include="OpenTK" Version="4.9.4" />

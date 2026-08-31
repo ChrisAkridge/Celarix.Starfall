@@ -9,6 +9,7 @@ using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Color;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
+using ExtendedNumerics;
 using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
@@ -27,16 +28,6 @@ public sealed class BarChartDisplay : IChartDisplay
     private IReadOnlyList<ResolvedDataPoint> _barData;
     private bool _needStaticInvalidation;
 
-    // Okay, this one requires some justification. This represents the fractional offset of where
-    // the slots are rendered vs. where they "naturally" are. For example, if we've scrolled by half
-    // a slot, we want to render bars half a slot-width to the left, then clipped by the Y-axis. But
-    // why UInt32? Well, we need a number that is strictly between 0 and 1 and has wraparound behavior.
-    // We don't want to have to bother with keeping everything in the range [0, 1) manually. So this
-    // represents the fractional offset as a UInt32, where 0 is 0.0 and UInt32.MaxValue is just under 1.0.
-    private uint _animMinSlotScrollOffset;
-    private uint _animMaxSlotScrollOffset;
-    private double AnimMinSlotScrollOffset => _animMinSlotScrollOffset / (double)uint.MaxValue;
-    private double AnimMaxSlotScrollOffset => _animMaxSlotScrollOffset / (double)uint.MaxValue;
     private double _xAxisEm;
     private double _yAxisEm;
 
@@ -133,7 +124,7 @@ public sealed class BarChartDisplay : IChartDisplay
         var canDrawTicks = !IsDense(barChartBounds) && XAxisProperties.GridlineStyle != GridlineStyle.None;
         if (canDrawTicks)
         {
-            var totalSlots = (Properties.XMaximum - Properties.XMinimum) + 1;
+            var totalSlots = Properties.XRange.Range + 1;
             var slotWidth = barChartBounds.Width * MathHelpers.BigIntegerRatioToDouble(BigInteger.One, totalSlots);
             var minSlotWidthToDrawTicks = XAxisProperties.GridlineThickness * 2d;
             if (slotWidth < minSlotWidthToDrawTicks)
@@ -150,7 +141,7 @@ public sealed class BarChartDisplay : IChartDisplay
                 GridlineStyle.Gridline => barChartBounds.Height,
                 _ => throw new NotImplementedException($"Gridline style {XAxisProperties.GridlineStyle} is not implemented.")
             };
-            for (var x = Properties.XMinimum; x <= Properties.XMaximum; x++)
+            for (var x = Properties.XRange.Minimum; x <= Properties.XRange.Maximum; x++)
             {
                 var slotBounds = GetXSlotBounds(x, barChartBounds);
                 var tickX = slotBounds.Center.X;
@@ -227,11 +218,8 @@ public sealed class BarChartDisplay : IChartDisplay
     }
 
     // Animation
-    public void AnimateScrollToXRange(BigInteger newXMinimum, BigInteger newXMaximum, double duration, Easing? easing = null)
+    public void AnimateScrollToXRange(BigDecimal newXMinimum, BigDecimal newXMaximum, double duration, Easing? easing = null)
     {
-        const int InterpolationFractionBits = 53;
-        const int ScrollOffsetBits = 32;
-
         if (newXMinimum > newXMaximum)
         {
             throw new ArgumentException("newXMinimum must be less than or equal to newXMaximum.");
@@ -244,40 +232,25 @@ public sealed class BarChartDisplay : IChartDisplay
         var xMinRange = newXMinimum - oldXMinimum;
         var xMaxRange = newXMaximum - oldXMaximum;
 
-        var fractionScale = BigInteger.One << InterpolationFractionBits;
-        var fractionMask = fractionScale - 1;
-
         Action<double> updateAction = d =>
         {
-            var fraction = (BigInteger)(d * (1L << InterpolationFractionBits));
+            var fraction = (BigDecimal)d;
 
-            var minFixed = xMinRange * fraction;
-            var maxFixed = xMaxRange * fraction;
+            Properties.SetProperties(() =>
+            {
+                Properties.XMinimum = oldXMinimum + (xMinRange * fraction);
+                Properties.XMaximum = oldXMaximum + (xMaxRange * fraction);
 
-            var minInteger = minFixed >> InterpolationFractionBits;
-            var maxInteger = maxFixed >> InterpolationFractionBits;
-
-            var minFraction = minFixed & fractionMask;
-            var maxFraction = maxFixed & fractionMask;
-
-            _animMinSlotScrollOffset =
-                (uint)(minFraction >> (InterpolationFractionBits - ScrollOffsetBits));
-
-            _animMaxSlotScrollOffset =
-                (uint)(maxFraction >> (InterpolationFractionBits - ScrollOffsetBits));
-
-            var oldRaiseEvents = Properties.RaiseEventOnChanged;
-
-            Properties.XMinimum = oldXMinimum + minInteger;
-            Properties.XMaximum = oldXMaximum + maxInteger;
+                Console.WriteLine($"[FRAME] xMin: {Properties.XMinimum}, xMax: {Properties.XMaximum}");
+            });
         };
 
         Action onCompleted = () =>
         {
             Properties.XMinimum = newXMinimum;
             Properties.XMaximum = newXMaximum;
-            _animMinSlotScrollOffset = 0;
-            _animMaxSlotScrollOffset = 0;
+
+            Console.WriteLine($"[ END ] xMin: {Properties.XMinimum}, xMax: {Properties.XMaximum}");
         };
 
         _moveRangeAnimation.Replace(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(duration),
@@ -288,15 +261,14 @@ public sealed class BarChartDisplay : IChartDisplay
     private void Invalidate(SRectF displayBounds)
     {
         var barChartBounds = GetBarChartBounds(displayBounds);
-        var totalSlots = (Properties.XMaximum - Properties.XMinimum) + 1;
+        var totalSlots = Properties.XRange.Range + 1;
         int trueSlots = totalSlots < (BigInteger)barChartBounds.Width ? (int)totalSlots : (int)barChartBounds.Width;
         var source = new DataSeriesDataSource(_dataSeries, new StandardResolutionStrategy());
-        _barData = DataResolver.Resolve(source, new(Properties.XMinimum, Properties.XMaximum), trueSlots);
+        _barData = DataResolver.Resolve(source, Properties.XRange, trueSlots);
         var yGridLines = GetYGridlines(barChartBounds);
 
-        // TODO: Animation slots!
         _xAxisEm = _measurementService.MeasureText("M", XAxisProperties.LabelFont).Width;
-        _xAxisLabels = ChartHelpers.FitLabelsForAxis(new(Properties.XMinimum, Properties.XMaximum),
+        _xAxisLabels = ChartHelpers.FitLabelsForAxis(Properties.XRange,
             x => XAxisProperties.TickFormatter(x).Layout(_xAxisLabelContext, XAxisProperties.LabelColor),
             x => GetXSlotBounds(x, barChartBounds),
             Side.Bottom, XAxisProperties.LabelMarginEm * _xAxisEm);
@@ -336,8 +308,13 @@ public sealed class BarChartDisplay : IChartDisplay
                     barLeft += (slotBounds.Width - barWidth) / 2f;
                 }
 
-                var barRect = new SRectF(barLeft, barTop, barWidth, barHeight);
-                barRenderables.Add((barRect, Properties.BarColorFormatter(individualDataPoint.Y)));
+                Console.Write($"{barWidth:F2}, ");
+                var barRect = SRectF.GetIntersection(new SRectF(barLeft, barTop, barWidth, barHeight), barChartBounds);
+
+                if (barRect != SRectF.Empty)
+                {
+                    barRenderables.Add((barRect, Properties.BarColorFormatter(individualDataPoint.Y)));
+                }
             }
             else if (dataPoint is AggregatedDataPoint aggregatedDataPoint)
             {
@@ -354,22 +331,33 @@ public sealed class BarChartDisplay : IChartDisplay
                 var minBarTop = Math.Min(minBarYCenter, yBaseline);
                 var minBarBottom = Math.Max(minBarYCenter, yBaseline);
                 var minBarHeight = minBarBottom - minBarTop;
-                var minBarRect = new SRectF(slotBounds.Left, minBarTop, slotBounds.Width, minBarHeight);
+                var minBarRect = SRectF.GetIntersection(new SRectF(slotBounds.Left, minBarTop, slotBounds.Width, minBarHeight), barChartBounds);
 
                 var meanBarTop = Math.Min(meanYBarCenter, yBaseline);
                 var meanBarBottom = Math.Max(meanYBarCenter, yBaseline);
                 var meanBarHeight = meanBarBottom - meanBarTop;
-                var meanBarRect = new SRectF(slotBounds.Left, meanBarTop, slotBounds.Width, meanBarHeight);
+                var meanBarRect = SRectF.GetIntersection(new SRectF(slotBounds.Left, meanBarTop, slotBounds.Width, meanBarHeight), barChartBounds);
 
                 var maxBarTop = Math.Min(maxBarYCenter, yBaseline);
                 var maxBarBottom = Math.Max(maxBarYCenter, yBaseline);
                 var maxBarHeight = maxBarBottom - maxBarTop;
-                var maxBarRect = new SRectF(slotBounds.Left, maxBarTop, slotBounds.Width, maxBarHeight);
-                barRenderables.Add((minBarRect, barMinColor));
-                barRenderables.Add((meanBarRect, barMeanColor));
-                barRenderables.Add((maxBarRect, barMaxColor));
+                var maxBarRect = SRectF.GetIntersection(new SRectF(slotBounds.Left, maxBarTop, slotBounds.Width, maxBarHeight), barChartBounds);
+                if (minBarRect != SRectF.Empty)
+                {
+                    barRenderables.Add((minBarRect, barMinColor));
+                }
+                if (meanBarRect != SRectF.Empty)
+                {
+                    barRenderables.Add((meanBarRect, barMeanColor));
+                }
+                if (maxBarRect != SRectF.Empty)
+                {
+                    barRenderables.Add((maxBarRect, barMaxColor));
+                }
             }
         }
+
+        Console.WriteLine();
         _barRenderables = barRenderables;
     }
 
@@ -421,51 +409,29 @@ public sealed class BarChartDisplay : IChartDisplay
 
     private bool ShouldInsetBarWidths(SRectF barChartBounds)
     {
-        var totalSlots = (Properties.XMaximum - Properties.XMinimum) + 1;
+        var totalSlots = Properties.XRange.Range + 1;
         var slotWidth = barChartBounds.Width * MathHelpers.BigIntegerRatioToDouble(BigInteger.One, totalSlots);
 
         // TODO: lift totally arbitrary 3f threshold into a constant
         return slotWidth >= 3f;
     }
 
-    private BigInteger GetXMinimumFixedPoint()
-    {
-        var integerPart = Properties.XMinimum << 32;
-        var fractionalPart = ((BigInteger)_animMinSlotScrollOffset);
-        return integerPart + fractionalPart;
-    }
-
-    private BigInteger GetXMaximumFixedPoint()
-    {
-        var integerPart = Properties.XMaximum << 32;
-        var fractionalPart = ((BigInteger)_animMaxSlotScrollOffset);
-        return integerPart + fractionalPart;
-    }
-
     private SRectF GetXSlotBounds(BigInteger x, SRectF barChartBounds)
     {
-        var totalSlotsIntegral = (Properties.XMaximum - Properties.XMinimum) + 1;
-        var totalSlotsFixedPoint = (GetXMaximumFixedPoint() - GetXMinimumFixedPoint()) + (BigInteger.One << 32);
-        var barChartWidthFixedPoint = (BigInteger)(barChartBounds.Width * (1L << 32));
-        var barChartLeftFixedPoint = (BigInteger)(barChartBounds.Left * (1L << 32));
+        var range = (Properties.XMaximum - Properties.XMinimum);
+        var totalSlotsIntegral = Properties.XRange.Range + 1;
         var slotIndex = x - Properties.XMinimum;
 
         if (!IsDense(barChartBounds))
         {
-            var slotWidthFixedPoint = (barChartWidthFixedPoint << 32) / totalSlotsFixedPoint;
-            var slotLeftFixedPoint = barChartLeftFixedPoint
-                + (slotIndex * slotWidthFixedPoint)
-                + (_animMinSlotScrollOffset);
+            var slotWidth = (BigDecimal)barChartBounds.Width / range;
+            var slotLeft = barChartBounds.Left + (slotIndex * slotWidth);
 
-            // Overflow is actually okay here - if you're asking for slots way off the left or right, that's on you.
-            var slotWidth = ((double)slotWidthFixedPoint) / (1L << 32);
-            var slotLeft = ((double)slotLeftFixedPoint) / (1L << 32);
-
-            return new SRectF(slotLeft, barChartBounds.Top, slotWidth, barChartBounds.Height);
+            return new SRectF((double)slotLeft, barChartBounds.Top, (double)slotWidth, barChartBounds.Height);
         }
         else
         {
-            var pixelIndex = barChartBounds.Width * MathHelpers.BigIntegerRatioToDouble(slotIndex, totalSlotsIntegral);
+            var pixelIndex = (int)BigDecimal.Floor((BigDecimal)barChartBounds.Width * (slotIndex / (BigDecimal)totalSlotsIntegral));
             return new SRectF(barChartBounds.Left + pixelIndex, barChartBounds.Top, 1, barChartBounds.Height);
         }
     }

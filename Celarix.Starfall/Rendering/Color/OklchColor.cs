@@ -76,13 +76,28 @@ public readonly record struct OklchColor
 
     public SColor ToSColor()
     {
-        var c = Chroma;
-        (double linearR, double linearG, double linearB) = GetLinearRGBForChroma(c);
+        var low = 0.0;
+        var high = Math.Max(0.0, Chroma);
 
-        while (!linearR.InRange(0, 1) || !linearG.InRange(0, 1) || !linearB.InRange(0, 1))
+        var (linearR, linearG, linearB) = GetLinearRGBForChroma(high);
+
+        if (!IsInGamut(linearR, linearG, linearB))
         {
-            c -= 0.01;
-            (linearR, linearG, linearB) = GetLinearRGBForChroma(c);
+            for (var i = 0; i < 32; i++)
+            {
+                var mid = (low + high) / 2.0;
+                var rgb = GetLinearRGBForChroma(mid);
+
+                if (IsInGamut(rgb.LinearR, rgb.LinearG, rgb.LinearB))
+                {
+                    low = mid;
+                    (linearR, linearG, linearB) = rgb;
+                }
+                else
+                {
+                    high = mid;
+                }
+            }
         }
 
         var red = ApplySRGBTransfer(linearR);
@@ -90,11 +105,21 @@ public readonly record struct OklchColor
         var blue = ApplySRGBTransfer(linearB);
 
         return new SColor(
-            (byte)Math.Clamp((int)(red * 255.0), 0, 255),
-            (byte)Math.Clamp((int)(green * 255.0), 0, 255),
-            (byte)Math.Clamp((int)(blue * 255.0), 0, 255),
+            (byte)Math.Clamp((int)Math.Round(red * 255.0), 0, 255),
+            (byte)Math.Clamp((int)Math.Round(green * 255.0), 0, 255),
+            (byte)Math.Clamp((int)Math.Round(blue * 255.0), 0, 255),
             255
         );
+    }
+
+    private static bool IsInGamut(double r, double g, double b)
+    {
+        return double.IsFinite(r)
+            && double.IsFinite(g)
+            && double.IsFinite(b)
+            && r is >= 0 and <= 1
+            && g is >= 0 and <= 1
+            && b is >= 0 and <= 1;
     }
 
     private static double ApplySRGBTransfer(double channel)

@@ -26,6 +26,22 @@ public abstract class ChartPropertyBase
         }
     }
 
+    public void SetProperties(Action multipropertySetter)
+    {
+        var oldRaiseEventOnChanged = RaiseEventOnChanged;
+
+        try
+        {
+            RaiseEventOnChanged = false;
+            multipropertySetter();
+        }
+        finally
+        {
+            RaiseEventOnChanged = oldRaiseEventOnChanged;
+            OnPropertiesChanged();
+        }
+    }
+
     protected virtual bool Valid([NotNullWhen(false)] out Exception? ex)
     {
         ex = null;

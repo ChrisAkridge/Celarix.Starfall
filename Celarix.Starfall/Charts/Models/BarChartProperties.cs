@@ -1,5 +1,6 @@
 ﻿using Celarix.Starfall.Charts.DataResolution;
 using Celarix.Starfall.Rendering.Models;
+using ExtendedNumerics;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -10,21 +11,21 @@ namespace Celarix.Starfall.Charts.Models;
 
 public sealed class BarChartProperties : ChartPropertyBase
 {
-    private BigInteger _xMinimum;
-    private BigInteger _xMaximum;
+    private BigDecimal _xMinimum;
+    private BigDecimal _xMaximum;
     private double _yMinimum;
     private double _yMaximum;
 
     private double _barWidthRatioOfSlotWidth;
     private Func<double, SColor> _barColorFormatter;
 
-    public BigInteger XMinimum
+    public BigDecimal XMinimum
     {
         get => _xMinimum;
         set => SetProperty(value, _xMaximum, v => _xMinimum = v);
     }
 
-    public BigInteger XMaximum
+    public BigDecimal XMaximum
     {
         get => _xMaximum;
         set => SetProperty(value, _xMaximum, v => _xMaximum = v);
@@ -54,11 +55,11 @@ public sealed class BarChartProperties : ChartPropertyBase
         set => SetProperty(value, _barColorFormatter, v => _barColorFormatter = v);
     }
 
-    public XRange XRange => new(XMinimum, XMaximum);
+    public XRange XRange => new(BigDecimal.Floor(XMinimum).WholeValue, BigDecimal.Ceiling(XMaximum).WholeValue);
 
     public BarChartProperties(
-        BigInteger xMinimum,
-        BigInteger xMaximum,
+        BigDecimal xMinimum,
+        BigDecimal xMaximum,
         double yMinimum,
         double yMaximum,
         double barWidthRatioOfSlotWidth,
