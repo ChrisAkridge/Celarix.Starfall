@@ -17,6 +17,8 @@ public sealed class ChartProperties : ChartPropertyBase
     private AnimatedVisiblity _infoPanelVisibility;
     private double? _titleVisibilityToggleProgress;
     private double? _infoPanelVisibilityToggleProgress;
+    private AnimationSlot? _titleVisibilityAnimation;
+    private AnimationSlot? _infoPanelVisibilityAnimation;
 
     // Title bar properties
     private double _titleBarHeightRatioOfElement;
@@ -364,45 +366,68 @@ public sealed class ChartProperties : ChartPropertyBase
 
     public void SetTitleBarVisibility(bool visible, AnimationContext context)
     {
-        if ((visible && _titleVisibility == AnimatedVisiblity.Visible)
-            || (!visible && _titleVisibility == AnimatedVisiblity.Invisible))
+        ArgumentNullException.ThrowIfNull(context);
+
+        if ((visible && _titleVisibility is AnimatedVisiblity.Visible or AnimatedVisiblity.Appearing)
+            || (!visible && _titleVisibility is AnimatedVisiblity.Invisible or AnimatedVisiblity.Disappearing))
         {
             // No change needed.
             return;
         }
 
+        _titleVisibilityAnimation ??= context.CreateSlot("ChartProperties.TitleVisibility");
+        var startingProgress = _titleVisibilityToggleProgress
+            ?? (_titleVisibility == AnimatedVisiblity.Visible ? 1d : 0d);
+        var endingProgress = visible ? 1d : 0d;
+        _titleVisibility = visible ? AnimatedVisiblity.Appearing : AnimatedVisiblity.Disappearing;
+        _titleVisibilityToggleProgress = startingProgress;
+        OnPropertiesChanged();
+
         var frames = AnimationContext.SecondsToFrames(AnimationDurationSeconds);
-        var animation = FixedDurationAnimation.StartNow(frames, progress =>
-        {
-            _titleVisibilityToggleProgress = visible ? progress : 1d - progress;
-            OnPropertiesChanged();
-        }, () =>
-        {
-            _titleVisibility = visible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
-            _titleVisibilityToggleProgress = null;
-            OnPropertiesChanged();
-        });
+        _titleVisibilityAnimation.Replace(() => FixedDurationAnimation.StartNow(frames, progress =>
+            {
+                _titleVisibilityToggleProgress = startingProgress
+                    + ((endingProgress - startingProgress) * progress);
+                OnPropertiesChanged();
+            }, () =>
+            {
+                _titleVisibility = visible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
+                _titleVisibilityToggleProgress = null;
+                OnPropertiesChanged();
+            }), AnimationSlotReplacementBehavior.CancelExisting);
     }
 
     public void SetInfoPanelVisibility(bool visible, AnimationContext context)
     {
-        if ((visible && _infoPanelVisibility == AnimatedVisiblity.Visible)
-            || (!visible && _infoPanelVisibility == AnimatedVisiblity.Invisible))
+        ArgumentNullException.ThrowIfNull(context);
+
+        if ((visible && _infoPanelVisibility is AnimatedVisiblity.Visible or AnimatedVisiblity.Appearing)
+            || (!visible && _infoPanelVisibility is AnimatedVisiblity.Invisible or AnimatedVisiblity.Disappearing))
         {
             // No change needed.
             return;
         }
+
+        _infoPanelVisibilityAnimation ??= context.CreateSlot("ChartProperties.InfoPanelVisibility");
+        var startingProgress = _infoPanelVisibilityToggleProgress
+            ?? (_infoPanelVisibility == AnimatedVisiblity.Visible ? 1d : 0d);
+        var endingProgress = visible ? 1d : 0d;
+        _infoPanelVisibility = visible ? AnimatedVisiblity.Appearing : AnimatedVisiblity.Disappearing;
+        _infoPanelVisibilityToggleProgress = startingProgress;
+        OnPropertiesChanged();
+
         var frames = AnimationContext.SecondsToFrames(AnimationDurationSeconds);
-        var animation = FixedDurationAnimation.StartNow(frames, progress =>
-        {
-            _infoPanelVisibilityToggleProgress = visible ? progress : 1d - progress;
-            OnPropertiesChanged();
-        }, () =>
-        {
-            _infoPanelVisibility = visible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
-            _infoPanelVisibilityToggleProgress = null;
-            OnPropertiesChanged();
-        });
+        _infoPanelVisibilityAnimation.Replace(() => FixedDurationAnimation.StartNow(frames, progress =>
+            {
+                _infoPanelVisibilityToggleProgress = startingProgress
+                    + ((endingProgress - startingProgress) * progress);
+                OnPropertiesChanged();
+            }, () =>
+            {
+                _infoPanelVisibility = visible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
+                _infoPanelVisibilityToggleProgress = null;
+                OnPropertiesChanged();
+            }), AnimationSlotReplacementBehavior.CancelExisting);
     }
 
     protected override bool Valid([NotNullWhen(false)] out Exception? ex)
