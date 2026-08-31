@@ -11,4 +11,5 @@ public interface IChartDisplay
 {
     AnimationContext? AnimationContext { get; set; }
     void Render(IRenderTarget target, SRectF displayBounds);
+    void OnContainerChanged();
 }

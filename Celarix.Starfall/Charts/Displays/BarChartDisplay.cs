@@ -258,6 +258,11 @@ public sealed class BarChartDisplay : IChartDisplay
     }
 
     // Invalidation
+    public void OnContainerChanged()
+    {
+        _needStaticInvalidation = true;
+    }
+
     private void Invalidate(SRectF displayBounds)
     {
         var barChartBounds = GetBarChartBounds(displayBounds);

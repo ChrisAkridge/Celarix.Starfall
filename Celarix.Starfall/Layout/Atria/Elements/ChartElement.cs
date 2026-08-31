@@ -32,6 +32,13 @@ public sealed class ChartElement : AtriaElement
         _chartDisplay = chartDisplay;
 
         Id = AtriaId.Parse(atriaIdString);
+
+        Properties.PropertiesChanged += Properties_PropertiesChanged;
+    }
+
+    private void Properties_PropertiesChanged(object? sender, EventArgs e)
+    {
+        _chartDisplay.OnContainerChanged();
     }
 
     public override void Render(IRenderTarget target)

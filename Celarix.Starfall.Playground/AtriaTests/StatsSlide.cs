@@ -17,6 +17,7 @@ namespace Celarix.Starfall.Playground.AtriaTests;
 internal sealed class StatsSlide : AtriaSlide
 {
     private BarChartDisplay? _barChart;
+    private ChartProperties? _chartProperties;
 
     public StatsSlide(int width, int height) : base(width, height)
     {
@@ -179,6 +180,7 @@ internal sealed class StatsSlide : AtriaSlide
         Add([chartElement, chartAnchor]);
 
         _barChart = barChart;
+        _chartProperties = chartProperties;
     }
 
     public override void Update(double deltaTime)
@@ -195,6 +197,14 @@ internal sealed class StatsSlide : AtriaSlide
         else if (keyboardEvent.Key == SKey.Right)
         {
             _barChart?.AnimateScrollToXRange(_barChart.Properties.XMinimum + 7, _barChart.Properties.XMaximum + 7, 1d);
+        }
+        else if (keyboardEvent.Key == SKey.Up)
+        {
+            _chartProperties?.SetTitleBarVisibility(_chartProperties.TitleVisibility != AnimatedVisiblity.Visible, Animations);
+        }
+        else if (keyboardEvent.Key == SKey.Down)
+        {
+            _chartProperties?.SetInfoPanelVisibility(_chartProperties.InfoPanelVisibility != AnimatedVisiblity.Visible, Animations);
         }
     }
 }

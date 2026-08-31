@@ -13,6 +13,11 @@ public sealed class DistributionWrapperDisplay : IChartDisplay
 
     public AnimationContext? AnimationContext { get; set; }
 
+    public void OnContainerChanged()
+    {
+        _wrappedDisplay.OnContainerChanged();
+    }
+
     public void Render(IRenderTarget target, SRectF displayBounds)
     {
         _wrappedDisplay.Render(target, displayBounds);
