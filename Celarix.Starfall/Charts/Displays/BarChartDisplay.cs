@@ -482,7 +482,7 @@ public sealed class BarChartDisplay : IChartDisplay
             }
             if (lowMultiple == null && negativeGridlineY > barChartBounds.Bottom)
             {
-                lowMultiple = multiple - 1;
+                lowMultiple = multiple + 1;
             }
 
             multiple += 1;

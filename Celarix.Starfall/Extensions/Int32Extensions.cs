@@ -13,5 +13,13 @@ namespace Celarix.Starfall.Extensions
                 throw new ArgumentOutOfRangeException(paramName, value, "Value must be positive.");
             }
         }
+
+        public static void ThrowIfNegative(this int value, string paramName = "value")
+        {
+            if (value < 0)
+            {
+                throw new ArgumentOutOfRangeException(paramName, value, "Value must be non-negative.");
+            }
+        }
     }
 }

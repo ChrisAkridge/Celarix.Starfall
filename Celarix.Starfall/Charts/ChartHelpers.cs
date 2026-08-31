@@ -20,8 +20,9 @@ public static class ChartHelpers
     {
         var previousCandidateLabels = new List<FittedLabel>();
         var candidateLabels = new List<FittedLabel>();
+        var cardinality = range.Range + 1;
 
-        if (range.Range == 1)
+        if (cardinality == 1)
         {
             var index = range.Minimum;
             var label = labelFactory(index);
@@ -30,11 +31,11 @@ public static class ChartHelpers
             return candidateLabels;
         }
 
-        for (var tickCount = 2; tickCount <= range.Range; tickCount++)
+        for (var tickCount = 2; tickCount <= cardinality; tickCount++)
         {
             for (var i = 0; i < tickCount; i++)
             {
-                var index = GetEvenlyDistributedIndex(range.Minimum, range.Range, i, tickCount);
+                var index = GetEvenlyDistributedIndex(range.Minimum, cardinality, i, tickCount);
                 var label = labelFactory(index);
                 var slotBounds = getSlotBounds(index);
                 candidateLabels.Add(new FittedLabel(label, GetAxisLabelPosition(label, slotBounds, axisSide, minorAxisMargin)));

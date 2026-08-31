@@ -19,6 +19,14 @@ public static class DoubleExtensions
         }
     }
 
+    public static void ThrowIfNegative(this double value, string paramName = "value")
+    {
+        if (value < 0d)
+        {
+            throw new ArgumentOutOfRangeException(paramName, value, "Value must be non-negative.");
+        }
+    }
+
     public static void ThrowIfOutOfRange(this double value, double min, double max, string paramName = "value")
     {
         if (value < min || value > max)

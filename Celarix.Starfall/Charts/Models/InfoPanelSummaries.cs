@@ -8,6 +8,11 @@ namespace Celarix.Starfall.Charts.Models;
 public enum InfoPanelSummaries
 {
     /// <summary>
+    /// Displays no summaries in the info panel.
+    /// </summary>
+    None = 0x0,
+
+    /// <summary>
     /// Displays the last element of the data series (e.g. "Current: 72.3°F").
     /// </summary>
     CurrentValue = 0x1,
@@ -50,5 +55,11 @@ public enum InfoPanelSummaries
     /// <summary>
     /// Displays the count and sum of the data series (e.g. "Count: 10, Sum: 718°F⋅day").
     /// </summary>
-    CountAndSum = 0x100
+    CountAndSum = 0x100,
+
+    /// <summary>
+    /// Displays all available summaries in the info panel.
+    /// </summary>
+    All = CurrentValue | RangeLine | Mean | Median | Mode | PopulationStandardDeviation | SampleStandardDeviation
+        | Percentiles | CountAndSum
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Celarix.Starfall.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -19,10 +20,12 @@ public static class DataResolver
 
     private static IEnumerable<XRange> CreateBuckets(XRange xRange, int bucketCount)
     {
+        bucketCount.ThrowIfNotPositive(nameof(bucketCount));
+
         var cardinality = (xRange.Maximum - xRange.Minimum) + 1;
         var trueBucketCount = BigInteger.Min(cardinality, bucketCount);
 
-        for (var i = BigInteger.Zero; i < bucketCount; i++)
+        for (var i = BigInteger.Zero; i < trueBucketCount; i++)
         {
             var startOffset = i * cardinality / trueBucketCount;
             var endOffset = ((i + 1) * cardinality / trueBucketCount) - 1;

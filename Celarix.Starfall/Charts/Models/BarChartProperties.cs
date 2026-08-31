@@ -22,7 +22,7 @@ public sealed class BarChartProperties : ChartPropertyBase
     public BigDecimal XMinimum
     {
         get => _xMinimum;
-        set => SetProperty(value, _xMaximum, v => _xMinimum = v);
+        set => SetProperty(value, _xMinimum, v => _xMinimum = v);
     }
 
     public BigDecimal XMaximum
@@ -34,7 +34,7 @@ public sealed class BarChartProperties : ChartPropertyBase
     public double YMinimum
     {
         get => _yMinimum;
-        set => SetProperty(value, _yMaximum, v => _yMinimum = v);
+        set => SetProperty(value, _yMinimum, v => _yMinimum = v);
     }
 
     public double YMaximum

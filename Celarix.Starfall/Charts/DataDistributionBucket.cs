@@ -17,7 +17,7 @@ public readonly struct DataDistributionBucket
     public DataDistributionBucket(double lowerBound, double bucketSize, int count)
     {
         bucketSize.ThrowIfNotPositive(nameof(bucketSize));
-        count.ThrowIfNotPositive(nameof(count));
+        count.ThrowIfNegative(nameof(count));
 
         LowerBound = lowerBound;
         BucketSize = bucketSize;

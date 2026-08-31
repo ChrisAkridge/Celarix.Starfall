@@ -20,9 +20,11 @@ public sealed class DataDistribution : IEnumerable<DataDistributionBucket>
         set
         {
             value.ThrowIfNotPositive();
+            _bucketSize.ThrowIfNotPositive(nameof(BucketSize));
             if (_bucketSize != value)
             {
                 _bucketSize = value;
+                RecalculateDistribution();
                 DistributionChanged?.Invoke(this, EventArgs.Empty);
             }
         }

@@ -19,9 +19,9 @@ public static class ColorFormatters
 
     public static Func<double, SColor> HueWheel(double saturation = 1.0d, double value = 1.0d)
     {
-        return value =>
+        return v =>
         {
-            var hue = value * 360.0d;
+            var hue = v * 360.0d;
             return SColor.FromHSV(hue, saturation, value);
         };
     }

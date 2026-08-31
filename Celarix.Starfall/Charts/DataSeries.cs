@@ -11,6 +11,7 @@ namespace Celarix.Starfall.Charts;
 public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
 {
     public event EventHandler? DataChanged;
+    private bool _suppressEvents;
 
     private Dictionary<BigInteger, double?> _data;
 
@@ -127,7 +128,7 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
     public void AddPoint(DataSeriesPoint point)
     {
         AddPointImpl(point);
-        DataChanged?.Invoke(this, new EventArgs());
+        OnDataChanged();
     }
 
     private void AddPointImpl(DataSeriesPoint point)
@@ -201,7 +202,7 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
                     _sumOfSquares = null;
                 }
             }
-            DataChanged?.Invoke(this, new EventArgs());
+            OnDataChanged();
             return true;
         }
         else
@@ -224,8 +225,17 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
         if (_data.ContainsKey(x))
         {
             // Only fire the DataChanged event once.
-            TryRemovePoint(x);
-            AddPointImpl(new DataSeriesPoint(x, y));
+            _suppressEvents = true;
+            try
+            {
+                TryRemovePoint(x);
+                AddPointImpl(new DataSeriesPoint(x, y));
+            }
+            finally
+            {
+                _suppressEvents = false;
+                OnDataChanged();
+            }
         }
         else
         {
@@ -315,6 +325,14 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
         foreach (var kvp in sortedData)
         {
             yield return new KeyValuePair<BigInteger, double>(kvp.Key, kvp.Value!.Value);
+        }
+    }
+
+    private void OnDataChanged()
+    {
+        if (!_suppressEvents)
+        {
+            DataChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
