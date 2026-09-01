@@ -32,6 +32,7 @@ public sealed class StandardResolutionStrategy : IResolutionStrategy
         double minY = double.PositiveInfinity;
         double maxY = double.NegativeInfinity;
         double sumY = 0;
+        double meanY = 0;
 
         for (var i = 0; i < bucket.Points.Count; i++)
         {
@@ -45,16 +46,15 @@ public sealed class StandardResolutionStrategy : IResolutionStrategy
                 maxY = point.Y;
             }
             sumY += point.Y;
+            meanY += (point.Y - meanY) / (i + 1);
         }
-
-        double averageY = sumY / (double)count;
 
         return new AggregatedDataPoint
         {
             Range = bucket.Range,
             MinimumY = minY,
             MaximumY = maxY,
-            AverageY = averageY,
+            AverageY = meanY,
             FirstY = firstY,
             LastY = lastY,
             Count = count,

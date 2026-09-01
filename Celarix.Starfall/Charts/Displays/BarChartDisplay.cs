@@ -24,9 +24,10 @@ public sealed class BarChartDisplay : IChartDisplay
     private const double TickLength = 15d;
 
     private readonly MeasurementService _measurementService;
-    private readonly DataSeries _dataSeries;
-    private IReadOnlyList<ResolvedDataPoint> _barData;
+    private readonly IDataSource _dataSource;
+    private IReadOnlyList<ResolvedDataPoint> _barData = [];
     private bool _needStaticInvalidation;
+    private bool _connected;
 
     private double _xAxisEm;
     private double _yAxisEm;
@@ -36,11 +37,11 @@ public sealed class BarChartDisplay : IChartDisplay
     private readonly LibraRenderingContext _yAxisLabelContext;
 
     // Animation slots and their referents.
-    private IReadOnlyList<FittedLabel> _xAxisLabels;
+    private IReadOnlyList<FittedLabel> _xAxisLabels = [];
     private IReadOnlyList<FittedLabel> _nextXAxisLabels;
-    private IReadOnlyList<FittedLabel> _yAxisLabels;
+    private IReadOnlyList<FittedLabel> _yAxisLabels = [];
     private IReadOnlyList<FittedLabel> _nextYAxisLabels;
-    private IReadOnlyList<(SRectF Bar, SColor color)> _barRenderables;
+    private IReadOnlyList<(SRectF Bar, SColor color)> _barRenderables = [];
     private IReadOnlyList<(SRectF Bar, SColor color)> _nextBarRenderables;
     private AnimationSlot _moveRangeAnimation;
     private AnimationSlot _changeDataAnimation;
@@ -56,17 +57,23 @@ public sealed class BarChartDisplay : IChartDisplay
         BarChartProperties properties,
         AxisProperties<BigInteger> xAxisProperties,
         AxisProperties<double> yAxisProperties)
+        : this(measurementService, new DataSeriesDataSource(dataSeries, new StandardResolutionStrategy()), properties, xAxisProperties, yAxisProperties)
+    { }
+
+    public BarChartDisplay(
+        MeasurementService measurementService,
+        IDataSource dataSource,
+        BarChartProperties properties,
+        AxisProperties<BigInteger> xAxisProperties,
+        AxisProperties<double> yAxisProperties)
     {
         _measurementService = measurementService;
-        _dataSeries = dataSeries;
+        _dataSource = dataSource;
         Properties = properties;
         XAxisProperties = xAxisProperties;
         YAxisProperties = yAxisProperties;
 
-        _dataSeries.DataChanged += (sender, args) => _needStaticInvalidation = true;
-        Properties.PropertiesChanged += (sender, args) => _needStaticInvalidation = true;
-        XAxisProperties.PropertiesChanged += (sender, args) => _needStaticInvalidation = true;
-        YAxisProperties.PropertiesChanged += (sender, args) => _needStaticInvalidation = true;
+        Connect();
 
         _xAxisLabelContext = new LibraRenderingContext(measurementService,
             XAxisProperties.LabelFont, LibraMetrics.Default, FenceRenderingMode.Automatic);
@@ -75,6 +82,29 @@ public sealed class BarChartDisplay : IChartDisplay
 
         _needStaticInvalidation = true;
     }
+
+    public void Connect()
+    {
+        if (_connected) return;
+        _dataSource.DataChanged += DependencyChanged;
+        Properties.PropertiesChanged += DependencyChanged;
+        XAxisProperties.PropertiesChanged += DependencyChanged;
+        YAxisProperties.PropertiesChanged += DependencyChanged;
+        _connected = true;
+        _needStaticInvalidation = true;
+    }
+
+    public void Disconnect()
+    {
+        if (!_connected) return;
+        _dataSource.DataChanged -= DependencyChanged;
+        Properties.PropertiesChanged -= DependencyChanged;
+        XAxisProperties.PropertiesChanged -= DependencyChanged;
+        YAxisProperties.PropertiesChanged -= DependencyChanged;
+        _connected = false;
+    }
+
+    private void DependencyChanged(object? sender, EventArgs e) => _needStaticInvalidation = true;
 
     // Rendering
     public void Render(IRenderTarget target, SRectF displayBounds)
@@ -236,7 +266,7 @@ public sealed class BarChartDisplay : IChartDisplay
         {
             var fraction = (BigDecimal)d;
 
-            Properties.SetProperties(() =>
+            Properties.UpdatePropertiesAtomic(() =>
             {
                 Properties.XMinimum = oldXMinimum + (xMinRange * fraction);
                 Properties.XMaximum = oldXMaximum + (xMaxRange * fraction);
@@ -267,9 +297,10 @@ public sealed class BarChartDisplay : IChartDisplay
     {
         var barChartBounds = GetBarChartBounds(displayBounds);
         var totalSlots = Properties.XRange.Range + 1;
-        int trueSlots = totalSlots < (BigInteger)barChartBounds.Width ? (int)totalSlots : (int)barChartBounds.Width;
-        var source = new DataSeriesDataSource(_dataSeries, new StandardResolutionStrategy());
-        _barData = DataResolver.Resolve(source, Properties.XRange, trueSlots);
+        int trueSlots = totalSlots < (BigInteger)barChartBounds.Width ? (int)totalSlots : (int)Math.Floor(barChartBounds.Width);
+        _barData = trueSlots > 0
+            ? DataResolver.Resolve(_dataSource, Properties.XRange, trueSlots)
+            : [];
         var yGridLines = GetYGridlines(barChartBounds);
 
         _xAxisEm = _measurementService.MeasureText("M", XAxisProperties.LabelFont).Width;
@@ -323,7 +354,7 @@ public sealed class BarChartDisplay : IChartDisplay
             }
             else if (dataPoint is AggregatedDataPoint aggregatedDataPoint)
             {
-                var slotBounds = GetXSlotBounds(aggregatedDataPoint.Range.Minimum, barChartBounds);
+                var slotBounds = GetXRangeBounds(aggregatedDataPoint.Range, barChartBounds);
                 var meanYBarCenter = GetYSlotCenter(aggregatedDataPoint.AverageY, barChartBounds);
                 var barMinColor = Properties.BarColorFormatter(aggregatedDataPoint.AverageY);
                 var barShades = ColorHelpers.LightnessRamp(barMinColor, 0.1d, 3).ToArray();
@@ -423,13 +454,12 @@ public sealed class BarChartDisplay : IChartDisplay
 
     private SRectF GetXSlotBounds(BigInteger x, SRectF barChartBounds)
     {
-        var range = (Properties.XMaximum - Properties.XMinimum);
         var totalSlotsIntegral = Properties.XRange.Range + 1;
         var slotIndex = x - Properties.XMinimum;
 
         if (!IsDense(barChartBounds))
         {
-            var slotWidth = (BigDecimal)barChartBounds.Width / range;
+            var slotWidth = (BigDecimal)barChartBounds.Width / totalSlotsIntegral;
             var slotLeft = barChartBounds.Left + (slotIndex * slotWidth);
 
             return new SRectF((double)slotLeft, barChartBounds.Top, (double)slotWidth, barChartBounds.Height);
@@ -439,6 +469,13 @@ public sealed class BarChartDisplay : IChartDisplay
             var pixelIndex = (int)BigDecimal.Floor((BigDecimal)barChartBounds.Width * (slotIndex / (BigDecimal)totalSlotsIntegral));
             return new SRectF(barChartBounds.Left + pixelIndex, barChartBounds.Top, 1, barChartBounds.Height);
         }
+    }
+
+    private SRectF GetXRangeBounds(XRange range, SRectF barChartBounds)
+    {
+        var first = GetXSlotBounds(range.Minimum, barChartBounds);
+        var last = GetXSlotBounds(range.Maximum, barChartBounds);
+        return new SRectF(first.Left, barChartBounds.Top, last.Right - first.Left, barChartBounds.Height);
     }
 
     private double GetYSlotCenter(double y, SRectF barChartBounds)

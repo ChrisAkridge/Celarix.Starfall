@@ -2,6 +2,7 @@
 using Celarix.Starfall.Charts.Models;
 using Celarix.Starfall.Extensions;
 using Celarix.Starfall.Layout.Atria.Components;
+using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Libra;
 using Celarix.Starfall.Libra.Metrics;
@@ -16,11 +17,15 @@ namespace Celarix.Starfall.Layout.Atria.Elements;
 
 public sealed class ChartElement : AtriaElement
 {
+    private const double VisibilityAnimationDurationSeconds = 0.5d;
     private const double InfoPanelDisplayItemMarginMultiplier = 1.25d;
 
     // No need to rebuild this every time.
     private readonly LibraMetrics _metrics = LibraMetrics.Default;
     private readonly IChartDisplay _chartDisplay;
+    private AnimationSlot? _titleVisibilityAnimation;
+    private AnimationSlot? _infoPanelVisibilityAnimation;
+    private bool _connected;
 
     public ChartProperties Properties { get; }
 
@@ -33,12 +38,58 @@ public sealed class ChartElement : AtriaElement
 
         Id = AtriaId.Parse(atriaIdString);
 
+        Connect();
+    }
+
+    public void Connect()
+    {
+        if (_connected) return;
         Properties.PropertiesChanged += Properties_PropertiesChanged;
+        _connected = true;
+    }
+
+    public void Disconnect()
+    {
+        if (!_connected) return;
+        Properties.PropertiesChanged -= Properties_PropertiesChanged;
+        _connected = false;
     }
 
     private void Properties_PropertiesChanged(object? sender, EventArgs e)
     {
         _chartDisplay.OnContainerChanged();
+    }
+
+    public void SetTitleBarVisibility(bool visible)
+    {
+        if ((visible && Properties.TitleVisibility is AnimatedVisiblity.Visible or AnimatedVisiblity.Appearing)
+            || (!visible && Properties.TitleVisibility is AnimatedVisiblity.Invisible or AnimatedVisiblity.Disappearing)) return;
+
+        _titleVisibilityAnimation ??= Animations.CreateSlot("ChartElement.TitleVisibility");
+        var start = Properties.TitleVisibilityToggleProgress
+            ?? (Properties.TitleVisibility == AnimatedVisiblity.Visible ? 1d : 0d);
+        var end = visible ? 1d : 0d;
+        Properties.BeginTitleVisibilityChange(visible, start);
+        var frames = AnimationContext.SecondsToFrames(VisibilityAnimationDurationSeconds);
+        _titleVisibilityAnimation.Replace(() => FixedDurationAnimation.StartNow(frames,
+            progress => Properties.UpdateTitleVisibilityProgress(start + ((end - start) * progress)),
+            () => Properties.CompleteTitleVisibilityChange(visible)), AnimationSlotReplacementBehavior.CancelExisting);
+    }
+
+    public void SetInfoPanelVisibility(bool visible)
+    {
+        if ((visible && Properties.InfoPanelVisibility is AnimatedVisiblity.Visible or AnimatedVisiblity.Appearing)
+            || (!visible && Properties.InfoPanelVisibility is AnimatedVisiblity.Invisible or AnimatedVisiblity.Disappearing)) return;
+
+        _infoPanelVisibilityAnimation ??= Animations.CreateSlot("ChartElement.InfoPanelVisibility");
+        var start = Properties.InfoPanelVisibilityToggleProgress
+            ?? (Properties.InfoPanelVisibility == AnimatedVisiblity.Visible ? 1d : 0d);
+        var end = visible ? 1d : 0d;
+        Properties.BeginInfoPanelVisibilityChange(visible, start);
+        var frames = AnimationContext.SecondsToFrames(VisibilityAnimationDurationSeconds);
+        _infoPanelVisibilityAnimation.Replace(() => FixedDurationAnimation.StartNow(frames,
+            progress => Properties.UpdateInfoPanelVisibilityProgress(start + ((end - start) * progress)),
+            () => Properties.CompleteInfoPanelVisibilityChange(visible)), AnimationSlotReplacementBehavior.CancelExisting);
     }
 
     public override void Render(IRenderTarget target)

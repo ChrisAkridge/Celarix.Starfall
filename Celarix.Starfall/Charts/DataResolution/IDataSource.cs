@@ -7,5 +7,6 @@ namespace Celarix.Starfall.Charts.DataResolution;
 
 public interface IDataSource
 {
+    event EventHandler? DataChanged;
     ResolvedDataPoint ResolveBucket(XRange bucket);
 }

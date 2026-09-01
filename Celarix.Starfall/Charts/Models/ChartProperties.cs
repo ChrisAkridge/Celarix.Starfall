@@ -10,15 +10,11 @@ namespace Celarix.Starfall.Charts.Models;
 
 public sealed class ChartProperties : ChartPropertyBase
 {
-    private const double AnimationDurationSeconds = 0.5;
-
     // Side panel visibilities
     private AnimatedVisiblity _titleVisibility;
     private AnimatedVisiblity _infoPanelVisibility;
     private double? _titleVisibilityToggleProgress;
     private double? _infoPanelVisibilityToggleProgress;
-    private AnimationSlot? _titleVisibilityAnimation;
-    private AnimationSlot? _infoPanelVisibilityAnimation;
 
     // Title bar properties
     private double _titleBarHeightRatioOfElement;
@@ -343,95 +339,63 @@ public sealed class ChartProperties : ChartPropertyBase
 
     public void SetDisplayedPercentiles(IEnumerable<double> percentiles)
     {
+        ArgumentNullException.ThrowIfNull(percentiles);
         List<double> percentileList = [.. percentiles.OrderBy(p => p)];
-        PercentileListValidOrThrow(percentileList);
-        _displayedPercentiles = percentileList;
-        OnPropertiesChanged();
+        if (!IsAtomicUpdateInProgress) PercentileListValidOrThrow(percentileList);
+        SetProperty(percentileList, _displayedPercentiles, v => _displayedPercentiles = v);
     }
 
-    public void AddPercentile(double percentile)
+    internal void BeginTitleVisibilityChange(bool visible, double startingProgress)
     {
-        if (percentile < 0d || percentile > 100d)
-        {
-            throw new ArgumentOutOfRangeException(nameof(percentile), percentile, "Percentile must be between 0 and 100, inclusive.");
-        }
-        if (_displayedPercentiles.Contains(percentile))
-        {
-            throw new ArgumentException("Percentile list cannot contain duplicate values.", nameof(percentile));
-        }
-        _displayedPercentiles.Add(percentile);
-        _displayedPercentiles.Sort();
-        OnPropertiesChanged();
-    }
-
-    public void SetTitleBarVisibility(bool visible, AnimationContext context)
-    {
-        ArgumentNullException.ThrowIfNull(context);
-
-        if ((visible && _titleVisibility is AnimatedVisiblity.Visible or AnimatedVisiblity.Appearing)
-            || (!visible && _titleVisibility is AnimatedVisiblity.Invisible or AnimatedVisiblity.Disappearing))
-        {
-            // No change needed.
-            return;
-        }
-
-        _titleVisibilityAnimation ??= context.CreateSlot("ChartProperties.TitleVisibility");
-        var startingProgress = _titleVisibilityToggleProgress
-            ?? (_titleVisibility == AnimatedVisiblity.Visible ? 1d : 0d);
-        var endingProgress = visible ? 1d : 0d;
         _titleVisibility = visible ? AnimatedVisiblity.Appearing : AnimatedVisiblity.Disappearing;
         _titleVisibilityToggleProgress = startingProgress;
         OnPropertiesChanged();
-
-        var frames = AnimationContext.SecondsToFrames(AnimationDurationSeconds);
-        _titleVisibilityAnimation.Replace(() => FixedDurationAnimation.StartNow(frames, progress =>
-            {
-                _titleVisibilityToggleProgress = startingProgress
-                    + ((endingProgress - startingProgress) * progress);
-                OnPropertiesChanged();
-            }, () =>
-            {
-                _titleVisibility = visible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
-                _titleVisibilityToggleProgress = null;
-                OnPropertiesChanged();
-            }), AnimationSlotReplacementBehavior.CancelExisting);
     }
 
-    public void SetInfoPanelVisibility(bool visible, AnimationContext context)
+    internal void UpdateTitleVisibilityProgress(double progress)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        _titleVisibilityToggleProgress = progress;
+        OnPropertiesChanged();
+    }
 
-        if ((visible && _infoPanelVisibility is AnimatedVisiblity.Visible or AnimatedVisiblity.Appearing)
-            || (!visible && _infoPanelVisibility is AnimatedVisiblity.Invisible or AnimatedVisiblity.Disappearing))
-        {
-            // No change needed.
-            return;
-        }
+    internal void CompleteTitleVisibilityChange(bool visible)
+    {
+        _titleVisibility = visible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
+        _titleVisibilityToggleProgress = null;
+        OnPropertiesChanged();
+    }
 
-        _infoPanelVisibilityAnimation ??= context.CreateSlot("ChartProperties.InfoPanelVisibility");
-        var startingProgress = _infoPanelVisibilityToggleProgress
-            ?? (_infoPanelVisibility == AnimatedVisiblity.Visible ? 1d : 0d);
-        var endingProgress = visible ? 1d : 0d;
+    internal void BeginInfoPanelVisibilityChange(bool visible, double startingProgress)
+    {
         _infoPanelVisibility = visible ? AnimatedVisiblity.Appearing : AnimatedVisiblity.Disappearing;
         _infoPanelVisibilityToggleProgress = startingProgress;
         OnPropertiesChanged();
+    }
 
-        var frames = AnimationContext.SecondsToFrames(AnimationDurationSeconds);
-        _infoPanelVisibilityAnimation.Replace(() => FixedDurationAnimation.StartNow(frames, progress =>
-            {
-                _infoPanelVisibilityToggleProgress = startingProgress
-                    + ((endingProgress - startingProgress) * progress);
-                OnPropertiesChanged();
-            }, () =>
-            {
-                _infoPanelVisibility = visible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
-                _infoPanelVisibilityToggleProgress = null;
-                OnPropertiesChanged();
-            }), AnimationSlotReplacementBehavior.CancelExisting);
+    internal void UpdateInfoPanelVisibilityProgress(double progress)
+    {
+        _infoPanelVisibilityToggleProgress = progress;
+        OnPropertiesChanged();
+    }
+
+    internal void CompleteInfoPanelVisibilityChange(bool visible)
+    {
+        _infoPanelVisibility = visible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
+        _infoPanelVisibilityToggleProgress = null;
+        OnPropertiesChanged();
     }
 
     protected override bool Valid([NotNullWhen(false)] out Exception? ex)
     {
+        try
+        {
+            PercentileListValidOrThrow(_displayedPercentiles);
+        }
+        catch (Exception percentileException)
+        {
+            ex = percentileException;
+            return false;
+        }
         if (_titleBarHeightRatioOfElement < 0d || _titleBarHeightRatioOfElement > 1d)
         {
             ex = new ArgumentOutOfRangeException(nameof(TitleBarHeightRatioOfElement), _titleBarHeightRatioOfElement, "Value must be between 0 and 1.");

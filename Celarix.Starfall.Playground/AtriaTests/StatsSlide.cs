@@ -18,6 +18,7 @@ internal sealed class StatsSlide : AtriaSlide
 {
     private BarChartDisplay? _barChart;
     private ChartProperties? _chartProperties;
+    private ChartElement? _chartElement;
 
     public StatsSlide(int width, int height) : base(width, height)
     {
@@ -181,6 +182,7 @@ internal sealed class StatsSlide : AtriaSlide
 
         _barChart = barChart;
         _chartProperties = chartProperties;
+        _chartElement = chartElement;
     }
 
     public override void Update(double deltaTime)
@@ -200,11 +202,11 @@ internal sealed class StatsSlide : AtriaSlide
         }
         else if (keyboardEvent.Key == SKey.Up)
         {
-            _chartProperties?.SetTitleBarVisibility(_chartProperties.TitleVisibility != AnimatedVisiblity.Visible, Animations);
+            _chartElement?.SetTitleBarVisibility(_chartProperties?.TitleVisibility != AnimatedVisiblity.Visible);
         }
         else if (keyboardEvent.Key == SKey.Down)
         {
-            _chartProperties?.SetInfoPanelVisibility(_chartProperties.InfoPanelVisibility != AnimatedVisiblity.Visible, Animations);
+            _chartElement?.SetInfoPanelVisibility(_chartProperties?.InfoPanelVisibility != AnimatedVisiblity.Visible);
         }
     }
 }

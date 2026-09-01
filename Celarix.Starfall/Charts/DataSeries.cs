@@ -13,7 +13,8 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
     public event EventHandler? DataChanged;
     private bool _suppressEvents;
 
-    private Dictionary<BigInteger, double?> _data;
+    private SortedDictionary<BigInteger, double?> _data;
+    private bool _warnedAboutNonFiniteValue;
 
     // Statistical properties. Keep them as fields so recalculating them every time isn't necessary.
     private SortedDictionary<double, int> _sortedValues;
@@ -21,7 +22,8 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
     private double? _min;
     private double? _max;
     private double? _sum;
-    private double? _sumOfSquares;
+    private double _mean;
+    private double _m2;
 
     // Some properties are pretty cheap, though.
     private double? Range => _max - _min;
@@ -55,7 +57,8 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
     public double? Min => _min;
     public double? Max => _max;
     public double? Sum => _sum;
-    public double? SumOfSquares => _sumOfSquares;
+    public double? SumOfSquares => _count == 0 ? null : _m2 + (_count * _mean * _mean);
+    public double? M2 => _count == 0 ? null : _m2;
 
     public double Mean
     {
@@ -66,7 +69,7 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
                 throw new InvalidOperationException("The collection is empty.");
             }
 
-            return _sum!.Value / Count;
+            return _mean;
         }
     }
 
@@ -83,8 +86,7 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
                 throw new InvalidOperationException("The collection is empty.");
             }
 
-            var mean = Mean;
-            return (_sumOfSquares!.Value / Count) - (mean * mean);
+            return _m2 / Count;
         }
     }
 
@@ -101,10 +103,7 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
                     "Sample variance requires at least two values.");
             }
 
-            var sum = _sum!.Value;
-
-            return (_sumOfSquares!.Value - (sum * sum / Count))
-                / (Count - 1);
+            return _m2 / (Count - 1);
         }
     }
 
@@ -118,11 +117,14 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
         _min = null;
         _max = null;
         _sum = null;
-        _sumOfSquares = null;
         foreach (var point in data)
         {
-            AddPointImpl(point);
+            if (!_data.TryAdd(point.X, Normalize(point.X, point.Y)))
+            {
+                throw new ArgumentException($"A point with X={point.X} already exists in the series.");
+            }
         }
+        RebuildStatistics();
     }
 
     public void AddPoint(DataSeriesPoint point)
@@ -133,28 +135,43 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
 
     private void AddPointImpl(DataSeriesPoint point)
     {
-        if (!_data.TryAdd(point.X, point.Y))
+        var normalizedY = Normalize(point.X, point.Y);
+        if (!_data.TryAdd(point.X, normalizedY))
         {
             throw new ArgumentException($"A point with X={point.X} already exists in the series.");
         }
 
         // Keep the statistical properties up to date.
-        if (point.Y != null)
+        if (normalizedY != null)
         {
-            if (_sortedValues.TryGetValue(point.Y.Value, out int value))
+            var y = normalizedY.Value;
+            if (_sortedValues.TryGetValue(y, out int value))
             {
-                _sortedValues[point.Y.Value] = ++value;
+                _sortedValues[y] = ++value;
             }
             else
             {
-                _sortedValues[point.Y.Value] = 1;
+                _sortedValues[y] = 1;
             }
-            _count += 1;
-            _min = Math.Min(_min ??= point.Y.Value, point.Y.Value);
-            _max = Math.Max(_max ??= point.Y.Value, point.Y.Value);
-            _sum = (_sum ?? 0) + point.Y.Value;
-            _sumOfSquares = (_sumOfSquares ?? 0) + point.Y.Value * point.Y.Value;
+            _count++;
+            var delta = y - _mean;
+            _mean += delta / _count;
+            _m2 += delta * (y - _mean);
+            _min = Math.Min(_min ??= y, y);
+            _max = Math.Max(_max ??= y, y);
+            _sum = (_sum ?? 0) + y;
         }
+    }
+
+    private double? Normalize(BigInteger x, double? y)
+    {
+        if (y is null || double.IsFinite(y.Value)) return y;
+        if (!_warnedAboutNonFiniteValue)
+        {
+            Console.WriteLine($"Chart data series normalized non-finite value {y.Value} at X={x} to zero.");
+            _warnedAboutNonFiniteValue = true;
+        }
+        return 0d;
     }
 
     public bool TryRemovePoint(BigInteger x)
@@ -176,9 +193,26 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
                         _sortedValues[y.Value] = --value;
                     }
                 }
-                _count -= 1;
+                var oldCount = _count;
+                _count--;
                 _sum -= y.Value;
-                _sumOfSquares -= y.Value * y.Value;
+                if (_count == 0)
+                {
+                    _mean = 0d;
+                    _m2 = 0d;
+                }
+                else
+                {
+                    var oldMean = _mean;
+                    _mean = ((oldCount * oldMean) - y.Value) / _count;
+                    _m2 -= (y.Value - oldMean) * (y.Value - _mean);
+                    if (_m2 < 0d)
+                    {
+                        var tolerance = 1e-12 * Math.Max(1d, Math.Abs(oldMean));
+                        if (_m2 >= -tolerance) _m2 = 0d;
+                        else RebuildStatistics();
+                    }
+                }
                 // Recalculate min and max if necessary.
                 if (y == _min || y == _max)
                 {
@@ -199,7 +233,8 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
                     _min = null;
                     _max = null;
                     _sum = null;
-                    _sumOfSquares = null;
+                    _mean = 0d;
+                    _m2 = 0d;
                 }
             }
             OnDataChanged();
@@ -250,15 +285,33 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
 
     public IReadOnlyList<DataPoint> GetPointsInRange(XRange range)
     {
-        var result = new List<DataPoint>();
-        for (var i = range.Minimum; i <= range.Maximum; i++)
+        return [.. _data
+            .Where(kvp => kvp.Key >= range.Minimum && kvp.Key <= range.Maximum && kvp.Value.HasValue)
+            .Select(kvp => new DataPoint(kvp.Key, kvp.Value!.Value))];
+    }
+
+    public void RecalculateStatistics() => RebuildStatistics();
+
+    private void RebuildStatistics()
+    {
+        _sortedValues.Clear();
+        _count = 0;
+        _min = null;
+        _max = null;
+        _sum = null;
+        _mean = 0d;
+        _m2 = 0d;
+        foreach (var y in _data.Values.Where(v => v.HasValue).Select(v => v!.Value))
         {
-            if (_data.TryGetValue(i, out double? y) && y.HasValue)
-            {
-                result.Add(new DataPoint { X = i, Y = y.Value });
-            }
+            _sortedValues[y] = _sortedValues.GetValueOrDefault(y) + 1;
+            _count++;
+            var delta = y - _mean;
+            _mean += delta / _count;
+            _m2 += delta * (y - _mean);
+            _sum = (_sum ?? 0d) + y;
+            _min = Math.Min(_min ?? y, y);
+            _max = Math.Max(_max ?? y, y);
         }
-        return result;
     }
 
     public (double Lower, double Upper) GetPopulationSigmaRange(double sigma)

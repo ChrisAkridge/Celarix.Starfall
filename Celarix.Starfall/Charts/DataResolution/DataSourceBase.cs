@@ -6,6 +6,7 @@ namespace Celarix.Starfall.Charts.DataResolution;
 
 public abstract class DataSourceBase : IDataSource
 {
+    public event EventHandler? DataChanged;
     private readonly IResolutionStrategy _resolutionStrategy;
 
     protected DataSourceBase(IResolutionStrategy resolutionStrategy)
@@ -21,4 +22,6 @@ public abstract class DataSourceBase : IDataSource
     }
 
     protected abstract BucketObservation GetObservation(XRange bucket);
+
+    protected void OnDataChanged() => DataChanged?.Invoke(this, EventArgs.Empty);
 }
