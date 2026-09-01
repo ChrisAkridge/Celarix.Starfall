@@ -109,6 +109,31 @@ public sealed class ChartCoreTests
         Assert.All(expandedFit, label => Assert.Equal(10d, label.LibraLayoutResult.Bounds.Width));
     }
 
+    [Fact]
+    public void ChartInsets_ApplyNormallyWhenTheyFit()
+    {
+        var result = new ChartInsets(10, 20, 30, 40).ApplyTo(new SRectF(100, 200, 200, 150));
+
+        Assert.Equal(new SRectF(110, 220, 160, 90), result);
+    }
+
+    [Fact]
+    public void ChartInsets_CollapseProportionallyWithoutNegativeDimensions()
+    {
+        var result = new ChartInsets(30, 80, 70, 20).ApplyTo(new SRectF(10, 20, 50, 40));
+
+        Assert.Equal(new SRectF(25, 52, 0, 0), result);
+    }
+
+    [Theory]
+    [InlineData(-1d)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void ChartInsets_RejectInvalidValues(double value)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ChartInsets(value, 0, 0, 0));
+    }
+
     private sealed class TestProperties : ChartPropertyBase
     {
         private int _minimum;

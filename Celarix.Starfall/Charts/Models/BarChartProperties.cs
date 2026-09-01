@@ -18,6 +18,7 @@ public sealed class BarChartProperties : ChartPropertyBase
 
     private double _barWidthRatioOfSlotWidth;
     private Func<double, SColor> _barColorFormatter;
+    private ChartInsets _plotInsets;
 
     public BigDecimal XMinimum
     {
@@ -55,6 +56,16 @@ public sealed class BarChartProperties : ChartPropertyBase
         set => SetProperty(value, _barColorFormatter, v => _barColorFormatter = v);
     }
 
+    /// <summary>
+    /// Gets or sets the pixel insets applied inside the display area before laying out the plot and its axes.
+    /// Insets that cannot fit are reduced proportionally, so the plot never has negative dimensions.
+    /// </summary>
+    public ChartInsets PlotInsets
+    {
+        get => _plotInsets;
+        set => SetProperty(value, _plotInsets, v => _plotInsets = v);
+    }
+
     public XRange XRange => new(BigDecimal.Floor(XMinimum).WholeValue, BigDecimal.Ceiling(XMaximum).WholeValue);
 
     public BarChartProperties(
@@ -63,7 +74,8 @@ public sealed class BarChartProperties : ChartPropertyBase
         double yMinimum,
         double yMaximum,
         double barWidthRatioOfSlotWidth,
-        Func<double, SColor> barColorFormatter
+        Func<double, SColor> barColorFormatter,
+        ChartInsets plotInsets = default
     )
     {
         _xMinimum = xMinimum;
@@ -72,6 +84,7 @@ public sealed class BarChartProperties : ChartPropertyBase
         _yMaximum = yMaximum;
         _barWidthRatioOfSlotWidth = barWidthRatioOfSlotWidth;
         _barColorFormatter = barColorFormatter;
+        _plotInsets = plotInsets;
 
         if (!Valid(out var ex))
         {

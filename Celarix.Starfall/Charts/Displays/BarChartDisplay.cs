@@ -119,6 +119,10 @@ public sealed class BarChartDisplay : IChartDisplay
 
         // Let's draw this all piece-by-piece.
         var barChartBounds = GetBarChartBounds(displayBounds);
+        if (!CanRenderPlot(barChartBounds))
+        {
+            return;
+        }
         var xAxisBounds = GetXAxisBounds(displayBounds, barChartBounds);
         var yAxisBounds = GetYAxisBounds(displayBounds, barChartBounds);
         var yRange = Properties.YMaximum - Properties.YMinimum;
@@ -296,6 +300,15 @@ public sealed class BarChartDisplay : IChartDisplay
     private void Invalidate(SRectF displayBounds)
     {
         var barChartBounds = GetBarChartBounds(displayBounds);
+        if (!CanRenderPlot(barChartBounds))
+        {
+            _barData = [];
+            _xAxisLabels = [];
+            _yAxisLabels = [];
+            _barRenderables = [];
+            _needStaticInvalidation = false;
+            return;
+        }
         var totalSlots = Properties.XRange.Range + 1;
         int trueSlots = totalSlots < (BigInteger)barChartBounds.Width ? (int)totalSlots : (int)Math.Floor(barChartBounds.Width);
         _barData = trueSlots > 0
@@ -403,12 +416,13 @@ public sealed class BarChartDisplay : IChartDisplay
     {
         var xAxisHeight = displayBounds.Height * XAxisProperties.SizeRatioOfParent;
         var yAxisWidth = displayBounds.Width * YAxisProperties.SizeRatioOfParent;
-        return new SRectF(
+        var allocatedBounds = new SRectF(
             displayBounds.X + yAxisWidth,
             displayBounds.Y,
             displayBounds.Width - yAxisWidth,
             displayBounds.Height - xAxisHeight
         );
+        return Properties.PlotInsets.ApplyTo(allocatedBounds);
     }
 
     private SRectF GetXAxisBounds(SRectF displayBounds, SRectF barChartBounds)
@@ -420,7 +434,7 @@ public sealed class BarChartDisplay : IChartDisplay
         return new SRectF(
             barChartLeft,
             barChartBounds.Bottom,
-            displayBounds.Right - barChartLeft,
+            barChartBounds.Width,
             xAxisHeight
         );
     }
@@ -429,15 +443,15 @@ public sealed class BarChartDisplay : IChartDisplay
     {
         // The Y-axis is strictly to the left of only the bar chart, so it ends more upward than the display area.
         // Pass in barChartBounds because we just calculated it and don't want to recalculate it here.
-        var barChartBottom = barChartBounds.Bottom;
-        var yAxisWidth = displayBounds.Width * YAxisProperties.SizeRatioOfParent;
         return new SRectF(
             displayBounds.X,
-            displayBounds.Top,
-            yAxisWidth,
-            displayBounds.Bottom - barChartBottom
+            barChartBounds.Top,
+            Math.Max(0d, barChartBounds.Left - displayBounds.Left),
+            barChartBounds.Height
         );
     }
+
+    private static bool CanRenderPlot(SRectF bounds) => bounds.Width >= 1d && bounds.Height >= 1d;
 
     private bool IsDense(SRectF barChartBounds)
     {

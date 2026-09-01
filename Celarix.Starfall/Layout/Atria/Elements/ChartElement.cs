@@ -160,8 +160,8 @@ public sealed class ChartElement : AtriaElement
 
         var borderColor = Properties.InfoPanelBorderColor.WithOpacity(globalOpacity);
         var backgroundColor = Properties.InfoPanelBackgroundColor.WithOpacity(globalOpacity);
-        target.DrawRectangleOfThickness(bounds, Properties.InfoPanelBorderThickness, borderColor);
         target.DrawRectangle(bounds, backgroundColor, SPaintStyle.Fill, SAngle.Zero);
+        target.DrawRectangleOfThickness(bounds, Properties.InfoPanelBorderThickness, borderColor);
 
         // But, oh, is there so much to do.
         var root = new LayoutNode();

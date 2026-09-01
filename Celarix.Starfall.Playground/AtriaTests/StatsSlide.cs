@@ -140,7 +140,8 @@ internal sealed class StatsSlide : AtriaSlide
             yMinimum: 0,
             yMaximum: 5000,
             barWidthRatioOfSlotWidth: 0.8d,
-            barColorFormatter: y => new SColor(128, 128, 128, 255)
+            barColorFormatter: y => new SColor(128, 128, 128, 255),
+            plotInsets: ChartInsets.Uniform(12d)
         );
         var xAxisProperties = new AxisProperties<BigInteger>(0.1d, 0, 42, GridlineStyle.Tick, 1d, SColor.White, BigInteger.One, labelFont, SColor.White, SAngle.Zero,
             0.5d, x => new ChartText(DateOnly.Parse("7/12/2026").AddDays((int)x).ToString("M/d")),
@@ -158,15 +159,15 @@ internal sealed class StatsSlide : AtriaSlide
             titleFont: new SFontFamily("Calibri", 16),
             titleColor: SColor.White,
             infoPanelWidthRatioOfElement: 0.2d,
-            infoPanelBorderColor: yAxisColor,
+            infoPanelBorderColor: new SColor(120, 145, 220, 150),
             infoPanelBorderThickness: 1d,
-            infoPanelPaddingRatio: 0.1d,
-            infoPanelBackgroundColor: new SColor(140, 140, 140, 255),
+            infoPanelPaddingRatio: 0.08d,
+            infoPanelBackgroundColor: new SColor(15, 18, 55, 235),
             infoPanelBaseFont: new SFontFamily("Calibri", 12),
             infoPanelFontSizeMultiplierStep: 1.2d,
-            infoPanelLabelColor: SColor.White,
-            infoPanelValueColor: SColor.Yellow,
-            infoPanelSecondaryColor: SColor.LightBlue,
+            infoPanelLabelColor: new SColor(185, 195, 225, 255),
+            infoPanelValueColor: SColor.White,
+            infoPanelSecondaryColor: new SColor(120, 190, 255, 255),
             visibleDisplays: InfoPanelSummaries.CurrentValue,
             visibleDisplayItemMargin: 0.1d,
             displayedPercentiles: []
