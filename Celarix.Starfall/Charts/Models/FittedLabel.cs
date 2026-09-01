@@ -8,3 +8,5 @@ using System.Text;
 namespace Celarix.Starfall.Charts.Models;
 
 public sealed record FittedLabel(LibraLayoutResult LibraLayoutResult, SPointF Position);
+
+public sealed record FittedAxisLabel<T>(T Value, LibraLayoutResult LibraLayoutResult, SPointF Position);

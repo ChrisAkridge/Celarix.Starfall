@@ -59,7 +59,7 @@ public static class ChartHelpers
         return previousCandidateLabels;
     }
 
-    public static IReadOnlyList<FittedLabel> FitLabelsForDoubleAxis(double max, double min,
+    public static IReadOnlyList<FittedLabel> FitLabelsForDoubleAxis(double minimum, double maximum,
         Func<double, LibraLayoutResult> labelFactory,
         Func<double, double> getSlotCenter,
         Side axisSide,
@@ -71,9 +71,9 @@ public static class ChartHelpers
         ValidateLabelFitExtentMultiplier(labelFitExtentMultiplier);
         var previousCandidateLabels = new List<FittedLabel>();
         var candidateLabels = new List<FittedLabel>();
-        if (max == min)
+        if (maximum == minimum)
         {
-            var index = min;
+            var index = minimum;
             var label = labelFactory(index);
             var slotBounds = axisSide switch
             {
@@ -89,7 +89,7 @@ public static class ChartHelpers
         {
             for (var i = 0; i < tickCount; i++)
             {
-                var index = min + (i * (max - min) / (tickCount - 1));
+                var index = minimum + (i * (maximum - minimum) / (tickCount - 1));
                 var label = labelFactory(index);
                 var slotBounds = axisSide switch
                 {

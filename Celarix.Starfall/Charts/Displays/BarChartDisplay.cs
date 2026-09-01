@@ -33,12 +33,15 @@ public sealed class BarChartDisplay : IChartDisplay
     private double _yAxisEm;
 
     // Libra fields.
-    private readonly LibraRenderingContext _xAxisLabelContext;
+    private LibraRenderingContext _xAxisLabelContext;
     private readonly LibraRenderingContext _yAxisLabelContext;
+    private readonly IntegralAxisLabelLayout _xAxisLabelLayout = new();
+    private double? _lastXAxisLabelPlotWidth;
+    private BigDecimal? _lastXAxisLabelViewportSpan;
+    private bool _forceXAxisLabelDensityRecalculation = true;
 
     // Animation slots and their referents.
-    private IReadOnlyList<FittedLabel> _xAxisLabels = [];
-    private IReadOnlyList<FittedLabel> _nextXAxisLabels;
+    private IReadOnlyList<FittedAxisLabel<BigInteger>> _xAxisLabels = [];
     private IReadOnlyList<FittedLabel> _yAxisLabels = [];
     private IReadOnlyList<FittedLabel> _nextYAxisLabels;
     private IReadOnlyList<(SRectF Bar, SColor color)> _barRenderables = [];
@@ -104,7 +107,17 @@ public sealed class BarChartDisplay : IChartDisplay
         _connected = false;
     }
 
-    private void DependencyChanged(object? sender, EventArgs e) => _needStaticInvalidation = true;
+    private void DependencyChanged(object? sender, EventArgs e)
+    {
+        _needStaticInvalidation = true;
+        if (ReferenceEquals(sender, XAxisProperties))
+        {
+            _xAxisLabelLayout.InvalidateMeasurements();
+            _xAxisLabelContext = new LibraRenderingContext(_measurementService,
+                XAxisProperties.LabelFont, LibraMetrics.Default, FenceRenderingMode.Automatic);
+            _forceXAxisLabelDensityRecalculation = true;
+        }
+    }
 
     // Rendering
     public void Render(IRenderTarget target, SRectF displayBounds)
@@ -190,6 +203,8 @@ public sealed class BarChartDisplay : IChartDisplay
         foreach (var label in _xAxisLabels)
         {
             var position = label.Position;
+            var renderedBounds = label.LibraLayoutResult.Bounds.At(position);
+            if (!SRectF.Intersects(renderedBounds, xAxisBounds)) continue;
             foreach (var renderable in label.LibraLayoutResult.Renderables)
             {
                 renderable.RenderAt(target, position, 1d);
@@ -208,10 +223,11 @@ public sealed class BarChartDisplay : IChartDisplay
         // Draw the ticks/gridlines given the gridline style and the spacing.
         if (YAxisProperties.GridlineStyle != GridlineStyle.None)
         {
-            var (minMultiple, maxMultiple) = GetYGridlines(barChartBounds);
+            var (minMultiple, maxMultiple) = GetYGridlines();
 
             for (int multiple = minMultiple; multiple <= maxMultiple; multiple++)
             {
+                if (multiple == 0) continue;
                 var y = multiple * YAxisProperties.GridlineGap;
                 DrawTickOrGridline(y);
             }
@@ -295,6 +311,7 @@ public sealed class BarChartDisplay : IChartDisplay
     public void OnContainerChanged()
     {
         _needStaticInvalidation = true;
+        _forceXAxisLabelDensityRecalculation = true;
     }
 
     private void Invalidate(SRectF displayBounds)
@@ -314,18 +331,28 @@ public sealed class BarChartDisplay : IChartDisplay
         _barData = trueSlots > 0
             ? DataResolver.Resolve(_dataSource, Properties.XRange, trueSlots)
             : [];
-        var yGridLines = GetYGridlines(barChartBounds);
+        var yGridLines = GetYGridlines();
 
         _xAxisEm = _measurementService.MeasureText("M", XAxisProperties.LabelFont).Width;
-        _xAxisLabels = ChartHelpers.FitLabelsForAxis(Properties.XRange,
+        var viewportSpan = Properties.XMaximum - Properties.XMinimum;
+        var recalculateXAxisLabelDensity = _forceXAxisLabelDensityRecalculation
+            || _lastXAxisLabelPlotWidth != barChartBounds.Width
+            || _lastXAxisLabelViewportSpan != viewportSpan;
+        _xAxisLabels = _xAxisLabelLayout.Update(Properties.XRange,
             x => XAxisProperties.TickFormatter(x).Layout(_xAxisLabelContext, XAxisProperties.LabelColor),
             x => GetXSlotBounds(x, barChartBounds),
             Side.Bottom, XAxisProperties.LabelMarginEm * _xAxisEm,
-            XAxisProperties.LabelFitExtentMultiplier);
+            XAxisProperties.LabelFitExtentMultiplier,
+            recalculateXAxisLabelDensity);
+        _lastXAxisLabelPlotWidth = barChartBounds.Width;
+        _lastXAxisLabelViewportSpan = viewportSpan;
+        _forceXAxisLabelDensityRecalculation = false;
 
         _yAxisEm = _measurementService.MeasureText("M", YAxisProperties.LabelFont).Width;
-        _yAxisLabels = ChartHelpers.FitLabelsForDoubleAxis(Properties.YMinimum,
-            Properties.YMaximum,
+        var minimumYGridline = yGridLines.MinMultiple * YAxisProperties.GridlineGap;
+        var maximumYGridline = yGridLines.MaxMultiple * YAxisProperties.GridlineGap;
+        _yAxisLabels = ChartHelpers.FitLabelsForDoubleAxis(minimumYGridline,
+            maximumYGridline,
             y => YAxisProperties.TickFormatter(y).Layout(_yAxisLabelContext, YAxisProperties.LabelColor),
             y => GetYSlotCenter(y, barChartBounds),
             Side.Left, barChartBounds.Left,
@@ -520,32 +547,11 @@ public sealed class BarChartDisplay : IChartDisplay
         }
     }
 
-    private (int MinMultiple, int MaxMultiple) GetYGridlines(SRectF barChartBounds)
+    private (int MinMultiple, int MaxMultiple) GetYGridlines()
     {
-        var multiple = 1;
-        int? highMultiple = null;
-        int? lowMultiple = null;
-
-        while (highMultiple == null || lowMultiple == null)
-        {
-            var positiveGridline = multiple * YAxisProperties.GridlineGap;
-            var negativeGridline = -multiple * YAxisProperties.GridlineGap;
-
-            var positiveGridlineY = GetYSlotCenter(positiveGridline, barChartBounds);
-            var negativeGridlineY = GetYSlotCenter(negativeGridline, barChartBounds);
-
-            if (highMultiple == null && positiveGridlineY < barChartBounds.Top)
-            {
-                highMultiple = multiple - 1;
-            }
-            if (lowMultiple == null && negativeGridlineY > barChartBounds.Bottom)
-            {
-                lowMultiple = multiple + 1;
-            }
-
-            multiple += 1;
-        }
-
-        return (lowMultiple.Value, highMultiple.Value);
+        var gap = YAxisProperties.GridlineGap;
+        var minimum = checked((int)Math.Ceiling(Properties.YMinimum / gap));
+        var maximum = checked((int)Math.Floor(Properties.YMaximum / gap));
+        return (minimum, maximum);
     }
 }
