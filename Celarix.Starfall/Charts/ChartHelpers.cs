@@ -16,8 +16,10 @@ public static class ChartHelpers
         Func<BigInteger, LibraLayoutResult> labelFactory,
         Func<BigInteger, SRectF> getSlotBounds,
         Side axisSide,
-        double minorAxisMargin)
+        double minorAxisMargin,
+        double labelFitExtentMultiplier = 1d)
     {
+        ValidateLabelFitExtentMultiplier(labelFitExtentMultiplier);
         var previousCandidateLabels = new List<FittedLabel>();
         var candidateLabels = new List<FittedLabel>();
         var cardinality = range.Range + 1;
@@ -41,7 +43,7 @@ public static class ChartHelpers
                 candidateLabels.Add(new FittedLabel(label, GetAxisLabelPosition(label, slotBounds, axisSide, minorAxisMargin)));
             }
 
-            if (HasAnyLabelIntersections(candidateLabels))
+            if (HasAnyLabelIntersections(candidateLabels, axisSide, labelFitExtentMultiplier))
             {
                 return previousCandidateLabels;
             }
@@ -63,8 +65,10 @@ public static class ChartHelpers
         Side axisSide,
         double minorAxisEdge,
         double minorAxisMargin,
-        int maxLabels)
+        int maxLabels,
+        double labelFitExtentMultiplier = 1d)
     {
+        ValidateLabelFitExtentMultiplier(labelFitExtentMultiplier);
         var previousCandidateLabels = new List<FittedLabel>();
         var candidateLabels = new List<FittedLabel>();
         if (max == min)
@@ -95,7 +99,7 @@ public static class ChartHelpers
                 };
                 candidateLabels.Add(new FittedLabel(label, GetAxisLabelPosition(label, slotBounds, axisSide, minorAxisMargin)));
             }
-            if (HasAnyLabelIntersections(candidateLabels))
+            if (HasAnyLabelIntersections(candidateLabels, axisSide, labelFitExtentMultiplier))
             {
                 return previousCandidateLabels;
             }
@@ -149,9 +153,32 @@ public static class ChartHelpers
         return new SPointF(labelX, labelY);
     }
 
-    private static bool HasAnyLabelIntersections(IReadOnlyList<FittedLabel> labels)
+    private static bool HasAnyLabelIntersections(
+        IReadOnlyList<FittedLabel> labels,
+        Side axisSide,
+        double labelFitExtentMultiplier)
     {
-        SRectF[] labelBounds = [.. labels.Select(l => l.LibraLayoutResult.Bounds.At(l.Position))];
+        SRectF[] labelBounds = [.. labels.Select(l => ExpandMajorAxisExtent(
+            l.LibraLayoutResult.Bounds.At(l.Position), axisSide, labelFitExtentMultiplier))];
         return SRectF.AnyIntersection(labelBounds);
+    }
+
+    private static SRectF ExpandMajorAxisExtent(SRectF bounds, Side axisSide, double multiplier)
+    {
+        return axisSide switch
+        {
+            Side.Top or Side.Bottom => bounds.Expand((bounds.Width * (multiplier - 1d)) / 2d, 0d),
+            Side.Left or Side.Right => bounds.Expand(0d, (bounds.Height * (multiplier - 1d)) / 2d),
+            _ => throw new ArgumentOutOfRangeException(nameof(axisSide), axisSide, null)
+        };
+    }
+
+    private static void ValidateLabelFitExtentMultiplier(double multiplier)
+    {
+        if (!double.IsFinite(multiplier) || multiplier < 1d)
+        {
+            throw new ArgumentOutOfRangeException(nameof(multiplier), multiplier,
+                "Label fit extent multiplier must be finite and at least 1.");
+        }
     }
 }

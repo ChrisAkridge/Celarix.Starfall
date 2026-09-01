@@ -32,6 +32,7 @@ public sealed class AxisProperties<T> : ChartPropertyBase
     private SColor _labelColor;
     private SAngle _labelAngle;
     private double _labelMarginEm;
+    private double _labelFitExtentMultiplier;
 
     private Func<T, ChartText> _tickFormatter = v => ChartText.String(v.ToString() ?? string.Empty);
 
@@ -174,6 +175,16 @@ public sealed class AxisProperties<T> : ChartPropertyBase
     }
 
     /// <summary>
+    /// Gets or sets the multiplier applied to each label's measured extent along the axis when determining
+    /// how many labels fit. This affects label selection only and does not change the rendered label size.
+    /// </summary>
+    public double LabelFitExtentMultiplier
+    {
+        get => _labelFitExtentMultiplier;
+        set => SetProperty(value, _labelFitExtentMultiplier, v => _labelFitExtentMultiplier = v);
+    }
+
+    /// <summary>
     /// Gets or sets the function used to convert numeric values to tick labels.
     /// </summary>
     public Func<T, ChartText> TickFormatter
@@ -183,7 +194,8 @@ public sealed class AxisProperties<T> : ChartPropertyBase
     }
 
     public AxisProperties(double sizeRatioOfParent, T minimum, T maximum, GridlineStyle gridlineStyle, double gridlineThickness, SColor gridlineColor,
-        T gridlineGap, SFont labelFont, SColor labelColor, SAngle labelAngle, double labelMarginEm, Func<T, ChartText> tickFormatter)
+        T gridlineGap, SFont labelFont, SColor labelColor, SAngle labelAngle, double labelMarginEm, Func<T, ChartText> tickFormatter,
+        double labelFitExtentMultiplier = 1d)
     {
         _sizeRatioOfParent = sizeRatioOfParent;
         _minimum = minimum;
@@ -203,6 +215,7 @@ public sealed class AxisProperties<T> : ChartPropertyBase
         _labelColor = labelColor;
         _labelAngle = labelAngle;
         _labelMarginEm = labelMarginEm;
+        _labelFitExtentMultiplier = labelFitExtentMultiplier;
 
         _tickFormatter = tickFormatter;
 
@@ -285,6 +298,13 @@ public sealed class AxisProperties<T> : ChartPropertyBase
         if (_labelMarginEm < 0)
         {
             ex = new InvalidOperationException("Label margin cannot be negative.");
+            return false;
+        }
+
+
+        if (!double.IsFinite(_labelFitExtentMultiplier) || _labelFitExtentMultiplier < 1d)
+        {
+            ex = new InvalidOperationException("Label fit extent multiplier must be finite and at least 1.");
             return false;
         }
 

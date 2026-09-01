@@ -1,6 +1,10 @@
 using Celarix.Starfall.Charts;
 using Celarix.Starfall.Charts.DataResolution;
 using Celarix.Starfall.Charts.Models;
+using Celarix.Starfall.Libra;
+using Celarix.Starfall.Libra.Renderables;
+using Celarix.Starfall.Rendering;
+using Celarix.Starfall.Rendering.Models;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
@@ -86,6 +90,23 @@ public sealed class ChartCoreTests
         var aggregate = Assert.IsType<AggregatedDataPoint>(DataResolver.Resolve(source, new XRange(0, 2), 1).Single());
         Assert.Equal(1e12 + 2, aggregate.AverageY, 10);
         Assert.Equal(3e12 + 6, aggregate.SumY);
+    }
+
+    [Fact]
+    public void LabelFitExtentMultiplier_ReservesProportionalMajorAxisSpace()
+    {
+        LibraLayoutResult LabelFactory(BigInteger _) => new(
+            Array.Empty<LibraRenderable>(), new SRectF(0, 0, 10, 4), 0, 0);
+        SRectF SlotFactory(BigInteger x) => new((double)x * 12d, 0, 0, 0);
+
+        var naturalFit = ChartHelpers.FitLabelsForAxis(
+            new XRange(0, 2), LabelFactory, SlotFactory, Side.Bottom, 0, 1d);
+        var expandedFit = ChartHelpers.FitLabelsForAxis(
+            new XRange(0, 2), LabelFactory, SlotFactory, Side.Bottom, 0, 1.4d);
+
+        Assert.Equal(3, naturalFit.Count);
+        Assert.Equal(2, expandedFit.Count);
+        Assert.All(expandedFit, label => Assert.Equal(10d, label.LibraLayoutResult.Bounds.Width));
     }
 
     private sealed class TestProperties : ChartPropertyBase

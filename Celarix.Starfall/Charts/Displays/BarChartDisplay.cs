@@ -307,7 +307,8 @@ public sealed class BarChartDisplay : IChartDisplay
         _xAxisLabels = ChartHelpers.FitLabelsForAxis(Properties.XRange,
             x => XAxisProperties.TickFormatter(x).Layout(_xAxisLabelContext, XAxisProperties.LabelColor),
             x => GetXSlotBounds(x, barChartBounds),
-            Side.Bottom, XAxisProperties.LabelMarginEm * _xAxisEm);
+            Side.Bottom, XAxisProperties.LabelMarginEm * _xAxisEm,
+            XAxisProperties.LabelFitExtentMultiplier);
 
         _yAxisEm = _measurementService.MeasureText("M", YAxisProperties.LabelFont).Width;
         _yAxisLabels = ChartHelpers.FitLabelsForDoubleAxis(Properties.YMinimum,
@@ -316,7 +317,8 @@ public sealed class BarChartDisplay : IChartDisplay
             y => GetYSlotCenter(y, barChartBounds),
             Side.Left, barChartBounds.Left,
             YAxisProperties.LabelMarginEm * _yAxisEm,
-            yGridLines.MaxMultiple - yGridLines.MinMultiple + 1);
+            yGridLines.MaxMultiple - yGridLines.MinMultiple + 1,
+            YAxisProperties.LabelFitExtentMultiplier);
 
         BuildRenderables(barChartBounds);
 

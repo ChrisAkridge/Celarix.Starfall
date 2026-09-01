@@ -143,10 +143,12 @@ internal sealed class StatsSlide : AtriaSlide
             barColorFormatter: y => new SColor(128, 128, 128, 255)
         );
         var xAxisProperties = new AxisProperties<BigInteger>(0.1d, 0, 42, GridlineStyle.Tick, 1d, SColor.White, BigInteger.One, labelFont, SColor.White, SAngle.Zero,
-            0.5d, x => new ChartText(DateOnly.Parse("7/12/2026").AddDays((int)x).ToString("M/d"))
+            0.5d, x => new ChartText(DateOnly.Parse("7/12/2026").AddDays((int)x).ToString("M/d")),
+            labelFitExtentMultiplier: 1.2d
         );
         var yAxisProperties = new AxisProperties<double>(0.1d, 0, 5000, GridlineStyle.Gridline, 1d, yAxisColor, 500d, labelFont, yAxisColor, SAngle.Zero,
-            0.5d, y => new ChartText(y.ToString())
+            0.5d, y => new ChartText(y.ToString()),
+            labelFitExtentMultiplier: 1.2d
         );
         var chartProperties = new ChartProperties(
             startTitleBarVisible: true,
