@@ -171,8 +171,8 @@ public sealed class BarChartDisplay : IChartDisplay
         var canDrawTicks = !IsDense(barChartBounds) && XAxisProperties.GridlineStyle != GridlineStyle.None;
         if (canDrawTicks)
         {
-            var totalSlots = Properties.XRange.Range + 1;
-            var slotWidth = barChartBounds.Width * MathHelpers.BigIntegerRatioToDouble(BigInteger.One, totalSlots);
+            var totalSlots = GetVisualSlotCount();
+            var slotWidth = (double)((BigDecimal)barChartBounds.Width / totalSlots);
             var minSlotWidthToDrawTicks = XAxisProperties.GridlineThickness * 2d;
             if (slotWidth < minSlotWidthToDrawTicks)
             {
@@ -482,14 +482,14 @@ public sealed class BarChartDisplay : IChartDisplay
 
     private bool IsDense(SRectF barChartBounds)
     {
-        var totalSlots = (Properties.XMaximum - Properties.XMinimum) + 1;
+        var totalSlots = GetVisualSlotCount();
         return totalSlots > (BigInteger)barChartBounds.Width;
     }
 
     private bool ShouldInsetBarWidths(SRectF barChartBounds)
     {
-        var totalSlots = Properties.XRange.Range + 1;
-        var slotWidth = barChartBounds.Width * MathHelpers.BigIntegerRatioToDouble(BigInteger.One, totalSlots);
+        var totalSlots = GetVisualSlotCount();
+        var slotWidth = (double)((BigDecimal)barChartBounds.Width / totalSlots);
 
         // TODO: lift totally arbitrary 3f threshold into a constant
         return slotWidth >= 3f;
@@ -497,22 +497,25 @@ public sealed class BarChartDisplay : IChartDisplay
 
     private SRectF GetXSlotBounds(BigInteger x, SRectF barChartBounds)
     {
-        var totalSlotsIntegral = Properties.XRange.Range + 1;
+        var totalSlots = GetVisualSlotCount();
         var slotIndex = x - Properties.XMinimum;
 
         if (!IsDense(barChartBounds))
         {
-            var slotWidth = (BigDecimal)barChartBounds.Width / totalSlotsIntegral;
+            var slotWidth = (BigDecimal)barChartBounds.Width / totalSlots;
             var slotLeft = barChartBounds.Left + (slotIndex * slotWidth);
 
             return new SRectF((double)slotLeft, barChartBounds.Top, (double)slotWidth, barChartBounds.Height);
         }
         else
         {
-            var pixelIndex = (int)BigDecimal.Floor((BigDecimal)barChartBounds.Width * (slotIndex / (BigDecimal)totalSlotsIntegral));
+            var pixelIndex = (int)BigDecimal.Floor((BigDecimal)barChartBounds.Width * (slotIndex / totalSlots));
             return new SRectF(barChartBounds.Left + pixelIndex, barChartBounds.Top, 1, barChartBounds.Height);
         }
     }
+
+    private BigDecimal GetVisualSlotCount() =>
+        (Properties.XMaximum - Properties.XMinimum) + BigDecimal.One;
 
     private SRectF GetXRangeBounds(XRange range, SRectF barChartBounds)
     {
