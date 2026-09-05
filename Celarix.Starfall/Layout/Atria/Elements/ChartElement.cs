@@ -28,6 +28,9 @@ public sealed class ChartElement : AtriaElement
 
     // No need to rebuild this every time.
     private readonly LibraMetrics _metrics = LibraMetrics.Default;
+    private readonly List<LibraRenderable> _infoPanelRenderables = [];
+    private readonly List<Action<IRenderTarget>> _infoPanelRenderActions = [];
+    private bool _rebuildInfoPanel = true;
     private readonly IChartDisplay _chartDisplay;
     private InfoPanelText _infoPanelText;
     private AnimationSlot? _titleVisibilityAnimation;
@@ -72,6 +75,7 @@ public sealed class ChartElement : AtriaElement
     private void ChartDisplay_DataChanged(object? sender, EventArgs e)
     {
         _infoPanelText = _chartDisplay.GetInfoPanelText(Properties.DisplayedPercentiles);
+        _rebuildInfoPanel = true;
     }
 
     public void SetTitleBarVisibility(bool visible)
@@ -190,23 +194,246 @@ public sealed class ChartElement : AtriaElement
             throw new InvalidOperationException("Failed to get content bounds for info panel.");
         }
 
-        // Okay, maybe not THAT much to do.
-        var stacker = new LayoutStacker(
-        Direction.Vertical,
-        Properties.InfoPanelSummaryItemMargin,
-        InfoPanelDisplayItemMarginMultiplier);
+        // Debug
+        target.DrawRectangle(contentBounds!.Value, SColor.Red, SPaintStyle.Stroke, SAngle.Zero);
 
-        foreach (var row in GetInfoPanelRows())
+        // Okay, maybe not THAT much to do.
+        if (_rebuildInfoPanel)
         {
-            DrawInfoPanelRow(
-                row,
-                stacker,
-                contentBounds.Value.Left,
-                contentBounds.Value.Right,
-                contentBounds.Value.Position,
-                font,
-                labelColor,
-                target);
+            var stacker = new LayoutStacker(
+                Direction.Vertical,
+                Properties.InfoPanelSummaryItemMargin,
+                InfoPanelDisplayItemMarginMultiplier);
+            _infoPanelRenderables.Clear();
+            _infoPanelRenderActions.Clear();
+
+            //foreach (var row in GetInfoPanelRows())
+            //{
+            //    DrawInfoPanelRow(
+            //        row,
+            //        stacker,
+            //        contentBounds.Value.Left,
+            //        contentBounds.Value.Right,
+            //        contentBounds.Value.Position,
+            //        font,
+            //        labelColor,
+            //        target);
+            //}
+
+            LayoutCurrentValue(target, stacker, contentBounds.Value);
+            LayoutRangeSection(target, stacker, contentBounds.Value);
+            _rebuildInfoPanel = false;
+        }
+
+        foreach (var renderable in _infoPanelRenderables)
+        {
+            // When we laid out the renderables, they already were positioned relative to the content
+            // bounds, so we don't need to add the content bounds position here.
+            renderable.RenderAt(target, renderable.Position, 1d);
+        }
+
+        foreach (var action in _infoPanelRenderActions)
+        {
+            action(target);
+        }
+    }
+
+    private void LayoutCurrentValue(IRenderTarget target, LayoutStacker stacker, SRectF contentBounds)
+    {
+        if (!Properties.VisibleDisplays.HasFlag(InfoPanelSummaries.CurrentValue))
+        {
+            return;
+        }
+
+        var downwardOffset = new SPointF(0, contentBounds.Y);
+
+        var currentText = _infoPanelText.CurrentValueText;
+        var currentValueAlternate = _infoPanelText.CurrentValueAlternateText;
+
+        var currentLayout = LayoutInfoPanelValue(currentText, isAlternate: false)?.ScaleToFitWidth(contentBounds.Width);
+        var alternateLayout = LayoutInfoPanelValue(currentValueAlternate, isAlternate: true)?.ScaleToFitWidth(contentBounds.Width);
+
+        if (currentLayout == null && alternateLayout == null)
+        {
+            return;
+        }
+
+        var currentBounds = (currentLayout != null)
+            ? stacker.PlaceWithNoMargin(currentLayout.Bounds.Size, contentBounds.Left, contentBounds.Right, Alignment.RightCenter)
+            : (SRectF?)null;
+        var alternateBounds = (alternateLayout != null)
+            ? stacker.PlaceWithNoMargin(alternateLayout.Bounds.Size, contentBounds.Left, contentBounds.Right, Alignment.RightCenter)
+            : (SRectF?)null;
+
+        // If we got down here, at least ONE of them must be non-null, so add a margin.
+        stacker.PlaceMargin(1);
+
+        if (currentLayout != null)
+        {
+            currentLayout = currentLayout.Translate(currentBounds!.Value.Position + downwardOffset);
+        }
+
+        if (alternateLayout != null)
+        {
+            alternateLayout = alternateLayout.Translate(alternateBounds!.Value.Position + downwardOffset);
+        }
+
+        _infoPanelRenderables.AddRange(currentLayout?.Renderables ?? []);
+        _infoPanelRenderables.AddRange(alternateLayout?.Renderables ?? []);
+    }
+
+    private void LayoutRangeSection(IRenderTarget target, LayoutStacker stacker, SRectF contentBounds)
+    {
+        // This one's fun - dynamically resizing stuff based on how big we render it. We'll be drawing:
+        //  RANGE
+        // ┌─────┐
+        // MIN–MAX
+        //  (mid)
+
+        var majorFont = Properties.InfoPanelBaseFont.WithSize((float)((Properties.InfoPanelBaseFont.Size ?? 12f) * Properties.InfoPanelFontSizeMultiplierStep));
+
+        // Start with the en-dash.
+        var enDashSize = target.MeasureText("–", majorFont);
+
+        // Pad it out by 1/2 en on the left and right.
+        var halfEn = enDashSize.Width / 2d;
+        var quarterEn = enDashSize.Width / 4d;
+        var paddedEnDashSize = new SSizeF(enDashSize.Width + (halfEn * 2d), enDashSize.Height);
+
+        // Layout the minimum and minimum alternate.
+        var minimumLayout = LayoutInfoPanelValue(_infoPanelText.MinimumText, isAlternate: false);
+        var minimumAlternateLayout = LayoutInfoPanelValue(_infoPanelText.MinimumAlternateText, isAlternate: true);
+        var minimumLocalStack = CreateLocalStackForRange(minimumLayout, minimumAlternateLayout, quarterEn);
+        var maximumLocalStackBounds = SRectF.BoundsOf(minimumLocalStack.Select(r => r.Bounds));
+
+        // Then the maximum and maximum alternate.
+        var maximumLayout = LayoutInfoPanelValue(_infoPanelText.MaximumText, isAlternate: false);
+        var maximumAlternateLayout = LayoutInfoPanelValue(_infoPanelText.MaximumAlternateText, isAlternate: true);
+        var maximumLocalStack = CreateLocalStackForRange(maximumLayout, maximumAlternateLayout, quarterEn);
+        var minimumLocalStackBounds = SRectF.BoundsOf(maximumLocalStack.Select(r => r.Bounds));
+
+        // Compute the full width of the three of them.
+        var rangeWidth = minimumLocalStackBounds.Width + paddedEnDashSize.Width + maximumLocalStackBounds.Width;
+        var enDashX = minimumLocalStackBounds.Width + halfEn;
+
+        // Get the size of the horizontal bracket.
+        var bracketSize = new SSizeF(rangeWidth, halfEn);
+
+        // Layout the range and range alternate.
+        var rangeLayout = LayoutInfoPanelValue(_infoPanelText.RangeText, isAlternate: false);
+        var rangeAlternateLayout = LayoutInfoPanelValue(_infoPanelText.RangeAlternateText, isAlternate: true);
+        var rangeLocalStack = CreateLocalStackForRange(rangeLayout, rangeAlternateLayout, quarterEn);
+        var rangeLocalStackBounds = SRectF.BoundsOf(rangeLocalStack.Select(r => r.Bounds));
+
+        // Layout the midpoint and midpoint alternate. Make them smaller than the rest of the text, since they're less important.
+        var midpointLayout = LayoutInfoPanelValue(_infoPanelText.MidpointText, isAlternate: false)?.Scale(1d / Properties.InfoPanelFontSizeMultiplierStep);
+        var midpointAlternateLayout = LayoutInfoPanelValue(_infoPanelText.MidpointAlternateText, isAlternate: true)?.Scale(1d / Properties.InfoPanelFontSizeMultiplierStep);
+        var midpointLocalStack = CreateLocalStackForRange(midpointLayout, midpointAlternateLayout, quarterEn);
+        var midpointLocalStackBounds = SRectF.BoundsOf(midpointLocalStack.Select(r => r.Bounds));
+
+        // Start figuring out Y coordinates.
+        var top = stacker.MajorAxisPosition + contentBounds.Y;
+        var rangeLocalStackY = top;
+        var bracketY = rangeLocalStackY + quarterEn + rangeLocalStackBounds.Height;
+        var minMaxOuterHeight = Math.Max(minimumLocalStackBounds.Height, Math.Max(maximumLocalStackBounds.Height, enDashSize.Height));
+        var minimumLocalStackY = bracketY + bracketSize.Height
+            + AlignmentHelper.AlignAxis(minMaxOuterHeight, minimumLocalStackBounds.Height, Alignment.Center);
+        var maximumLocalStackY = bracketY + bracketSize.Height
+            + AlignmentHelper.AlignAxis(minMaxOuterHeight, maximumLocalStackBounds.Height, Alignment.Center);
+        var enDashY = bracketY + bracketSize.Height
+            + AlignmentHelper.AlignAxis(minMaxOuterHeight, enDashSize.Height, Alignment.Center);
+        // Hey, it's still easier than center-aligning a <div> now, isn't it?
+        var minMaxBottom = Math.Max(minimumLocalStackY + minimumLocalStackBounds.Height,
+            Math.Max(maximumLocalStackY + maximumLocalStackBounds.Height, enDashY + enDashSize.Height));
+        var midpointY = minMaxBottom + quarterEn;
+
+        // Bound the whole thing and center it in content bounds.
+        var scaleFactor = 1d;
+        var widestWidth = Math.Max(rangeLocalStackBounds.Width, Math.Max(rangeWidth, midpointLocalStackBounds.Width));
+        if (widestWidth > contentBounds.Width)
+        {
+            scaleFactor = contentBounds.Width / widestWidth;
+        }
+        var bounds = new SRectF(0d, 0d, widestWidth * scaleFactor, (midpointY + midpointLocalStackBounds.Height) * scaleFactor);
+        var centerOffset = contentBounds.Left + AlignmentHelper.CenterAlign(contentBounds.Width, bounds.Width);
+
+        // Figure out the remaining X coordinates.
+        var rangeLocalStackX = centerOffset + AlignmentHelper.AlignAxis(bounds.Width, rangeLocalStackBounds.Width * scaleFactor, Alignment.Center);
+        var minimumLocalStackX = centerOffset + AlignmentHelper.AlignAxis(bounds.Width, rangeWidth * scaleFactor, Alignment.Center);
+        var enDashLocalStackX = minimumLocalStackX + (minimumLocalStackBounds.Width * scaleFactor) + (halfEn * scaleFactor);
+        var maximumLocalStackX = enDashLocalStackX + (halfEn * scaleFactor);
+        var midPointX = centerOffset + AlignmentHelper.AlignAxis(bounds.Width, midpointLocalStackBounds.Width * scaleFactor, Alignment.Center);
+
+        // Add the renderables and actions to the lists.
+        _infoPanelRenderables.AddRange(rangeLocalStack.Select(r => ScaleAndTranslate(r, new SPointF(rangeLocalStackX, rangeLocalStackY))));
+        _infoPanelRenderActions.Add(t =>
+        {
+            var lineColor = Properties.InfoPanelBorderColor.WithOpacity(Properties.InfoPanelVisibilityToggleProgress ?? 1d);
+            var lineWidth = Properties.InfoPanelBorderThickness * 4d;   // totally arbitrary, but it looks good
+            var left = contentBounds.Left + centerOffset;   // yes, capture over everything, why not
+            var right = (left + (rangeWidth * scaleFactor)) - lineWidth;
+            // Draw the vertical bracket lines.
+            t.DrawRectangle(new(left, bracketY, lineWidth, bracketSize.Height), lineColor, SPaintStyle.Fill, SAngle.Zero);
+            t.DrawRectangle(new(right, bracketY, lineWidth, bracketSize.Height), lineColor, SPaintStyle.Fill, SAngle.Zero);
+            // Draw the horizontal bracket line.
+            t.DrawRectangle(new(left, bracketY, rangeWidth, lineWidth), lineColor, SPaintStyle.Fill, SAngle.Zero);
+        });
+        _infoPanelRenderables.AddRange(minimumLocalStack.Select(r => ScaleAndTranslate(r, new SPointF(minimumLocalStackX, minimumLocalStackY))));
+        _infoPanelRenderables.AddRange(maximumLocalStack.Select(r => ScaleAndTranslate(r, new SPointF(maximumLocalStackX, maximumLocalStackY))));
+        _infoPanelRenderActions.Add(t =>
+        {
+            var enDashColor = Properties.InfoPanelLabelColor.WithOpacity(Properties.InfoPanelVisibilityToggleProgress ?? 1d);
+            t.DrawText("–", majorFont, new(new(enDashLocalStackX * scaleFactor, enDashY * scaleFactor), enDashSize * scaleFactor), enDashColor, SAngle.Zero);
+        });
+        _infoPanelRenderables.AddRange(midpointLocalStack.Select(r => ScaleAndTranslate(r, new SPointF(midPointX, midpointY))));
+
+        // Now adjust the stacker to account for the space we just used.
+        stacker.Place(new SSizeF(bounds.Width, bounds.Height), 0d, 1);
+
+        LibraRenderable ScaleAndTranslate(LibraRenderable original, SPointF offset)
+        {
+            return original.ScaleAndTranslate(scaleFactor, offset);
+        }
+    }
+
+    private IReadOnlyList<LibraRenderable> CreateLocalStackForRange(LibraLayoutResult? primary, LibraLayoutResult? alternate, double marginPx)
+    {
+        if (primary == null && alternate == null)
+        {
+            return [];
+        }
+
+        if (primary != null && alternate == null)
+        {
+            return primary.Renderables;
+        }
+
+        if (primary == null && alternate != null)
+        {
+            return alternate.Renderables;
+        }
+
+        // Place the alternate centered below the primary with the specified margin.
+        if (primary!.Bounds.Width > alternate!.Bounds.Width)
+        {
+            var alternateXInset = AlignmentHelper.AlignAxis(primary.Bounds.Width, alternate.Bounds.Width, Alignment.Center);
+            alternate = alternate.Translate(new SPointF(alternateXInset, primary.Bounds.Height + marginPx));
+            return [.. primary.Renderables, .. alternate.Renderables];
+        }
+
+        if (alternate.Bounds.Width > primary.Bounds.Width)
+        {
+            var primaryXInset = AlignmentHelper.AlignAxis(alternate.Bounds.Width, primary.Bounds.Width, Alignment.Center);
+            primary = primary.Translate(new SPointF(primaryXInset, 0d));
+            alternate = alternate.Translate(new SPointF(0d, primary.Bounds.Height + marginPx));
+            return [.. primary.Renderables, .. alternate.Renderables];
+
+        }
+        else
+        {
+            // Same width, so just stack them.
+            alternate = alternate.Translate(new SPointF(0d, primary.Bounds.Height + marginPx));
+            return [.. primary.Renderables, .. alternate.Renderables];
         }
     }
 
@@ -322,7 +549,7 @@ public sealed class ChartElement : AtriaElement
 
         var color = isAlternate ? Properties.InfoPanelSecondaryColor : Properties.InfoPanelValueColor;
         var fontSize = isAlternate
-            ? (Properties.InfoPanelBaseFont.Size ?? 12f) / Properties.InfoPanelFontSizeMultiplierStep
+            ? (Properties.InfoPanelBaseFont.Size ?? 12f)
             : (Properties.InfoPanelBaseFont.Size ?? 12f) * Properties.InfoPanelFontSizeMultiplierStep;
         var context = BuildLibraRenderingContext(Properties.InfoPanelBaseFont.WithSize((float)fontSize));
         return valueText.Layout(context, color.WithOpacity(Properties.InfoPanelVisibilityToggleProgress ?? 1d));

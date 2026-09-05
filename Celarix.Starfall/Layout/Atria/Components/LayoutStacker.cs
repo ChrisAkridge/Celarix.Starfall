@@ -14,6 +14,7 @@ namespace Celarix.Starfall.Layout.Atria.Components
         public Direction Direction { get; }
         public double BaseMargin { get; }
         public double MarginStepMultiplier { get; }
+        public double MajorAxisPosition => _majorAxisPosition;
 
         public LayoutStacker(Direction direction, double baseMargin, double marginStepMultiplier)
         {
@@ -87,6 +88,12 @@ namespace Celarix.Starfall.Layout.Atria.Components
         {
             double minorAxisPosition = AlignOnBoundedMinorAxis(objectSize, minorAxisMin, minorAxisMax, alignment);
             return Place(objectSize, minorAxisMin + minorAxisPosition, followingMarginStep);
+        }
+
+        public SRectF PlaceWithNoMargin(SSizeF objectSize, double minorAxisMin, double minorAxisMax, Alignment alignment)
+        {
+            double minorAxisPosition = AlignOnBoundedMinorAxis(objectSize, minorAxisMin, minorAxisMax, alignment);
+            return Place(objectSize, minorAxisMin + minorAxisPosition, 0);
         }
 
         /// <summary>

@@ -135,7 +135,7 @@ internal sealed class StatsSlide : AtriaSlide
             (double)d.Item2
         )));
         var infoPanelProperties = new InfoPanelProviderProperties<double, BigInteger>(
-            TickFormatters.NaNAsDash(d => $"{d:F2} Cal"),
+            TickFormatters.NaNAsDash(d => $"{d:0.##} Cal"),
             y => double.IsNaN(y) ? new ChartText("-") : AlternateDataFormat(y),
             x => new ChartText(DateOnly.Parse("7/12/2026").AddDays((int)x).ToString("M/d")),
             null
@@ -170,11 +170,11 @@ internal sealed class StatsSlide : AtriaSlide
             infoPanelPaddingRatio: 0.08d,
             infoPanelBackgroundColor: new SColor(15, 18, 55, 235),
             infoPanelBaseFont: new SFontFamily("Calibri", 12),
-            infoPanelFontSizeMultiplierStep: 1.2d,
+            infoPanelFontSizeMultiplierStep: 1.8d,
             infoPanelLabelColor: new SColor(185, 195, 225, 255),
-            infoPanelValueColor: SColor.White,
+            infoPanelValueColor: SColor.Yellow,
             infoPanelSecondaryColor: new SColor(120, 190, 255, 255),
-            visibleDisplays: InfoPanelSummaries.CurrentValue,
+            visibleDisplays: InfoPanelSummaries.All,
             visibleDisplayItemMargin: 0.1d,
             displayedPercentiles: [1m, 5m, 10m, 25m, 50m, 75m, 90m, 95m, 99m]
         );
@@ -232,7 +232,7 @@ internal sealed class StatsSlide : AtriaSlide
         var joules = dietaryCalories * 4184d;
         var wattage = joules / 86400d;
 
-        var jouleText = TickFormatters.NaNAsDash(j => TickFormatters.QuantityToSIPrefixed(j, "j"))(joules);
+        var jouleText = TickFormatters.NaNAsDash(j => TickFormatters.QuantityToSIPrefixed(j, "J"))(joules);
         var wattText = TickFormatters.NaNAsDash(w => TickFormatters.QuantityToSIPrefixed(w, "W"))(wattage);
 
         return ChartText.Concat(ChartText.Concat(jouleText, ChartText.String(" / ")), wattText);

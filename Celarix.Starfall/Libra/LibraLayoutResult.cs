@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Libra.Renderables;
+﻿using Celarix.Starfall.Extensions;
+using Celarix.Starfall.Libra.Renderables;
 using Celarix.Starfall.Rendering.Models;
 using System.Collections.Immutable;
 
@@ -39,6 +40,38 @@ namespace Celarix.Starfall.Libra
             return new LibraLayoutResult(
                 [.. RenderablesMovedBy(offset)],
                 computedBounds.At(SPointF.Zero),
+                BaselineY + offset.Y,
+                MathAxisY + offset.Y);
+        }
+
+        public LibraLayoutResult Scale(double scaleFactor)
+        {
+            return new LibraLayoutResult(
+                Renderables.Select(r => r.Scale(scaleFactor)),
+                new SRectF(Bounds.X, Bounds.Y, Bounds.Width * scaleFactor, Bounds.Height * scaleFactor),
+                BaselineY * scaleFactor,
+                MathAxisY * scaleFactor);
+        }
+
+        public LibraLayoutResult ScaleToFitWidth(double width)
+        {
+            width.ThrowIfNotPositive(nameof(width));
+
+            if (Bounds.Width < width)
+            {
+                return this;
+            }
+
+            var scaleFactor = width / Bounds.Width;
+            return Scale(scaleFactor);
+        }
+
+        // I don't actually know if I designed Libra to support this, but here goes...
+        public LibraLayoutResult Translate(SPointF offset)
+        {
+            return new LibraLayoutResult(
+                Renderables.Select(r => r.Translate(offset)),
+                Bounds + offset,
                 BaselineY + offset.Y,
                 MathAxisY + offset.Y);
         }

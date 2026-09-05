@@ -6,11 +6,11 @@ namespace Celarix.Starfall.Libra.Renderables
     public abstract class LibraRenderable
     {
         protected internal LibraRenderableKey Key { get; }
-        
+
         public SPointF Position { get; set; }
         public SSizeF Size { get; set; }
         public SRectF Bounds => Position.WithSize(Size);
-        
+
         public SColor ForegroundColor { get; set; }
         public SColor BackgroundColor { get; set; }
 
@@ -25,6 +25,29 @@ namespace Celarix.Starfall.Libra.Renderables
             ForegroundColor = foregroundColor;
             BackgroundColor = backgroundColor;
             Key = key;
+        }
+
+        public LibraRenderable Scale(double scaleFactor)
+        {
+            var clone = Clone();
+            clone.Position *= scaleFactor;
+            clone.Size *= scaleFactor;
+            return clone;
+        }
+
+        public LibraRenderable Translate(SPointF offset)
+        {
+            var clone = Clone();
+            clone.Position += offset;
+            return clone;
+        }
+
+        public LibraRenderable ScaleAndTranslate(double scaleFactor, SPointF offset)
+        {
+            var clone = Clone();
+            clone.Position = (clone.Position * scaleFactor) + offset;
+            clone.Size *= scaleFactor;
+            return clone;
         }
 
         public abstract void RenderAt(IRenderTarget target, SPointF position, double scaleFactor);
