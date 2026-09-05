@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Charts.Models;
 
 public sealed class ChartText
 {
+    public static readonly ChartText Empty = new(string.Empty, useLibra: false);
+
     public string SourceString { get; }
     public bool UseLibra { get; }
 
@@ -21,6 +23,20 @@ public sealed class ChartText
 
     public static ChartText String(string sourceString) => new(sourceString, useLibra: false);
     public static ChartText Libra(string sourceString) => new(sourceString, useLibra: true);
+
+    public static ChartText Concat(ChartText a, ChartText b)
+    {
+        if (a.UseLibra || b.UseLibra)
+        {
+            var aString = a.UseLibra ? a.SourceString : $"\"{a.SourceString}\"";
+            var bString = b.UseLibra ? b.SourceString : $"\"{b.SourceString}\"";
+            return new ChartText($";catEm(1, {aString}, {bString})", useLibra: true);
+        }
+        else
+        {
+            return new ChartText($"{a.SourceString}{b.SourceString}", useLibra: false);
+        }
+    }
 
     public LibraLayoutResult Layout(LibraRenderingContext context, SColor textColor)
     {

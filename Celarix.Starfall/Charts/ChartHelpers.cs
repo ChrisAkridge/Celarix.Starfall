@@ -1,5 +1,6 @@
 ﻿using Celarix.Starfall.Charts.DataResolution;
 using Celarix.Starfall.Charts.Models;
+using Celarix.Starfall.Extensions;
 using Celarix.Starfall.Libra;
 using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
@@ -115,6 +116,15 @@ public static class ChartHelpers
         return previousCandidateLabels;
     }
 
+    public static ChartText FormatCountAndSum(ChartText countText, ChartText sumText)
+    {
+        var countTextString = !countText.UseLibra ? $"\"{countText.SourceString}\"" : countText.SourceString;
+        var sumTextString = !sumText.UseLibra ? $"\"{sumText.SourceString}\"" : sumText.SourceString;
+
+        var sourceString = $";catEm(1, \"count: \", {countTextString}, \"sum: \", {sumTextString})";
+        return new ChartText(sourceString, useLibra: true);
+    }
+
     private static BigInteger GetEvenlyDistributedIndex(
             BigInteger minimum,
             BigInteger range,
@@ -180,5 +190,43 @@ public static class ChartHelpers
             throw new ArgumentOutOfRangeException(nameof(multiplier), multiplier,
                 "Label fit extent multiplier must be finite and at least 1.");
         }
+    }
+
+    private static IOrderedEnumerable<ResolvedDataPoint> SortByX(IEnumerable<ResolvedDataPoint> points)
+    {
+        return points.OrderBy(p =>
+        {
+            if (p is IndividualDataPoint individualDataPoint)
+            {
+                return individualDataPoint.X;
+            }
+            else if (p is AggregatedDataPoint aggregatedDataPoint)
+            {
+                return aggregatedDataPoint.Range.Minimum;
+            }
+            else
+            {
+                throw new ArgumentException("Unknown ResolvedDataPoint type.", nameof(points));
+            }
+        });
+    }
+
+    private static IOrderedEnumerable<ResolvedDataPoint> SortByY(IEnumerable<ResolvedDataPoint> points)
+    {
+        return points.OrderBy(p =>
+        {
+            if (p is IndividualDataPoint individualDataPoint)
+            {
+                return individualDataPoint.Y;
+            }
+            else if (p is AggregatedDataPoint aggregatedDataPoint)
+            {
+                return aggregatedDataPoint.AverageY;
+            }
+            else
+            {
+                throw new ArgumentException("Unknown ResolvedDataPoint type.", nameof(points));
+            }
+        });
     }
 }

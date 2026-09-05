@@ -29,7 +29,7 @@ namespace Celarix.Starfall.Libra.Parsing
             {
                 return _tokens[_tokens.Count - 1];
             }
-            
+
             var result = _tokens[_position];
             _position += 1;
             return result;

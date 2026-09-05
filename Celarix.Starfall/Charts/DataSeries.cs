@@ -93,19 +93,12 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
     public double PopulationStandardDeviation =>
         Math.Sqrt(Math.Max(0, PopulationVariance));
 
-    public double SampleVariance
-    {
-        get
-        {
-            if (Count < 2)
-            {
-                throw new InvalidOperationException(
-                    "Sample variance requires at least two values.");
-            }
+    public double? SampleVariance => Count < 2 ? null : _m2 / (Count - 1);
 
-            return _m2 / (Count - 1);
-        }
-    }
+    public double? SampleStandardDeviation => Count < 2 ? null : Math.Sqrt(Math.Max(0, SampleVariance!.Value));
+
+    public BigInteger? FirstX => _data.Count > 0 ? _data.Keys.Min() : null;
+    public BigInteger? LastX => _data.Count > 0 ? _data.Keys.Max() : null;
 
     public DataSeries(IEnumerable<DataSeriesPoint> data)
     {
@@ -320,9 +313,14 @@ public sealed class DataSeries : IEnumerable<KeyValuePair<BigInteger, double>>
         return (Mean - amount, Mean + amount);
     }
 
-    public (double Lower, double Upper) GetSampleSigmaRange(double sigma)
+    public (double Lower, double Upper)? GetSampleSigmaRange(double sigma)
     {
-        var amount = Math.Sqrt(SampleVariance) * sigma;
+        if (Count == 0)
+        {
+            return null;
+        }
+
+        var amount = Math.Sqrt(SampleVariance!.Value) * sigma;
         return (Mean - amount, Mean + amount);
     }
 

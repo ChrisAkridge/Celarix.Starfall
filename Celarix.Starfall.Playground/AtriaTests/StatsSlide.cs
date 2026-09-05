@@ -134,6 +134,12 @@ internal sealed class StatsSlide : AtriaSlide
             (BigInteger)(d.Item1.DayNumber - DateOnly.Parse("7/12/2026").DayNumber),
             (double)d.Item2
         )));
+        var infoPanelProperties = new InfoPanelProviderProperties<double, BigInteger>(
+            TickFormatters.NaNAsDash(d => $"{d:F2} Cal"),
+            y => double.IsNaN(y) ? new ChartText("-") : AlternateDataFormat(y),
+            x => new ChartText(DateOnly.Parse("7/12/2026").AddDays((int)x).ToString("M/d")),
+            null
+        );
         var barChartProperties = new BarChartProperties(
             xMinimum: 0,
             xMaximum: 42,
@@ -170,10 +176,10 @@ internal sealed class StatsSlide : AtriaSlide
             infoPanelSecondaryColor: new SColor(120, 190, 255, 255),
             visibleDisplays: InfoPanelSummaries.CurrentValue,
             visibleDisplayItemMargin: 0.1d,
-            displayedPercentiles: []
+            displayedPercentiles: [1m, 5m, 10m, 25m, 50m, 75m, 90m, 95m, 99m]
         );
 
-        var barChart = new BarChartDisplay(MeasurementService, dataSeries, barChartProperties, xAxisProperties, yAxisProperties);
+        var barChart = new BarChartDisplay(MeasurementService, dataSeries, barChartProperties, xAxisProperties, yAxisProperties, infoPanelProperties);
         var chartElement = new ChartElement(chartProperties, barChart, "#chart")
         {
             Size = new SSizeF(1100, 700),
@@ -211,5 +217,24 @@ internal sealed class StatsSlide : AtriaSlide
         {
             _chartElement?.SetInfoPanelVisibility(_chartProperties?.InfoPanelVisibility != AnimatedVisiblity.Visible);
         }
+        else if (keyboardEvent.Key == SKey.Q)
+        {
+            _barChart?.Reveal(0.75d, Easings.Smoothstep);
+        }
+        else if (keyboardEvent.Key == SKey.W)
+        {
+            _barChart?.Hide(0.75d, Easings.Land);
+        }
+    }
+
+    private ChartText AlternateDataFormat(double dietaryCalories)
+    {
+        var joules = dietaryCalories * 4184d;
+        var wattage = joules / 86400d;
+
+        var jouleText = TickFormatters.NaNAsDash(j => TickFormatters.QuantityToSIPrefixed(j, "j"))(joules);
+        var wattText = TickFormatters.NaNAsDash(w => TickFormatters.QuantityToSIPrefixed(w, "W"))(wattage);
+
+        return ChartText.Concat(ChartText.Concat(jouleText, ChartText.String(" / ")), wattText);
     }
 }

@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Libra
         double BaselineY,
         double MathAxisY)
     {
+        public static LibraLayoutResult Empty => new([], SRectF.Empty, 0d, 0d);
+
         public LibraLayoutResult(
             IEnumerable<LibraRenderable> renderables,
             SRectF bounds,

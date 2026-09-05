@@ -23,7 +23,7 @@ namespace Celarix.Starfall.Layout.Atria
         public static int GlobalFrameNumber { get; internal set; }
 
         private AtriaSlide? CurrentSlide => _currentSlideName != null && _slides.TryGetValue(_currentSlideName, out var slide) ? slide : null;
-        
+
         public MeasurementService? MeasurementService { get; set; }
         public AnimationContextRegistry AnimationContexts => _animationContextRegistry;
         public string? CurrentSlideName => _currentSlideName;

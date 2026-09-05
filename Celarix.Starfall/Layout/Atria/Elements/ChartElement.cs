@@ -17,12 +17,19 @@ namespace Celarix.Starfall.Layout.Atria.Elements;
 
 public sealed class ChartElement : AtriaElement
 {
+    private readonly record struct InfoPanelRow(
+        string Label,
+        ChartText? Value,
+        ChartText? AlternateValue
+    );
+
     private const double VisibilityAnimationDurationSeconds = 0.5d;
     private const double InfoPanelDisplayItemMarginMultiplier = 1.25d;
 
     // No need to rebuild this every time.
     private readonly LibraMetrics _metrics = LibraMetrics.Default;
     private readonly IChartDisplay _chartDisplay;
+    private InfoPanelText _infoPanelText;
     private AnimationSlot? _titleVisibilityAnimation;
     private AnimationSlot? _infoPanelVisibilityAnimation;
     private bool _connected;
@@ -35,6 +42,7 @@ public sealed class ChartElement : AtriaElement
     {
         Properties = properties;
         _chartDisplay = chartDisplay;
+        _infoPanelText = _chartDisplay.GetInfoPanelText(Properties.DisplayedPercentiles);
 
         Id = AtriaId.Parse(atriaIdString);
 
@@ -45,6 +53,7 @@ public sealed class ChartElement : AtriaElement
     {
         if (_connected) return;
         Properties.PropertiesChanged += Properties_PropertiesChanged;
+        _chartDisplay.DataChanged += ChartDisplay_DataChanged;
         _connected = true;
     }
 
@@ -58,6 +67,11 @@ public sealed class ChartElement : AtriaElement
     private void Properties_PropertiesChanged(object? sender, EventArgs e)
     {
         _chartDisplay.OnContainerChanged();
+    }
+
+    private void ChartDisplay_DataChanged(object? sender, EventArgs e)
+    {
+        _infoPanelText = _chartDisplay.GetInfoPanelText(Properties.DisplayedPercentiles);
     }
 
     public void SetTitleBarVisibility(bool visible)
@@ -110,10 +124,9 @@ public sealed class ChartElement : AtriaElement
         // The same pattern applies to the info panel, which is at the right of the element and spans
         // the full height minus the title bar.
         var infoPanelNaturalWidth = Size.Width * Properties.InfoPanelWidthRatioOfElement;
-        var infoPanelNaturalBounds = new SRectF(Size.Width - infoPanelNaturalWidth, Position.Y + titleBarHeight, infoPanelNaturalWidth, nonTitleSize.Height);
+        var infoPanelNaturalBounds = new SRectF(Bounds.Right - infoPanelNaturalWidth, Position.Y + titleBarHeight, infoPanelNaturalWidth, nonTitleSize.Height);
         var infoPanelWidth = Size.Width * Properties.CurrentInfoPanelWidthRatioOfElement;
-        var infoPanelBounds = new SRectF(Size.Width - infoPanelWidth, titleBarHeight, infoPanelWidth, nonTitleSize.Height)
-            + Position;
+        var infoPanelBounds = new SRectF(Bounds.Right - infoPanelWidth, titleBarHeight, infoPanelWidth, nonTitleSize.Height);
         var chartSize = new SSizeF(Size.Width - infoPanelWidth, nonTitleSize.Height);
         var chartPosition = new SPointF(Position.X, Position.Y + titleBarHeight);
         var chartBounds = new SRectF(chartPosition, chartSize);
@@ -156,26 +169,160 @@ public sealed class ChartElement : AtriaElement
         // Same deal as with the title bar: we animate the non-info area as visibly shrinking or growing
         // and fade in the info panel at natural size.
         var globalOpacity = Properties.InfoPanelVisibilityToggleProgress ?? 1d;
-        var context = BuildLibraRenderingContext(Properties.InfoPanelBaseFont);
+        var font = Properties.InfoPanelBaseFont;
+        var context = BuildLibraRenderingContext(font);
+        var labelColor = Properties.InfoPanelLabelColor.WithOpacity(Properties.InfoPanelVisibilityToggleProgress ?? 1d);
 
         var borderColor = Properties.InfoPanelBorderColor.WithOpacity(globalOpacity);
         var backgroundColor = Properties.InfoPanelBackgroundColor.WithOpacity(globalOpacity);
+
         target.DrawRectangle(bounds, backgroundColor, SPaintStyle.Fill, SAngle.Zero);
-        target.DrawRectangleOfThickness(bounds, Properties.InfoPanelBorderThickness, borderColor);
+        target.DrawRectangleOfThickness(
+            bounds,
+            Properties.InfoPanelBorderThickness,
+            borderColor);
 
         // But, oh, is there so much to do.
         var root = new LayoutNode();
-        var contentBounds = root.Inset(Properties.InfoPanelPaddingRatio, Properties.InfoPanelPaddingRatio, "contentBounds");
+        var contentBoundsNode = root.Inset(Properties.InfoPanelPaddingRatio, Properties.InfoPanelPaddingRatio, "contentBounds");
+        if (!contentBoundsNode.TryGetBoundsFor("contentBounds", naturalBounds, out var contentBounds))
+        {
+            throw new InvalidOperationException("Failed to get content bounds for info panel.");
+        }
 
         // Okay, maybe not THAT much to do.
-        var stacker = new LayoutStacker(Direction.Vertical, Properties.InfoPanelSummaryItemMargin,
-            InfoPanelDisplayItemMarginMultiplier);
+        var stacker = new LayoutStacker(
+        Direction.Vertical,
+        Properties.InfoPanelSummaryItemMargin,
+        InfoPanelDisplayItemMarginMultiplier);
+
+        foreach (var row in GetInfoPanelRows())
+        {
+            DrawInfoPanelRow(
+                row,
+                stacker,
+                contentBounds.Value.Left,
+                contentBounds.Value.Right,
+                contentBounds.Value.Position,
+                font,
+                labelColor,
+                target);
+        }
     }
 
-    private void DrawInfoPanelContent(SRectF contentBounds, IRenderTarget target)
+    private IEnumerable<InfoPanelRow> GetInfoPanelRows()
     {
-        // Empty for now. We need the actual, you know, summary properties to come
-        // from somewhere first.
+        var text = _infoPanelText;
+
+        yield return new("Current", text.CurrentValueText, text.CurrentValueAlternateText);
+        yield return new("Minimum", text.MinimumText, text.MinimumAlternateText);
+        yield return new("Maximum", text.MaximumText, text.MaximumAlternateText);
+        yield return new("Range", text.RangeText, text.RangeAlternateText);
+        yield return new("Midpoint", text.MidpointText, text.MidpointAlternateText);
+        yield return new("Mean", text.MeanText, text.MeanAlternateText);
+        yield return new("Median", text.MedianText, text.MedianAlternateText);
+        yield return new("Mode", text.ModeText, text.ModeAlternateText);
+        yield return new(
+            "Population standard deviation",
+            text.PopulationStandardDeviationText,
+            text.PopulationStandardDeviationAlternateText);
+        yield return new(
+            "Sample standard deviation",
+            text.SampleStandardDeviationText,
+            text.SampleStandardDeviationAlternateText);
+
+        if (text.Percentiles is not null)
+        {
+            foreach (var percentile in text.Percentiles)
+            {
+                yield return new(
+                    $"{percentile.Percentile:0.##}th percentile",
+                    percentile.PercentileText,
+                    null);
+            }
+        }
+
+        yield return new("Count and sum", text.CountAndSumText, null);
+    }
+
+    private void DrawInfoPanelRow(
+    InfoPanelRow row,
+    LayoutStacker stacker,
+    double xMin,
+    double xMax,
+    SPointF offset,
+    SFont font,
+    SColor labelColor,
+    IRenderTarget target)
+    {
+        if (row.Value is null && row.AlternateValue is null)
+        {
+            return;
+        }
+
+        var labelSize = target.MeasureText(row.Label, font);
+        var valueLayout = LayoutInfoPanelValue(row.Value, useAlternateColor: false);
+        var alternateLayout = LayoutInfoPanelValue(row.AlternateValue, useAlternateColor: true);
+
+        var valueSize = valueLayout.Bounds.Size;
+        var alternateSize = alternateLayout.Bounds.Size;
+
+        // LayoutStacker requires positive sizes. Only place layouts that exist.
+        var valueX = valueSize.Width > 0d
+            ? stacker.AlignOnBoundedMinorAxis(valueSize, xMin, xMax, Alignment.RightCenter)
+            : xMax;
+
+        var labelAndValueBounds = valueSize.Width > 0d
+            ? stacker.PlaceAtSameMajorPosition(
+                [(labelSize, 0d), (valueSize, valueX)],
+                -1)
+            : [stacker.Place(labelSize, 0d, -1)];
+
+        target.DrawText(
+            row.Label,
+            font,
+            labelAndValueBounds[0] + offset,
+            labelColor,
+            SAngle.Zero);
+
+        if (valueSize.Width > 0d)
+        {
+            RenderLibraRenderables(
+                valueLayout,
+                labelAndValueBounds[1].Position + offset,
+                1d,
+                target);
+        }
+
+        if (alternateSize.Width > 0d)
+        {
+            var alternateX = stacker.AlignOnBoundedMinorAxis(
+                alternateSize,
+                xMin,
+                xMax,
+                Alignment.RightCenter);
+
+            var alternateBounds = stacker.Place(alternateSize, alternateX, 1);
+
+            RenderLibraRenderables(
+                alternateLayout,
+                alternateBounds.Position + offset,
+                1d,
+                target);
+        }
+    }
+
+    private LibraLayoutResult LayoutInfoPanelValue(ChartText? valueText,
+        bool useAlternateColor)
+    {
+        if (valueText == null)
+        {
+            return LibraLayoutResult.Empty;
+        }
+
+        var color = useAlternateColor ? Properties.InfoPanelSecondaryColor : Properties.InfoPanelValueColor;
+        var context = BuildLibraRenderingContext(Properties.InfoPanelBaseFont);
+        return valueText.Layout(context, color.WithOpacity(Properties.InfoPanelVisibilityToggleProgress ?? 1d));
     }
 
     private LibraRenderingContext BuildLibraRenderingContext(SFont font) => new(Slide!.MeasurementService!,

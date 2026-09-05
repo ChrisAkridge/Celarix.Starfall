@@ -25,10 +25,19 @@ namespace Celarix.Starfall.Layout.Atria.Components
             MarginStepMultiplier = marginStepMultiplier;
         }
 
+        /// <summary>
+        /// Places an object of the specified size at the current major axis position and the specified
+        /// minor axis position, then advances the major axis position by the size of the object plus
+        /// a margin determined by the following margin step.
+        /// </summary>
+        /// <param name="objectSize">The size of the object to place.</param>
+        /// <param name="minorAxisPosition">The position along the minor axis at which to place the object.</param>
+        /// <param name="followingMarginStep">The step used to calculate the margin after placing the object.</param>
+        /// <returns>The rectangle representing the placed object's bounds.</returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public SRectF Place(SSizeF objectSize, double minorAxisPosition, int followingMarginStep)
         {
             objectSize.ThrowIfNotPositive(nameof(objectSize));
-            followingMarginStep.ThrowIfNotPositive(nameof(followingMarginStep));
 
             SPointF position = Direction switch
             {
@@ -63,6 +72,16 @@ namespace Celarix.Starfall.Layout.Atria.Components
             return new SRectF(position, rectangleSize);
         }
 
+        /// <summary>
+        /// Places an object of the specified size at a position along the minor axis that is aligned within the bounds defined by
+        /// <paramref name="minorAxisMin"/> and <paramref name="minorAxisMax"/> according to the specified <paramref name="alignment"/>.
+        /// </summary>
+        /// <param name="objectSize">The size of the object to place.</param>
+        /// <param name="minorAxisMin">The minimum bound along the minor axis.</param>
+        /// <param name="minorAxisMax">The maximum bound along the minor axis.</param>
+        /// <param name="alignment">The alignment within the bounds.</param>
+        /// <param name="followingMarginStep">The step used to calculate the margin after placing the object.</param>
+        /// <returns>The rectangle representing the placed object's bounds.</returns>
         public SRectF Place(SSizeF objectSize, double minorAxisMin, double minorAxisMax, Alignment alignment,
             int followingMarginStep)
         {
@@ -70,6 +89,16 @@ namespace Celarix.Starfall.Layout.Atria.Components
             return Place(objectSize, minorAxisMin + minorAxisPosition, followingMarginStep);
         }
 
+        /// <summary>
+        /// Places multiple objects at the same major axis position, each with its own size and minor
+        /// axis position, then advances the major axis position by the largest object size plus a margin
+        /// determined by the following margin step.
+        /// </summary>
+        /// <param name="objectSizesAndMinorAxisPositions">A list of tuples containing the size and minor axis position of each object to place.</param>
+        /// <param name="followingMarginStep">The step used to calculate the margin after placing the objects.</param>
+        /// <returns>A list of rectangles representing the placed objects' bounds.</returns>
+        /// <exception cref="ArgumentException">Thrown if the list of object sizes and minor axis positions is empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if the direction is invalid.</exception>
         public IReadOnlyList<SRectF> PlaceAtSameMajorPosition(IReadOnlyList<(SSizeF Size, double MinorAxisPosition)> objectSizesAndMinorAxisPositions,
             int followingMarginStep)
         {
@@ -78,7 +107,6 @@ namespace Celarix.Starfall.Layout.Atria.Components
                 throw new ArgumentException("The list of object sizes and minor axis positions cannot be empty.",
                     nameof(objectSizesAndMinorAxisPositions));
             }
-            followingMarginStep.ThrowIfNotPositive(nameof(followingMarginStep));
 
             var largestOnMajorAxis = objectSizesAndMinorAxisPositions.Select(s => Direction switch
             {
@@ -101,6 +129,16 @@ namespace Celarix.Starfall.Layout.Atria.Components
             return rectangles;
         }
 
+        /// <summary>
+        /// Aligns an object of the specified size within the bounds defined by <paramref name="minorAxisMin"/> and <paramref name="minorAxisMax"/>
+        /// </summary>
+        /// <param name="objectSize">The size of the object to align.</param>
+        /// <param name="minorAxisMin">The minimum bound of the minor axis.</param>
+        /// <param name="minorAxisMax">The maximum bound of the minor axis.</param>
+        /// <param name="alignment">The alignment of the object within the bounds.</param>
+        /// <returns>The position of the object along the minor axis.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="minorAxisMax"/> is less than or equal to <paramref name="minorAxisMin"/>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if the direction is invalid.</exception>
         public double AlignOnBoundedMinorAxis(SSizeF objectSize, double minorAxisMin, double minorAxisMax, Alignment alignment)
         {
             if (minorAxisMax <= minorAxisMin)
@@ -134,6 +172,10 @@ namespace Celarix.Starfall.Layout.Atria.Components
             return minorAxisPosition;
         }
 
+        /// <summary>
+        /// Advances the major axis position by a margin determined by the specified margin step.
+        /// </summary>
+        /// <param name="marginStep">The step used to calculate the margin size.</param>
         public void PlaceMargin(int marginStep)
         {
             marginStep.ThrowIfNotPositive(nameof(marginStep));

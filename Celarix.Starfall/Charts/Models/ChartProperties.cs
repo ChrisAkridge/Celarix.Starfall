@@ -35,7 +35,7 @@ public sealed class ChartProperties : ChartPropertyBase
     private SColor _infoPanelSecondaryColor;
     private InfoPanelSummaries _visibleDisplays;
     private double _infoPanelSummaryItemMargin;
-    private List<double> _displayedPercentiles;
+    private List<decimal> _displayedPercentiles;
 
     /// <summary>
     /// Gets the visibility state of the chart title bar.
@@ -208,7 +208,7 @@ public sealed class ChartProperties : ChartPropertyBase
     /// <summary>
     /// Gets a read-only list of percentiles that are displayed in the info panel, if percentiles are enabled.
     /// </summary>
-    public IReadOnlyList<double> DisplayedPercentiles => _displayedPercentiles;
+    public IReadOnlyList<decimal> DisplayedPercentiles => _displayedPercentiles;
 
     /// <summary>
     /// Gets the current height ratio of the title bar relative to the overall chart element,
@@ -274,7 +274,7 @@ public sealed class ChartProperties : ChartPropertyBase
         SColor infoPanelSecondaryColor,
         InfoPanelSummaries visibleDisplays,
         double visibleDisplayItemMargin,
-        IEnumerable<double> displayedPercentiles)
+        IEnumerable<decimal> displayedPercentiles)
     {
         _titleVisibility = startTitleBarVisible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
         _infoPanelVisibility = startInfoPanelVisible ? AnimatedVisiblity.Visible : AnimatedVisiblity.Invisible;
@@ -305,7 +305,7 @@ public sealed class ChartProperties : ChartPropertyBase
         }
     }
 
-    private void PercentileListValidOrThrow(IList<double> percentiles)
+    private void PercentileListValidOrThrow(IList<decimal> percentiles)
     {
         if (!_visibleDisplays.HasFlag(InfoPanelSummaries.Percentiles))
         {
@@ -324,7 +324,7 @@ public sealed class ChartProperties : ChartPropertyBase
             }
 
             // Validate that all percentiles are between 0 and 100, inclusive.
-            if (percentiles.Any(p => p < 0d || p > 100d))
+            if (percentiles.Any(p => p < 0m || p > 100m))
             {
                 throw new ArgumentException("All percentiles must be between 0 and 100, inclusive.", nameof(percentiles));
             }
@@ -337,10 +337,10 @@ public sealed class ChartProperties : ChartPropertyBase
         }
     }
 
-    public void SetDisplayedPercentiles(IEnumerable<double> percentiles)
+    public void SetDisplayedPercentiles(IEnumerable<decimal> percentiles)
     {
         ArgumentNullException.ThrowIfNull(percentiles);
-        List<double> percentileList = [.. percentiles.OrderBy(p => p)];
+        List<decimal> percentileList = [.. percentiles.OrderBy(p => p)];
         if (!IsAtomicUpdateInProgress) PercentileListValidOrThrow(percentileList);
         SetProperty(percentileList, _displayedPercentiles, v => _displayedPercentiles = v);
     }

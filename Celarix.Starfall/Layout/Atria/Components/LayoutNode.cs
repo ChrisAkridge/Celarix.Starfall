@@ -103,7 +103,7 @@ public sealed class LayoutNode
         {
             throw new InvalidOperationException("Cannot split a node that has already been split.");
         }
-        
+
         if (!double.IsFinite(horizontalFraction) ||
             horizontalFraction < 0 ||
             horizontalFraction > 1)
@@ -163,7 +163,7 @@ public sealed class LayoutNode
                 NormalizedBounds.Height * baseSize.Height);
             return true;
         }
-        
+
         if (_firstChild != null)
         {
             if (_firstChild.TryGetBoundsFor(name, baseSize, out result))
@@ -171,7 +171,7 @@ public sealed class LayoutNode
                 return true;
             }
         }
-        
+
         if (_secondChild != null)
         {
             if (_secondChild.TryGetBoundsFor(name, baseSize, out result))

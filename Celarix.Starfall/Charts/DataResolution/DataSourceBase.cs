@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Celarix.Starfall.Charts.Models;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -22,6 +23,7 @@ public abstract class DataSourceBase : IDataSource
     }
 
     protected abstract BucketObservation GetObservation(XRange bucket);
+    public abstract InfoPanelData GetInfoPanelData(IEnumerable<decimal> percentiles);
 
     protected void OnDataChanged() => DataChanged?.Invoke(this, EventArgs.Empty);
 }

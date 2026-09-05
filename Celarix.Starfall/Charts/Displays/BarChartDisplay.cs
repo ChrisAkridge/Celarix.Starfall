@@ -23,6 +23,8 @@ public sealed class BarChartDisplay : IChartDisplay
     // maybe make this a property later
     private const double TickLength = 15d;
 
+    public event EventHandler? DataChanged;
+
     private readonly MeasurementService _measurementService;
     private readonly IDataSource _dataSource;
     private IReadOnlyList<ResolvedDataPoint> _barData = [];
@@ -31,6 +33,7 @@ public sealed class BarChartDisplay : IChartDisplay
 
     private double _xAxisEm;
     private double _yAxisEm;
+    private double _opacity = 1d;
 
     // Libra fields.
     private LibraRenderingContext _xAxisLabelContext;
@@ -46,12 +49,17 @@ public sealed class BarChartDisplay : IChartDisplay
     private IReadOnlyList<FittedLabel> _nextYAxisLabels;
     private IReadOnlyList<(SRectF Bar, SColor color)> _barRenderables = [];
     private IReadOnlyList<(SRectF Bar, SColor color)> _nextBarRenderables;
+    private double? _revealXAxisProgress;
+    private double? _revealYAxisProgress;
     private AnimationSlot _moveRangeAnimation;
     private AnimationSlot _changeDataAnimation;
+    private AnimationSlot _revealChartAnimation;
+    private AnimationSlot _hideChartAnimation;
 
     public BarChartProperties Properties { get; }
     public AxisProperties<BigInteger> XAxisProperties { get; }
     public AxisProperties<double> YAxisProperties { get; }
+    public InfoPanelProviderProperties<double, BigInteger> InfoPanelProviderProperties { get; }
     public AnimationContext? AnimationContext { get; set; }
 
     public BarChartDisplay(
@@ -59,8 +67,9 @@ public sealed class BarChartDisplay : IChartDisplay
         DataSeries dataSeries,
         BarChartProperties properties,
         AxisProperties<BigInteger> xAxisProperties,
-        AxisProperties<double> yAxisProperties)
-        : this(measurementService, new DataSeriesDataSource(dataSeries, new StandardResolutionStrategy()), properties, xAxisProperties, yAxisProperties)
+        AxisProperties<double> yAxisProperties,
+        InfoPanelProviderProperties<double, BigInteger> infoPanelProviderProperties)
+        : this(measurementService, new DataSeriesDataSource(dataSeries, new StandardResolutionStrategy()), properties, xAxisProperties, yAxisProperties, infoPanelProviderProperties)
     { }
 
     public BarChartDisplay(
@@ -68,12 +77,14 @@ public sealed class BarChartDisplay : IChartDisplay
         IDataSource dataSource,
         BarChartProperties properties,
         AxisProperties<BigInteger> xAxisProperties,
-        AxisProperties<double> yAxisProperties)
+        AxisProperties<double> yAxisProperties,
+        InfoPanelProviderProperties<double, BigInteger> infoPanelProviderProperties)
     {
         _measurementService = measurementService;
         _dataSource = dataSource;
         Properties = properties;
         XAxisProperties = xAxisProperties;
+        InfoPanelProviderProperties = infoPanelProviderProperties;
         YAxisProperties = yAxisProperties;
 
         Connect();
@@ -89,7 +100,11 @@ public sealed class BarChartDisplay : IChartDisplay
     public void Connect()
     {
         if (_connected) return;
-        _dataSource.DataChanged += DependencyChanged;
+        _dataSource.DataChanged += (sender, e) =>
+        {
+            DependencyChanged(sender, e);
+            DataChanged?.Invoke(this, EventArgs.Empty);
+        };
         Properties.PropertiesChanged += DependencyChanged;
         XAxisProperties.PropertiesChanged += DependencyChanged;
         YAxisProperties.PropertiesChanged += DependencyChanged;
@@ -124,6 +139,8 @@ public sealed class BarChartDisplay : IChartDisplay
     {
         _moveRangeAnimation ??= new AnimationSlot(AnimationContext!, "BarChartDisplay.MoveRangeAnimation");
         _changeDataAnimation ??= new AnimationSlot(AnimationContext!, "BarChartDisplay.ChangeDataAnimation");
+        _revealChartAnimation ??= new AnimationSlot(AnimationContext!, "BarChartDisplay.RevealChartAnimation");
+        _hideChartAnimation ??= new AnimationSlot(AnimationContext!, "BarChartDisplay.HideChartAnimation");
 
         if (_needStaticInvalidation)
         {
@@ -143,7 +160,7 @@ public sealed class BarChartDisplay : IChartDisplay
         DrawYEquals0Line(target, barChartBounds, yRange);
         DrawXAxis(target, xAxisBounds, barChartBounds);
         DrawYAxis(target, yAxisBounds, barChartBounds);
-        DrawBars(target);
+        DrawBars(target, barChartBounds);
     }
 
     private void DrawYEquals0Line(IRenderTarget target, SRectF barChartBounds, double yRange)
@@ -155,16 +172,22 @@ public sealed class BarChartDisplay : IChartDisplay
         }
 
         var zeroY = GetYBaseline(barChartBounds);
-        target.DrawLine(new SPointF(barChartBounds.Left, (float)zeroY), new SPointF(barChartBounds.Right, (float)zeroY), SColor.White,
+        var rightX = barChartBounds.Left + (barChartBounds.Width * (_revealXAxisProgress ?? 1d));
+        SPointF left = new(barChartBounds.Left, (float)zeroY);
+        SPointF right = new SPointF(rightX, (float)zeroY);
+        target.DrawLine(left, right, SColor.White.WithOpacity(_opacity),
             (float)YAxisProperties.GridlineThickness);
     }
 
     private void DrawXAxis(IRenderTarget target, SRectF xAxisBounds, SRectF barChartBounds)
     {
+        var left = xAxisBounds.Left;
+        var right = xAxisBounds.Left + (xAxisBounds.Width * (_revealXAxisProgress ?? 1d));
+
         // Draw the main gridline at the bottom of the bar chart. Use the label color for this line.
-        var mainGridlineColor = XAxisProperties.LabelColor;
+        var mainGridlineColor = XAxisProperties.LabelColor.WithOpacity(_opacity);
         var mainGridlineY = xAxisBounds.Top;
-        target.DrawLine(new SPointF(xAxisBounds.Left, mainGridlineY), new SPointF(xAxisBounds.Right, mainGridlineY), mainGridlineColor,
+        target.DrawLine(new SPointF(left, mainGridlineY), new SPointF(right, mainGridlineY), mainGridlineColor,
             (float)XAxisProperties.GridlineThickness);
 
         // Check to see if we can draw the ticks/gridlines.
@@ -192,6 +215,12 @@ public sealed class BarChartDisplay : IChartDisplay
             {
                 var slotBounds = GetXSlotBounds(x, barChartBounds);
                 var tickX = slotBounds.Center.X;
+
+                if (tickX >= right)
+                {
+                    continue;
+                }
+
                 var tickStartY = mainGridlineY;
                 var tickEndY = mainGridlineY - lineLength;
                 target.DrawLine(new SPointF(tickX, tickStartY), new SPointF(tickX, tickEndY), mainGridlineColor,
@@ -204,20 +233,31 @@ public sealed class BarChartDisplay : IChartDisplay
         {
             var position = label.Position;
             var renderedBounds = label.LibraLayoutResult.Bounds.At(position);
-            if (!SRectF.Intersects(renderedBounds, xAxisBounds)) continue;
+
+            // Completely intentional! This creates a cool shrinking effect as the chart is hidden.
+            var scaleFactor = _opacity;
+
+            if (!SRectF.Intersects(renderedBounds, xAxisBounds) || renderedBounds.Right >= right)
+            {
+                continue;
+            }
+
             foreach (var renderable in label.LibraLayoutResult.Renderables)
             {
-                renderable.RenderAt(target, position, 1d);
+                renderable.RenderAt(target, position, scaleFactor);
             }
         }
     }
 
     private void DrawYAxis(IRenderTarget target, SRectF yAxisBounds, SRectF barChartBounds)
     {
+        var top = yAxisBounds.Bottom - (yAxisBounds.Height * (_revealYAxisProgress ?? 1d));
+        var bottom = yAxisBounds.Bottom;
+
         // Draw the main gridline at the left of the bar chart. Use the label color for this line.
-        var mainGridlineColor = YAxisProperties.LabelColor;
+        var mainGridlineColor = YAxisProperties.LabelColor.WithOpacity(_opacity);
         var mainGridlineX = yAxisBounds.Right;
-        target.DrawLine(new SPointF(mainGridlineX, yAxisBounds.Top), new SPointF(mainGridlineX, yAxisBounds.Bottom), mainGridlineColor,
+        target.DrawLine(new SPointF(mainGridlineX, top), new SPointF(mainGridlineX, bottom), mainGridlineColor,
             (float)YAxisProperties.GridlineThickness);
 
         // Draw the ticks/gridlines given the gridline style and the spacing.
@@ -233,19 +273,33 @@ public sealed class BarChartDisplay : IChartDisplay
             }
         }
 
+        // Completely intentional! This creates a cool shrinking effect as the chart is hidden.
+        var scaleFactor = _opacity;
+
         // Draw the labels for each slot.
         foreach (var label in _yAxisLabels)
         {
             var position = label.Position;
             foreach (var renderable in label.LibraLayoutResult.Renderables)
             {
-                renderable.RenderAt(target, position, 1d);
+                var renderedBounds = label.LibraLayoutResult.Bounds.At(position);
+                if (renderedBounds.Top < top)
+                {
+                    continue;
+                }
+
+                renderable.RenderAt(target, position, scaleFactor);
             }
         }
 
         void DrawTickOrGridline(double y)
         {
             var ySlotCenter = GetYSlotCenter(y, barChartBounds);
+            if (ySlotCenter < top)
+            {
+                return;
+            }
+
             var lineLength = YAxisProperties.GridlineStyle switch
             {
                 GridlineStyle.Tick => TickLength,
@@ -259,11 +313,19 @@ public sealed class BarChartDisplay : IChartDisplay
         }
     }
 
-    private void DrawBars(IRenderTarget target)
+    private void DrawBars(IRenderTarget target, SRectF barChartBounds)
     {
+        var right = barChartBounds.Left + (barChartBounds.Width * (_revealXAxisProgress ?? 1d));
+        var top = barChartBounds.Top + (barChartBounds.Height * (_revealYAxisProgress ?? 1d));
+
         foreach (var (bar, color) in _barRenderables)
         {
-            target.DrawRectangle(bar, color, SPaintStyle.Fill, SAngle.Zero);
+            if (bar.Right < barChartBounds.Left || bar.Left > right || bar.Top > barChartBounds.Bottom || bar.Bottom < top)
+            {
+                continue;
+            }
+
+            target.DrawRectangle(bar, color.WithOpacity(_opacity), SPaintStyle.Fill, SAngle.Zero);
         }
     }
 
@@ -305,6 +367,75 @@ public sealed class BarChartDisplay : IChartDisplay
 
         _moveRangeAnimation.Replace(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(duration),
             updateAction, onCompleted), AnimationSlotReplacementBehavior.CancelExisting);
+    }
+
+    public void Reveal(double duration, Easing? easing = null)
+    {
+        easing ??= Easings.Linear;
+        _opacity = 1d;
+        _revealXAxisProgress = 0d;
+        _revealYAxisProgress = 0d;
+
+        Action<double> updateAction = d =>
+        {
+            var fraction = easing(d);
+            _revealXAxisProgress = fraction;
+            _revealYAxisProgress = fraction;
+        };
+        Action onCompleted = () =>
+        {
+            _revealXAxisProgress = null;
+            _revealYAxisProgress = null;
+        };
+
+        _revealChartAnimation.Replace(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(duration),
+            updateAction, onCompleted), AnimationSlotReplacementBehavior.CancelExisting);
+    }
+
+    public void Hide(double duration, Easing? easing = null)
+    {
+        easing ??= Easings.Linear;
+        _opacity = 1d;
+        Action<double> updateAction = d =>
+        {
+            var fraction = easing(d);
+            _opacity = 1d - fraction;
+        };
+        Action onCompleted = () =>
+        {
+            _opacity = 0d;
+        };
+
+        _hideChartAnimation.Replace(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(duration),
+            updateAction, onCompleted), AnimationSlotReplacementBehavior.CancelExisting);
+    }
+
+    // Info panel
+    public InfoPanelText GetInfoPanelText(IEnumerable<decimal> percentiles)
+    {
+        var yFormatter = InfoPanelProviderProperties.FormatData;
+        var yFormatterAlternate = InfoPanelProviderProperties.FormatDataAlternate ?? (y => ChartText.Empty);
+        var xFormatter = InfoPanelProviderProperties.FormatKey;
+        var xFormatterAlternate = InfoPanelProviderProperties.FormatKeyAlternate ?? (x => ChartText.Empty);
+
+        var data = _dataSource.GetInfoPanelData(percentiles);
+        var percentileTexts = data.Percentiles
+            ?.Select(p => new InfoPanelPercentileText(p.Percentile, yFormatter(p.Value)))
+            .ToArray();
+        var countText = yFormatter((double)data.Count);
+        var sumText = yFormatter(data.Sum);
+
+        return new InfoPanelText(yFormatter(data.CurrentValue), yFormatterAlternate(data.CurrentValue),
+            yFormatter(data.Minimum), yFormatterAlternate(data.Minimum),
+            yFormatter(data.Maximum), yFormatterAlternate(data.Maximum),
+            yFormatter(data.Range), yFormatterAlternate(data.Range),
+            yFormatter(data.Midpoint), yFormatterAlternate(data.Midpoint),
+            yFormatter(data.Mean), yFormatterAlternate(data.Mean),
+            yFormatter(data.Median), yFormatterAlternate(data.Median),
+            yFormatter(data.Mode), yFormatterAlternate(data.Mode),
+            yFormatter(data.PopulationStandardDeviation), yFormatterAlternate(data.PopulationStandardDeviation),
+            yFormatter(data.SampleStandardDeviation), yFormatterAlternate(data.SampleStandardDeviation),
+            percentileTexts, ChartHelpers.FormatCountAndSum(countText, sumText));
     }
 
     // Invalidation

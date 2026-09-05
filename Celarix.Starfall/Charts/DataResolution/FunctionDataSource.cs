@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Celarix.Starfall.Charts.Models;
+using System;
 
 using System.Collections.Generic;
 
@@ -30,6 +31,11 @@ public sealed class FunctionDataSource : DataSourceBase
         var xValues = bucket.Sample(_samplesPerBucket);
         var points = xValues.Select(x => new DataPoint(x, Normalize(x, _function(x)))).ToArray();
         return new BucketObservation(bucket, points);
+    }
+
+    public override InfoPanelData GetInfoPanelData(IEnumerable<decimal> percentiles)
+    {
+        throw new NotImplementedException("But I will implement this! Eventually.");
     }
 
     private double Normalize(BigInteger x, double y)

@@ -179,15 +179,15 @@ public sealed class IntegralAxisLabelLayout
         SRectF slotBounds,
         Side side,
         double minorAxisMargin) => side switch
-    {
-        Side.Top or Side.Bottom => new SPointF(
-            slotBounds.Center.X - (label.Bounds.Width / 2d),
-            slotBounds.Bottom + minorAxisMargin),
-        Side.Left or Side.Right => new SPointF(
-            slotBounds.Right - label.Bounds.Width - minorAxisMargin,
-            slotBounds.Center.Y - (label.Bounds.Height / 2d)),
-        _ => throw new ArgumentOutOfRangeException(nameof(side), side, null)
-    };
+        {
+            Side.Top or Side.Bottom => new SPointF(
+                slotBounds.Center.X - (label.Bounds.Width / 2d),
+                slotBounds.Bottom + minorAxisMargin),
+            Side.Left or Side.Right => new SPointF(
+                slotBounds.Right - label.Bounds.Width - minorAxisMargin,
+                slotBounds.Center.Y - (label.Bounds.Height / 2d)),
+            _ => throw new ArgumentOutOfRangeException(nameof(side), side, null)
+        };
 
     private static BigInteger CeilingToMultiple(BigInteger value, BigInteger stride)
     {

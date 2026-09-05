@@ -61,6 +61,11 @@ namespace Celarix.Starfall.Rendering.Models
             return new SRectF(rect.X - point.X, rect.Y - point.Y, rect.Width, rect.Height);
         }
 
+        public static SRectF operator *(SRectF rect, SSizeF size)
+        {
+            return new SRectF(rect.X, rect.Y, rect.Width * size.Width, rect.Height * size.Height);
+        }
+
         public static bool operator ==(SRectF a, SRectF b)
         {
             return a.X == b.X && a.Y == b.Y && a.Width == b.Width && a.Height == b.Height;
