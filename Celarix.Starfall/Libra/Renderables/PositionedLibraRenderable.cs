@@ -8,6 +8,8 @@ namespace Celarix.Starfall.Libra.Renderables;
 
 public sealed record PositionedLibraRenderable(LibraRenderable Renderable, SPointF Position, double ScaleFactor)
 {
+    public SRectF Bounds => (Renderable.Bounds * ScaleFactor).At(Position);
+
     public void Render(IRenderTarget target)
     {
         Renderable.RenderAt(target, Position, ScaleFactor);
@@ -16,7 +18,10 @@ public sealed record PositionedLibraRenderable(LibraRenderable Renderable, SPoin
     public static IEnumerable<PositionedLibraRenderable> FromLayout(LibraLayoutResult result,
         SPointF offset, double scaleFactor)
     {
-        // First, scale the positions and sizes of each renderable inside the result toward the origin
-        var scaledRenderables = result.Renderables.Select(r => r.Scale(scaleFactor)).ToList();
+        foreach (var renderable in result.Renderables)
+        {
+            var internalScaledPosition = renderable.Position * scaleFactor;
+            yield return new PositionedLibraRenderable(renderable, internalScaledPosition + offset, scaleFactor);
+        }
     }
 }

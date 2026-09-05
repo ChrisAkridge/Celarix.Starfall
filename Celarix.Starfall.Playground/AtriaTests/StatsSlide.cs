@@ -165,17 +165,17 @@ internal sealed class StatsSlide : AtriaSlide
             titleFont: new SFontFamily("Calibri", 16),
             titleColor: SColor.White,
             infoPanelWidthRatioOfElement: 0.2d,
-            infoPanelBorderColor: new SColor(120, 145, 220, 150),
+            infoPanelBorderColor: new SColor(120, 145, 220, 255),
             infoPanelBorderThickness: 1d,
             infoPanelPaddingRatio: 0.08d,
-            infoPanelBackgroundColor: new SColor(15, 18, 55, 235),
+            infoPanelBackgroundColor: new SColor(15, 18, 55, 255),
             infoPanelBaseFont: new SFontFamily("Calibri", 12),
             infoPanelFontSizeMultiplierStep: 1.8d,
             infoPanelLabelColor: new SColor(185, 195, 225, 255),
             infoPanelValueColor: SColor.Yellow,
             infoPanelSecondaryColor: new SColor(120, 190, 255, 255),
             visibleDisplays: InfoPanelSummaries.All,
-            visibleDisplayItemMargin: 0.1d,
+            visibleDisplayItemMargin: 10d,
             displayedPercentiles: [1m, 5m, 10m, 25m, 50m, 75m, 90m, 95m, 99m]
         );
 

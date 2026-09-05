@@ -46,7 +46,7 @@ namespace Celarix.Starfall.Rendering.Targets
 
             if (angle == SAngle.Zero)
             {
-                
+
                 canvas.DrawRect(rect, paint);
             }
             else
@@ -66,7 +66,7 @@ namespace Celarix.Starfall.Rendering.Targets
                 Style = paintStyle.ToSKPaintStyle(),
                 IsAntialias = true
             };
-            
+
             var cx = center.X;
             var cy = center.Y;
             var rx = size.Width / 2;
@@ -208,7 +208,7 @@ namespace Celarix.Starfall.Rendering.Targets
                 IsAntialias = true
             };
             SKRect skRect = bounds.ToSKRect();
-            
+
             if (rotation == SAngle.Zero)
             {
                 canvas.DrawImage(image.ToSKImage(), skRect, paint);

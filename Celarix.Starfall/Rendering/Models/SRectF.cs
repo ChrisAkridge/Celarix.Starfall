@@ -66,6 +66,11 @@ namespace Celarix.Starfall.Rendering.Models
             return new SRectF(rect.X, rect.Y, rect.Width * size.Width, rect.Height * size.Height);
         }
 
+        public static SRectF operator *(SRectF rect, double factor)
+        {
+            return new SRectF(rect.X, rect.Y, rect.Width * factor, rect.Height * factor);
+        }
+
         public static bool operator ==(SRectF a, SRectF b)
         {
             return a.X == b.X && a.Y == b.Y && a.Width == b.Width && a.Height == b.Height;
@@ -299,6 +304,11 @@ namespace Celarix.Starfall.Rendering.Models
             var secondRect = new SRectF(outer.X, outer.Y + firstHeight, outer.Width, secondHeight);
             return (firstRect, secondRect);
         }
+
+        public SRectF UpBy(double distance) => new(X, Y - distance, Width, Height);
+        public SRectF DownBy(double distance) => new(X, Y + distance, Width, Height);
+        public SRectF LeftBy(double distance) => new(X - distance, Y, Width, Height);
+        public SRectF RightBy(double distance) => new(X + distance, Y, Width, Height);
 
         public static SRectF GetIntersection(SRectF a, SRectF b)
         {
