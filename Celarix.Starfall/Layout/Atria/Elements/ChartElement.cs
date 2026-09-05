@@ -28,7 +28,7 @@ public sealed class ChartElement : AtriaElement
 
     // No need to rebuild this every time.
     private readonly LibraMetrics _metrics = LibraMetrics.Default;
-    private readonly List<LibraRenderable> _infoPanelRenderables = [];
+    private readonly List<PositionedLibraRenderable> _infoPanelRenderables = [];
     private readonly List<Action<IRenderTarget>> _infoPanelRenderActions = [];
     private bool _rebuildInfoPanel = true;
     private readonly IChartDisplay _chartDisplay;
@@ -227,9 +227,7 @@ public sealed class ChartElement : AtriaElement
 
         foreach (var renderable in _infoPanelRenderables)
         {
-            // When we laid out the renderables, they already were positioned relative to the content
-            // bounds, so we don't need to add the content bounds position here.
-            renderable.RenderAt(target, renderable.Position, 1d);
+            renderable.Render(target);
         }
 
         foreach (var action in _infoPanelRenderActions)
@@ -250,19 +248,26 @@ public sealed class ChartElement : AtriaElement
         var currentText = _infoPanelText.CurrentValueText;
         var currentValueAlternate = _infoPanelText.CurrentValueAlternateText;
 
-        var currentLayout = LayoutInfoPanelValue(currentText, isAlternate: false)?.ScaleToFitWidth(contentBounds.Width);
-        var alternateLayout = LayoutInfoPanelValue(currentValueAlternate, isAlternate: true)?.ScaleToFitWidth(contentBounds.Width);
+        var currentLayout = LayoutInfoPanelValue(currentText, isAlternate: false);
+        var alternateLayout = LayoutInfoPanelValue(currentValueAlternate, isAlternate: true);
 
         if (currentLayout == null && alternateLayout == null)
         {
             return;
         }
 
+        var currentLayoutScaleFactor = (currentLayout != null && currentLayout.Bounds.Width > contentBounds.Width)
+            ? contentBounds.Width / currentLayout.Bounds.Width
+            : 1d;
+        var alternateLayoutScaleFactor = (alternateLayout != null && alternateLayout.Bounds.Width > contentBounds.Width)
+            ? contentBounds.Width / alternateLayout.Bounds.Width
+            : 1d;
+
         var currentBounds = (currentLayout != null)
-            ? stacker.PlaceWithNoMargin(currentLayout.Bounds.Size, contentBounds.Left, contentBounds.Right, Alignment.RightCenter)
+            ? stacker.PlaceWithNoMargin(currentLayout.Bounds.Size * currentLayoutScaleFactor, contentBounds.Left, contentBounds.Right, Alignment.RightCenter)
             : (SRectF?)null;
         var alternateBounds = (alternateLayout != null)
-            ? stacker.PlaceWithNoMargin(alternateLayout.Bounds.Size, contentBounds.Left, contentBounds.Right, Alignment.RightCenter)
+            ? stacker.PlaceWithNoMargin(alternateLayout.Bounds.Size * alternateLayoutScaleFactor, contentBounds.Left, contentBounds.Right, Alignment.RightCenter)
             : (SRectF?)null;
 
         // If we got down here, at least ONE of them must be non-null, so add a margin.
