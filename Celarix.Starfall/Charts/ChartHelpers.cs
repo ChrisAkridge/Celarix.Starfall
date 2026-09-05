@@ -118,11 +118,16 @@ public static class ChartHelpers
 
     public static ChartText FormatCountAndSum(ChartText countText, ChartText sumText)
     {
-        var countTextString = !countText.UseLibra ? $"\"{countText.SourceString}\"" : countText.SourceString;
-        var sumTextString = !sumText.UseLibra ? $"\"{sumText.SourceString}\"" : sumText.SourceString;
+        //var countTextString = !countText.UseLibra ? $"\"{countText.SourceString}\"" : countText.SourceString;
+        //var sumTextString = !sumText.UseLibra ? $"\"{sumText.SourceString}\"" : sumText.SourceString;
 
-        var sourceString = $";catEm(1, \"count: \", {countTextString}, \"sum: \", {sumTextString})";
-        return new ChartText(sourceString, useLibra: true);
+        //var sourceString = $";catEm(1, \"count: \", {countTextString}, \"sum: \", {sumTextString})";
+        //return new ChartText(sourceString, useLibra: true);
+
+        var countLabel = ChartText.String("count: ");
+        var sumLabel = ChartText.String("sum: ");
+
+        return ChartText.Concat(ChartText.Concat(ChartText.Concat(countLabel, countText), sumLabel), sumText);
     }
 
     private static BigInteger GetEvenlyDistributedIndex(

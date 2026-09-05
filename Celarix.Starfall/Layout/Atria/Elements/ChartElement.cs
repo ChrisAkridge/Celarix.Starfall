@@ -261,8 +261,8 @@ public sealed class ChartElement : AtriaElement
         }
 
         var labelSize = target.MeasureText(row.Label, font);
-        var valueLayout = LayoutInfoPanelValue(row.Value, useAlternateColor: false);
-        var alternateLayout = LayoutInfoPanelValue(row.AlternateValue, useAlternateColor: true);
+        var valueLayout = LayoutInfoPanelValue(row.Value, isAlternate: false);
+        var alternateLayout = LayoutInfoPanelValue(row.AlternateValue, isAlternate: true);
 
         var valueSize = valueLayout.Bounds.Size;
         var alternateSize = alternateLayout.Bounds.Size;
@@ -313,15 +313,18 @@ public sealed class ChartElement : AtriaElement
     }
 
     private LibraLayoutResult LayoutInfoPanelValue(ChartText? valueText,
-        bool useAlternateColor)
+        bool isAlternate)
     {
         if (valueText == null)
         {
             return LibraLayoutResult.Empty;
         }
 
-        var color = useAlternateColor ? Properties.InfoPanelSecondaryColor : Properties.InfoPanelValueColor;
-        var context = BuildLibraRenderingContext(Properties.InfoPanelBaseFont);
+        var color = isAlternate ? Properties.InfoPanelSecondaryColor : Properties.InfoPanelValueColor;
+        var fontSize = isAlternate
+            ? (Properties.InfoPanelBaseFont.Size ?? 12f) / Properties.InfoPanelFontSizeMultiplierStep
+            : (Properties.InfoPanelBaseFont.Size ?? 12f) * Properties.InfoPanelFontSizeMultiplierStep;
+        var context = BuildLibraRenderingContext(Properties.InfoPanelBaseFont.WithSize((float)fontSize));
         return valueText.Layout(context, color.WithOpacity(Properties.InfoPanelVisibilityToggleProgress ?? 1d));
     }
 
