@@ -222,6 +222,33 @@ public sealed class ChartElement : AtriaElement
 
             LayoutCurrentValue(target, stacker, contentBounds.Value);
             LayoutRangeSection(target, stacker, contentBounds.Value);
+            LayoutInfoPanelRow(Properties.VisibleDisplays.HasFlag(InfoPanelSummaries.Mean),
+                new("Mean", _infoPanelText.MeanText, _infoPanelText.MeanAlternateText),
+                stacker,
+                contentBounds.Value.Left,
+                contentBounds.Value.Right,
+                contentBounds.Value.Position,
+                font,
+                labelColor,
+                target);
+            LayoutInfoPanelRow(Properties.VisibleDisplays.HasFlag(InfoPanelSummaries.Median),
+                new("Median", _infoPanelText.MedianText, _infoPanelText.MedianAlternateText),
+                stacker,
+                contentBounds.Value.Left,
+                contentBounds.Value.Right,
+                contentBounds.Value.Position,
+                font,
+                labelColor,
+                target);
+            LayoutInfoPanelRow(Properties.VisibleDisplays.HasFlag(InfoPanelSummaries.Mode),
+                new("Mode", _infoPanelText.ModeText, _infoPanelText.ModeAlternateText),
+                stacker,
+                contentBounds.Value.Left,
+                contentBounds.Value.Right,
+                contentBounds.Value.Position,
+                font,
+                labelColor,
+                target);
             _rebuildInfoPanel = false;
         }
 
@@ -499,22 +526,31 @@ public sealed class ChartElement : AtriaElement
         yield return new("Count and sum", text.CountAndSumText, null);
     }
 
-    private void DrawInfoPanelRow(
-    InfoPanelRow row,
-    LayoutStacker stacker,
-    double xMin,
-    double xMax,
-    SPointF offset,
-    SFont font,
-    SColor labelColor,
-    IRenderTarget target)
+    private void LayoutInfoPanelRow(
+        bool displayEnabled,
+        InfoPanelRow row,
+        LayoutStacker stacker,
+        double xMin,
+        double xMax,
+        SPointF offset,
+        SFont font,
+        SColor labelColor,
+        IRenderTarget target)
     {
         if (row.Value is null && row.AlternateValue is null)
         {
             return;
         }
 
+        if (!displayEnabled)
+        {
+            return;
+        }
+
         var labelSize = target.MeasureText(row.Label, font);
+        var labelLayout = ChartText.String(row.Label)
+            .Layout(BuildLibraRenderingContext(font), labelColor.WithOpacity(Properties.InfoPanelVisibilityToggleProgress ?? 1d));
+
         var valueLayout = LayoutInfoPanelValue(row.Value, isAlternate: false);
         var alternateLayout = LayoutInfoPanelValue(row.AlternateValue, isAlternate: true);
 
@@ -532,20 +568,17 @@ public sealed class ChartElement : AtriaElement
                 -1)
             : [stacker.Place(labelSize, 0d, -1)];
 
-        target.DrawText(
-            row.Label,
-            font,
-            labelAndValueBounds[0] + offset,
-            labelColor,
-            SAngle.Zero);
+        _infoPanelRenderables.AddRange(PositionedLibraRenderable.FromLayout(
+            labelLayout,
+            labelAndValueBounds[0].Position + offset,
+            1d));
 
         if (valueSize.Width > 0d)
         {
-            RenderLibraRenderables(
+            _infoPanelRenderables.AddRange(PositionedLibraRenderable.FromLayout(
                 valueLayout,
                 labelAndValueBounds[1].Position + offset,
-                1d,
-                target);
+                1d));
         }
 
         if (alternateSize.Width > 0d)
@@ -558,11 +591,10 @@ public sealed class ChartElement : AtriaElement
 
             var alternateBounds = stacker.Place(alternateSize, alternateX, 1);
 
-            RenderLibraRenderables(
+            _infoPanelRenderables.AddRange(PositionedLibraRenderable.FromLayout(
                 alternateLayout,
                 alternateBounds.Position + offset,
-                1d,
-                target);
+                1d));
         }
     }
 
