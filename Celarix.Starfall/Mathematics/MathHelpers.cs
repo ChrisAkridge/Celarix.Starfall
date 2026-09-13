@@ -168,5 +168,10 @@ namespace Celarix.Starfall.Mathematics
 
             return (double)scaled / (1L << precisionBits);
         }
+
+        public static double Distance(double xDistance, double yDistance)
+        {
+            return Math.Sqrt((xDistance * xDistance) + (yDistance * yDistance));
+        }
     }
 }
