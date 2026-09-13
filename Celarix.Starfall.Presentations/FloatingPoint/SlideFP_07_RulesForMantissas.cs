@@ -28,7 +28,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private StateMachine<State> _stateMachine;
 
-        public SlideFP_07_RulesForMantissas(int width, int height) : base(width, height)
+        public SlideFP_07_RulesForMantissas(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             _stateMachine = new StateMachine<State>(this, State.Initial);
         }

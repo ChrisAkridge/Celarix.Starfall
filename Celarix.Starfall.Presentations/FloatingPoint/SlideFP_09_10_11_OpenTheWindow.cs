@@ -102,7 +102,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
         }
 
-        public SlideFP_09_10_11_OpenTheWindow(int width, int height) : base(width, height)
+        public SlideFP_09_10_11_OpenTheWindow(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             
         }

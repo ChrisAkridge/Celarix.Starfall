@@ -20,7 +20,7 @@ public sealed class GraphSlide : AtriaSlide
     private readonly HashSet<long> _seen = [];
     private readonly Random _random = new();
 
-    public GraphSlide(int width, int height) : base(width, height)
+    public GraphSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
     {
     }
 

@@ -22,7 +22,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private StateMachine<State> _stateMachine;
 
-        public SlideFP_02_IntegersAreGoodAtMath(int width, int height) : base(width, height) { }
+        public SlideFP_02_IntegersAreGoodAtMath(AtriaRuntime runtime, SSizeF size) : base(runtime, size) { }
 
         public override void Initialize()
         {

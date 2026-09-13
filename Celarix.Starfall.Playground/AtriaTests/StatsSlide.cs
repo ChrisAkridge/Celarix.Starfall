@@ -20,7 +20,7 @@ internal sealed class StatsSlide : AtriaSlide
     private ChartProperties? _chartProperties;
     private ChartElement? _chartElement;
 
-    public StatsSlide(int width, int height) : base(width, height)
+    public StatsSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
     {
     }
 

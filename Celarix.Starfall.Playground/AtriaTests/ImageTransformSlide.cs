@@ -55,7 +55,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
             int width,
             int height,
             Func<SPointF, SPointF> positionTransform,
-            Func<SColor, SColor> colorTransform) : base(width, height)
+            Func<SColor, SColor> colorTransform, AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             BackgroundColor = new SColor(8, 0, 130, 255);
             var image = Image.Load<Rgba32>(imagePath);

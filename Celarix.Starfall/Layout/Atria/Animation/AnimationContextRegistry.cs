@@ -32,6 +32,12 @@ namespace Celarix.Starfall.Layout.Atria.Animation
         {
             foreach (var context in _contexts.ToArray())
             {
+                // An earlier context may dispose an element during a completion callback.
+                // The context remains in this frame's snapshot but must not be updated again.
+                if (context.IsDisposed)
+                {
+                    continue;
+                }
                 context.Update(currentFrame);
             }
         }

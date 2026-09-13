@@ -22,7 +22,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private readonly Random _random = new();
         private int _state;
 
-        public SlideSF_04_NoAbsolutePositioning(int width, int height) : base(width, height)
+        public SlideSF_04_NoAbsolutePositioning(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

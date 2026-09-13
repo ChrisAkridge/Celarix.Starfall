@@ -18,7 +18,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
         private readonly NumberFormatInfo _thousandsSpacedFormatInfo;
         private readonly TextBlock secondsBlock;
 
-        public GigasecondSlide(int width, int height) : base(width, height)
+        public GigasecondSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             BackgroundColor = new(255, 255, 255, 255);
             var textElement = new TextBlock("#seconds")

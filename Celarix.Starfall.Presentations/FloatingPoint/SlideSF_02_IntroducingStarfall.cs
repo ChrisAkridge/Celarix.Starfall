@@ -14,7 +14,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
     {
         private int _state = 0;
 
-        public SlideSF_02_IntroducingStarfall(int width, int height) : base(width, height)
+        public SlideSF_02_IntroducingStarfall(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

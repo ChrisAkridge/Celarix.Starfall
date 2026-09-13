@@ -142,7 +142,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             _soundPlayer.LoadSound("glassBreaking", "Assets/Sounds/159197__justbrando__glass-breaking.wav");
         }
 
-        public SlideFP_14_15_SpecialExponents(int width, int height) : base(width, height)
+        public SlideFP_14_15_SpecialExponents(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             _cursedNaNStatic = SImage.FromSKImage(SKImage.FromEncodedData("Assets/Images/3317968666_f46dbaac72_o_cropped.jpg"));
         }

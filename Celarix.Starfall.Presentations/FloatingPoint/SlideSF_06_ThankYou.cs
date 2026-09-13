@@ -15,7 +15,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
     {
         private bool _elementAdded;
 
-        public SlideSF_06_ThankYou(int width, int height) : base(width, height)
+        public SlideSF_06_ThankYou(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

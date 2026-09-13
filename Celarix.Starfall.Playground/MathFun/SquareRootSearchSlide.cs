@@ -34,9 +34,9 @@ namespace Celarix.Starfall.Playground.MathFun
         private int? _expansionPowerOf2;
         private double? _binarySearchGuess;
 
-        public SquareRootSearchSlide(int width, int height) : base(width, height)
+        public SquareRootSearchSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
-            _problemStack = new LayeredProblemStack(width, height);
+            _problemStack = new LayeredProblemStack((int)size.Width, (int)size.Height);
             _problemStack.AddProblem(new SColor(8, 0, 130, 255));
 
             _searchPhase = SearchPhase.Expansion;

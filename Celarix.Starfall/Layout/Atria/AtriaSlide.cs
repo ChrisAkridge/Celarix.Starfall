@@ -16,10 +16,11 @@ namespace Celarix.Starfall.Layout.Atria
         private readonly List<BasisElement> _basisElements = new();
         private bool _disposed;
 
-        public MeasurementService MeasurementService { get; private set; } = null!;
-        public DebugMode DebugMode { get; private set; } = null!;
-        public AnimationContextRegistry AnimationContexts { get; private set; } = null!;
-        protected AnimationContext Animations { get; private set; } = null!;
+        public AtriaRuntime Runtime { get; }
+        public MeasurementService MeasurementService => Runtime.MeasurementService;
+        public DebugMode DebugMode => Runtime.DebugMode;
+        public AnimationContextRegistry AnimationContexts => Runtime.AnimationContexts;
+        protected AnimationContext Animations { get; }
         public SColor BackgroundColor { get; set; }
         public SSizeF Size { get; }
 
@@ -37,19 +38,11 @@ namespace Celarix.Starfall.Layout.Atria
         public SPointF BottomCenter => new SPointF(Size.Width / 2, Size.Height);
         public SPointF BottomRight => new SPointF(Size.Width, Size.Height);
 
-        public AtriaSlide(int width, int height)
+        public AtriaSlide(AtriaRuntime runtime, SSizeF size)
         {
-            Size = new SSizeF(width, height);
-        }
-
-        internal void SetProtectedProperties(MeasurementService measurementService,
-            DebugMode debugMode,
-            AnimationContextRegistry animationContexts)
-        {
-            MeasurementService = measurementService;
-            DebugMode = debugMode;
-            AnimationContexts = animationContexts;
-            Animations = animationContexts.CreateFor(this);
+            Runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+            Size = size;
+            Animations = Runtime.AnimationContexts.CreateFor(this);
         }
 
         public abstract void Initialize();
@@ -113,14 +106,18 @@ namespace Celarix.Starfall.Layout.Atria
             var newBasisElements = new List<BasisElement>();
             foreach (var addable in newAddables)
             {
-                addable.Slide = this;
                 if (addable is AtriaElement element)
                 {
+                    element.Attach(this);
                     _elements.Add(element);
                     newElements.Add(element);
                 }
                 else if (addable is BasisElement basisElement)
                 {
+                    if (basisElement is ISlideAddable basisAddable)
+                    {
+                        basisAddable.Slide = this;
+                    }
                     _basisElements.Add(basisElement);
                     newBasisElements.Add(basisElement);
                 }

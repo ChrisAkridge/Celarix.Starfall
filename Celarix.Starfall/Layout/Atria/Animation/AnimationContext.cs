@@ -19,6 +19,7 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             || _continuingAnimations.Any(a => !a.Completed);
         public int RunningAnimationCount => _fixedDurationAnimations.Count(a => !a.Completed)
             + _continuingAnimations.Count(a => !a.Completed);
+        internal bool IsDisposed => _disposed;
 
         public AnimationContext()
         {

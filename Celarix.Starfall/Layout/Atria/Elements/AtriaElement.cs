@@ -14,7 +14,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
     {
         private SPointF? _position;
         private Anchor? _anchor;
-        private AnimationContext? _animations;
+        private AtriaElementContext? _context;
         private bool _disposed;
 
         protected Alignment? AnchoredPosition
@@ -26,9 +26,14 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             }
         }
 
-        public AtriaSlide? Slide { get; set; }
-        protected AnimationContext Animations => _animations ??= (Slide?.AnimationContexts.CreateFor(this)
-            ?? throw new InvalidOperationException("Slide must be set before creating an animation context."));
+        public AtriaSlide? Slide
+        {
+            get => _context?.Slide;
+            set => throw new InvalidOperationException("Elements are attached by AtriaSlide.Add.");
+        }
+        protected AtriaElementContext Context => _context
+            ?? throw new InvalidOperationException("Element must be added to a slide before using its context.");
+        protected AnimationContext Animations => Context.Animations;
         
         public AtriaId Id { get; protected set; }
         public SPointF Position
@@ -67,6 +72,22 @@ namespace Celarix.Starfall.Layout.Atria.Elements
         }
 
         public virtual void Update(double deltaTime)
+        {
+        }
+
+        internal void Attach(AtriaSlide slide)
+        {
+            if (_context != null)
+            {
+                throw new InvalidOperationException("An element may only be added to one slide.");
+            }
+
+            _context = new AtriaElementContext(slide.Runtime, slide,
+                slide.AnimationContexts.CreateFor(this));
+            OnAttached();
+        }
+
+        protected virtual void OnAttached()
         {
         }
 
@@ -166,7 +187,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
         public virtual void Dispose()
         {
             if (_disposed) { return; }
-            _animations?.Dispose();
+            _context?.Animations.Dispose();
             _disposed = true;
         }
     }

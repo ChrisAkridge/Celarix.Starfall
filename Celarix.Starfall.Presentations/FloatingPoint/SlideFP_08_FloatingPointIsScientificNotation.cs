@@ -58,7 +58,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
         }
 
-        public SlideFP_08_FloatingPointIsScientificNotation(int width, int height) : base(width, height)
+        public SlideFP_08_FloatingPointIsScientificNotation(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             _stateMachine = new StateMachine<State>(this, State.Initial);
             _sign = false;

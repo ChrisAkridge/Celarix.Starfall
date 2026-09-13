@@ -12,7 +12,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideSF_01_ThisShouldBeProgrammable : AtriaSlide
     {
-        public SlideSF_01_ThisShouldBeProgrammable(int width, int height) : base(width, height)
+        public SlideSF_01_ThisShouldBeProgrammable(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

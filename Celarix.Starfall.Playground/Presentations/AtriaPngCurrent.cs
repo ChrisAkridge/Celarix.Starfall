@@ -33,9 +33,7 @@ namespace Celarix.Starfall.Playground.Presentations
                 FramesPerSecond = 60,
                 OutputPath = Path.Combine(@"E:\Documents\Files\Pictures\Miscellaneous\Starfall\ImageTransforms", NextTransformIndex())
             });
-            layoutEngine.SetRenderTarget(pngTarget);
-            var measurementService = new Rendering.MeasurementService(pngTarget);
-            layoutEngine.MeasurementService = measurementService;
+            layoutEngine.Attach(pngTarget);
 
             var imageTransformSlide = new ImageTransformSlide(Image,
                 info.Width, info.Height,
@@ -45,7 +43,9 @@ namespace Celarix.Starfall.Playground.Presentations
                     var targetPixelIndex = (~pixelIndex) % ((uint)info.Width * (uint)info.Height);
                     return new SPointF(targetPixelIndex % (uint)info.Width, targetPixelIndex / (uint)info.Width);
                 },
-                color => color);
+                color => color,
+                layoutEngine.Runtime!,
+                new SSizeF(info.Width, info.Height));
             layoutEngine.AddSlide(imageTransformSlide, "Image Transform");
             layoutEngine.SetCurrentSlide("Image Transform");
 

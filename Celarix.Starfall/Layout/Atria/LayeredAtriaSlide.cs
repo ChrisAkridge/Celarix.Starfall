@@ -1,6 +1,7 @@
 using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Rendering.Targets;
+using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace Celarix.Starfall.Layout.Atria
     {
         private readonly List<AtriaLayer> _orderedLayers;
 
-        protected LayeredAtriaSlide(int width, int height, int layerCount) : base(width, height)
+        protected LayeredAtriaSlide(AtriaRuntime runtime, SSizeF size, int layerCount) : base(runtime, size)
         {
             if (layerCount <= 0)
             {
@@ -123,7 +124,7 @@ namespace Celarix.Starfall.Layout.Atria
     {
         private readonly IReadOnlyDictionary<TLayer, AtriaLayer> _layers;
 
-        protected LayeredAtriaSlide(int width, int height) : base(width, height, Enum.GetValues<TLayer>().Length)
+        protected LayeredAtriaSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size, Enum.GetValues<TLayer>().Length)
         {
             var orderedLayerKeys = Enum.GetValues<TLayer>()
                 .OrderBy(layer => layer)

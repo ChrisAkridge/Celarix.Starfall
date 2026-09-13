@@ -33,7 +33,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private double? _charWidth;
         private double? _lineHeight;
 
-        public SlideFP_04_NoEscapeFromInfiniteExpansions(int width, int height) : base(width, height)
+        public SlideFP_04_NoEscapeFromInfiniteExpansions(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

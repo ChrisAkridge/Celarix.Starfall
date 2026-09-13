@@ -16,7 +16,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private int _state;
 
-        public SlideFP_06_ButWhyScientificNotation(int width, int height) : base(width, height)
+        public SlideFP_06_ButWhyScientificNotation(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

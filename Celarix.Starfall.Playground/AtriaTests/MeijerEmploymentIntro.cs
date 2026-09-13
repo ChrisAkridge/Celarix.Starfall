@@ -64,7 +64,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
 
         private StateMachine<State> _stateMachine;
 
-        public MeijerEmploymentIntro(int width, int height) : base(width, height) { }
+        public MeijerEmploymentIntro(AtriaRuntime runtime, SSizeF size) : base(runtime, size) { }
 
         public override void Initialize()
         {

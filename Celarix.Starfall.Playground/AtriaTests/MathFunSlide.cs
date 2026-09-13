@@ -11,7 +11,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
     {
         private static readonly SColor _backgroundColor = new SColor(8, 0, 130, 255);
 
-        public MathFunSlide(int width, int height) : base(width, height)
+        public MathFunSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

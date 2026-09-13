@@ -24,7 +24,7 @@ namespace Celarix.Starfall.Layout.Atria
 
         private AtriaSlide? CurrentSlide => _currentSlideName != null && _slides.TryGetValue(_currentSlideName, out var slide) ? slide : null;
 
-        public MeasurementService? MeasurementService { get; set; }
+        public AtriaRuntime? Runtime { get; private set; }
         public AnimationContextRegistry AnimationContexts => _animationContextRegistry;
         public string? CurrentSlideName => _currentSlideName;
 
@@ -43,9 +43,14 @@ namespace Celarix.Starfall.Layout.Atria
 
         public void AddSlide(AtriaSlide slide, string name)
         {
-            slide.SetProtectedProperties(MeasurementService ?? throw new InvalidOperationException("MeasurementService must be set on the layout engine before adding slides."),
-                _debugMode,
-                _animationContextRegistry);
+            if (Runtime == null)
+            {
+                throw new InvalidOperationException("A render target must be attached before adding slides.");
+            }
+            if (!ReferenceEquals(slide.Runtime, Runtime))
+            {
+                throw new InvalidOperationException("The slide was constructed for a different Atria runtime.");
+            }
             try
             {
                 slide.Initialize();
@@ -116,7 +121,7 @@ namespace Celarix.Starfall.Layout.Atria
             _renderTarget!.Complete();
         }
 
-        public void SetRenderTarget(IRenderTarget renderTarget)
+        public void Attach(IRenderTarget renderTarget)
         {
             if (_renderTarget != null)
             {
@@ -124,6 +129,8 @@ namespace Celarix.Starfall.Layout.Atria
             }
 
             _renderTarget = renderTarget;
+            Runtime = new AtriaRuntime(new MeasurementService(renderTarget), _debugMode,
+                _animationContextRegistry, new SSizeF(viewportWidth, viewportHeight));
         }
 
         public SlideAdvanceResult RewindCurrentSlide()

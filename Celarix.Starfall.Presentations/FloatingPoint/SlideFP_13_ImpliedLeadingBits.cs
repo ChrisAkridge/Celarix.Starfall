@@ -25,7 +25,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private StateMachine<State> _stateMachine;
         internal static readonly string[] sourceArray = ["Left", "Right"];
 
-        public SlideFP_13_ImpliedLeadingBits(int width, int height) : base(width, height)
+        public SlideFP_13_ImpliedLeadingBits(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             _stateMachine = new StateMachine<State>(this, State.Initial);
         }

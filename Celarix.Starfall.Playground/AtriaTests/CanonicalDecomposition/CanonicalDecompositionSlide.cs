@@ -44,7 +44,7 @@ namespace Celarix.Starfall.Playground.AtriaTests.CanonicalDecomposition
             }
         }
 
-        public CanonicalDecompositionSlide(string imagePath, int width, int height) : base(width, height)
+        public CanonicalDecompositionSlide(string imagePath, AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             BackgroundColor = new SColor(8, 0, 130, 255);
 

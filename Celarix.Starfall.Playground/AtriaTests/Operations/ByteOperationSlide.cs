@@ -37,7 +37,7 @@ namespace Celarix.Starfall.Playground.AtriaTests.Operations
             string operationText,
             int width,
             int height,
-            double sizeMultiplier = 1d) : base(width, height)
+            double sizeMultiplier, AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             _transform = transform;
             _operationText = operationText;

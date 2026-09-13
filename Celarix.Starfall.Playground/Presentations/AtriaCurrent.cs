@@ -3,10 +3,10 @@ using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Playground.AtriaTests;
 using Celarix.Starfall.Playground.AtriaTests.CanonicalDecomposition;
 using Celarix.Starfall.Playground.AtriaTests.Operations;
-using Celarix.Starfall.Playground.DelphinusTests;
 using Celarix.Starfall.Playground.MathFun;
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Rendering.Targets;
+using Celarix.Starfall.Rendering.Models;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
@@ -17,12 +17,11 @@ namespace Celarix.Starfall.Playground.Presentations
 {
     internal static class AtriaCurrent
     {
-        private static Func<AtriaSlide>[] _factories = [
-            () => new SquareRootSearchSlide(1280, 720),
-            () => new DelphinusSlide(1280, 720),
-            () => new MathFunSlide(1280, 720),
-            () => new StatsSlide(1280, 720),
-            () => new GraphSlide(1280, 720)
+        private static Func<AtriaRuntime, AtriaSlide>[] _factories = [
+            runtime => new SquareRootSearchSlide(runtime, new SSizeF(1280, 720)),
+            runtime => new MathFunSlide(runtime, new SSizeF(1280, 720)),
+            runtime => new StatsSlide(runtime, new SSizeF(1280, 720)),
+            runtime => new GraphSlide(runtime, new SSizeF(1280, 720))
         ];
 
         public static void Run()
@@ -42,9 +41,7 @@ namespace Celarix.Starfall.Playground.Presentations
                 layoutEngine.KeyDown(args.ToSKeyboardEvent());
             };
 
-            layoutEngine.SetRenderTarget(tkTarget);
-            var measurementService = new Rendering.MeasurementService(tkTarget);
-            layoutEngine.MeasurementService = measurementService;
+            layoutEngine.Attach(tkTarget);
 
             // var timeProgressSlide = new TimeProgressSlide(1280, 720);
             // var timeProgressSlide = new GigasecondSlide(1920, 188);
@@ -53,7 +50,7 @@ namespace Celarix.Starfall.Playground.Presentations
             //var timeProgressSlide = new CanonicalDecompositionSlide(@"E:\Documents\Files\Pictures\Pictures\S Series\1s Series\1s000335.png",
             //    1280, 720);
             //var timeProgressSlide = new DelphinusSlide(1280, 720);
-            var timeProgressSlide = _factories[4]();
+            var timeProgressSlide = _factories[3](layoutEngine.Runtime!);
             layoutEngine.AddSlide(timeProgressSlide, "timeProgress");
             layoutEngine.SetCurrentSlide("timeProgress");
             layoutEngine.Start();
