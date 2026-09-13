@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -38,10 +38,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             BackgroundColor = Constants.FloatingPointBackground;
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override SlideAdvanceResult Advance()
@@ -173,7 +172,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 Query("#baseLine").Single(),
                 Query("#exponentLine").Single()
             ];
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 foreach (var element in elementsToFadeOut)
                 {
@@ -196,7 +195,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             var vBasisLine = new BasisLine(TopCenter, BottomCenter);
             var startPosition = goodExampleAnchor.Point;
             var targetPosition = new SPointF(goodExampleAnchor.Point.X, vBasisLine.SplitAndTakeLeft(1f / 3f).Center.Y);
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 goodExampleAnchor.Point = MathHelpers.Ease(startPosition, targetPosition, p, Easings.Land);
             }));
@@ -231,7 +230,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             Console.WriteLine("FP7: Colors the mantissa with too many digits to the left of the decimal point in red.");
             var badExample1 = (TextBlock)Query("#badExample1").Single();
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 badExample1.Color = MathHelpers.InterpolateColor(SColor.White, SColor.Red, p);
             }));
@@ -242,7 +241,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             Console.WriteLine("FP7: Colors the mantissa with a 0 to the left of the decimal point in red.");
             var badExample2 = (TextBlock)Query("#badExample2").Single();
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 badExample2.Color = MathHelpers.InterpolateColor(SColor.White, SColor.Red, p);
             }));

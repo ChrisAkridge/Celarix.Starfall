@@ -365,7 +365,7 @@ public sealed class BarChartDisplay : IChartDisplay
             Console.WriteLine($"[ END ] xMin: {Properties.XMinimum}, xMax: {Properties.XMaximum}");
         };
 
-        _moveRangeAnimation.Replace(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(duration),
+        _moveRangeAnimation.Replace(AnimationContext!.StartNow(AnimationContext.SecondsToFrames(duration),
             updateAction, onCompleted), AnimationSlotReplacementBehavior.CancelExisting);
     }
 
@@ -388,7 +388,7 @@ public sealed class BarChartDisplay : IChartDisplay
             _revealYAxisProgress = null;
         };
 
-        _revealChartAnimation.Replace(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(duration),
+        _revealChartAnimation.Replace(AnimationContext!.StartNow(AnimationContext.SecondsToFrames(duration),
             updateAction, onCompleted), AnimationSlotReplacementBehavior.CancelExisting);
     }
 
@@ -406,7 +406,7 @@ public sealed class BarChartDisplay : IChartDisplay
             _opacity = 0d;
         };
 
-        _hideChartAnimation.Replace(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(duration),
+        _hideChartAnimation.Replace(AnimationContext!.StartNow(AnimationContext.SecondsToFrames(duration),
             updateAction, onCompleted), AnimationSlotReplacementBehavior.CancelExisting);
     }
 

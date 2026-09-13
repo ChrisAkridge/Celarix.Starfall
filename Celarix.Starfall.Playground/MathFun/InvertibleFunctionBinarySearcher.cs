@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Libra;
+using Celarix.Starfall.Libra;
 using Celarix.Starfall.Libra.Expressions;
 using Celarix.Starfall.Rendering.Models;
 using System;

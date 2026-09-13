@@ -57,11 +57,11 @@ namespace Celarix.Starfall.Layout.Atria
             // Default implementation does nothing. Override in derived classes to handle key up events.
         }
 
-        public virtual void Update(double deltaTime)
+        public virtual void Update(FrameTime frameTime)
         {
             foreach (var element in _elements)
             {
-                element.Update(deltaTime);
+                element.Update(frameTime);
             }
         }
 

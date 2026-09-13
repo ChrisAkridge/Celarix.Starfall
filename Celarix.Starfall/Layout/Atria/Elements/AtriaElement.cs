@@ -71,7 +71,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             _anchor = null;
         }
 
-        public virtual void Update(double deltaTime)
+        public virtual void Update(FrameTime frameTime)
         {
         }
 
@@ -148,7 +148,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             var setter = CreateSetterExpression(propertySelector).Compile();
             var durationFrames = Math.Max(1, AnimationContext.SecondsToFrames(duration));
             var delayFrames = Math.Max(0, AnimationContext.SecondsToFrames(delay));
-            var animation = FixedDurationAnimation.StartIn(delayFrames, durationFrames, progress =>
+            var animation = Animations.StartIn(delayFrames, durationFrames, progress =>
             {
                 var easedProgress = easing(progress);
                 var currentValue = interpolator.Interpolate(from, to, easedProgress);

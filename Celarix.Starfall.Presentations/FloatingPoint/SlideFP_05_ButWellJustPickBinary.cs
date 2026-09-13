@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Mathematics;
@@ -69,10 +69,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             return SlideAdvanceResult.InternalStateChanged;
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
-            base.Update(deltaTime);
+            base.Update(frameTime);
         }
 
         // Forward transitions
@@ -99,7 +98,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             var binaryAnchor = (BasisPoint)QueryBasis("#binaryAnchor").Single();
             var oldBinaryAnchorPosition = binaryAnchor.Point;
             var newBinaryAnchorPosition = new BasisLine(TopCenter, BottomCenter).SplitAndTakeRight(2f / 3f).Center;
-            var moveBinaryAnchorAnimation = new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber, 30, p =>
+            var moveBinaryAnchorAnimation = Animations.StartNow(30, p =>
             {
                 binaryAnchor.Point = MathHelpers.Ease(oldBinaryAnchorPosition, newBinaryAnchorPosition, p, Easings.Land);
             });
@@ -119,7 +118,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             // I know we're adding an anchor just to move it immediately but I think it'll look cool
             var oldDecimalAnchorPosition = decimalAnchor.Point;
             var newDecimalAnchorPosition = new BasisLine(TopCenter, BottomCenter).SplitAndTakeLeft(1f / 3f).Center;
-            var moveDecimalAnchorAnimation = new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber, 30, p =>
+            var moveDecimalAnchorAnimation = Animations.StartNow(30, p =>
             {
                 decimalAnchor.Point = MathHelpers.Ease(oldDecimalAnchorPosition, newDecimalAnchorPosition, p, Easings.Land);
             });

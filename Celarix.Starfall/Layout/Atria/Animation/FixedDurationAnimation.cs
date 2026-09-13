@@ -42,20 +42,6 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             _onError = onError;
         }
 
-        public static FixedDurationAnimation StartNow(int duration, Action<double> updateAction,
-            Action? onCompleted = null,
-            Action<Exception?>? onError = null)
-        {
-            return new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber, duration, updateAction, onCompleted, onError);
-        }
-
-        public static FixedDurationAnimation StartIn(int framesFromNow, int duration, Action<double> updateAction,
-            Action? onCompleted = null,
-            Action<Exception?>? onError = null)
-        {
-            return new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber + framesFromNow, duration, updateAction, onCompleted, onError);
-        }
-
         public void Update(int currentFrame)
         {
             if (currentFrame < StartFrame || currentFrame > EndFrame)

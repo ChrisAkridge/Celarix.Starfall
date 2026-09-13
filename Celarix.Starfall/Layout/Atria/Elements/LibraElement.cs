@@ -66,15 +66,14 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             Id = AtriaId.Parse(atriaIdString);
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
             if (_state == ExpressionLayoutState.Dirty)
             {
                 UpdateRenderables(Slide?.MeasurementService ?? throw new InvalidOperationException("Slide must be set before updating renderables."));
             }
 
-            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
-            base.Update(deltaTime);
+            base.Update(frameTime);
         }
 
         public override void Render(IRenderTarget target)
@@ -177,7 +176,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
                 .Append(BuildLayoutSizeAnimation(oldLayoutSize, newLayoutSize))
                 .ToArray();
             var fixedDurationAnimation = new FixedDurationAnimation(
-                AtriaLayoutEngine.GlobalFrameNumber,
+                Animations.CurrentFrameNumber,
                 durationInFrames,
                 BuildCompositeAnimation(allAnimations),
                 () => OnCompleted(newLayoutSize));

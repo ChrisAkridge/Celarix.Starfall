@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -71,10 +71,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             BackgroundColor = Constants.FloatingPointBackground;
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override SlideAdvanceResult Advance()
@@ -126,7 +125,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             var scientificNotationAnchor = (BasisPoint)QueryBasis("#scientificNotationAnchor").Single();
             var scientificNotationInitialPosition = scientificNotationAnchor.Point;
             var scientificNotationTargetPosition = TopCenter.Down(Size.Height / 3f);
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 scientificNotationAnchor.Point = MathHelpers.Ease(scientificNotationInitialPosition, scientificNotationTargetPosition, p, Easings.Land);
             }));
@@ -162,7 +161,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 return (int)(sine * MaxMantissa);
             };
 
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(20d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(20d), p =>
             {
                 var mantissa = sweepFunction(p);
                 if (mantissa < 0)
@@ -198,7 +197,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 var exponentOffset = (int)(sine * exponentRange);
                 return (exponentOffset + MinExponent + MaxExponent) / 2; // Center the sweep around the midpoint of the exponent range
             };
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(20d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(20d), p =>
             {
                 _exponent = sweepFunction(p);
                 scientificNotationElement.Text = ScientificNotation;

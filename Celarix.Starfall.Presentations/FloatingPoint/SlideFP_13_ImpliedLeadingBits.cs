@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -35,10 +35,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             BackgroundColor = Constants.FloatingPointBackground;
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override SlideAdvanceResult Advance()
@@ -138,7 +137,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 .Select(id => (TextBlock)Query(id).Single())
                 .ToArray();
 
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d),
                 p =>
                 {
                     badText.Color = MathHelpers.InterpolateColor(SColor.White, SColor.Red, p);
@@ -191,7 +190,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             Console.WriteLine("FP13: Coloring 2 binary values.");
             var badText = (TextBlock)Query("#badBinary").Single();
             var goodText = (TextBlock)Query("#goodBinary").Single();
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d),
                 p =>
                 {
                     badText.Color = MathHelpers.InterpolateColor(SColor.White, SColor.Red, p);

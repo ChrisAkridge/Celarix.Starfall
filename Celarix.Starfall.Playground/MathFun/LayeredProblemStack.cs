@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Models;
@@ -47,7 +47,7 @@ namespace Celarix.Starfall.Playground.MathFun
             _selectedProblemIndex = index;
             var problemY = YOffsetForProblem(index);
             var currentY = layer.Transform.Translation.Y;
-            context.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d),
+            context.ScheduleAnimation(context.StartNow(AnimationContext.SecondsToFrames(1d),
                 p =>
                 {
                     var eased = Easings.Smoothstep(p);

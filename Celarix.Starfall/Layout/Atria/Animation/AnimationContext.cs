@@ -19,6 +19,7 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             || _continuingAnimations.Any(a => !a.Completed);
         public int RunningAnimationCount => _fixedDurationAnimations.Count(a => !a.Completed)
             + _continuingAnimations.Count(a => !a.Completed);
+        public int CurrentFrameNumber => _registry?.CurrentFrame.Number ?? _lastUpdatedFrame ?? 0;
         internal bool IsDisposed => _disposed;
 
         public AnimationContext()
@@ -57,12 +58,12 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             ThrowIfDisposed();
             onCompleted ??= () => { };
 
-            var globalFrameRemainder = AtriaLayoutEngine.GlobalFrameNumber % frameDelay;
+            var frameRemainder = CurrentFrameNumber % frameDelay;
             var animationCount = animationFactories.Count;
-            var staggeredAnimation = ContinuingAnimation.StartNow(() =>
+            var staggeredAnimation = StartNow(() =>
             {
-                var currentGlobalFrame = AtriaLayoutEngine.GlobalFrameNumber;
-                if ((currentGlobalFrame % frameDelay) == globalFrameRemainder)
+                var currentFrame = CurrentFrameNumber;
+                if ((currentFrame % frameDelay) == frameRemainder)
                 {
                     if (animationFactories.Count != 0)
                     {
@@ -88,9 +89,10 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             ScheduleContinuingAnimation(staggeredAnimation);
         }
 
-        public void Update(int currentFrame)
+        public void Update(FrameTime frameTime)
         {
             ThrowIfDisposed();
+            var currentFrame = frameTime.Number;
             if (_lastUpdatedFrame == currentFrame)
             {
                 return;
@@ -249,5 +251,21 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             // kind of setting or constant somewhere. For now, we'll just hardcode it to 60fps.
             return (int)(seconds * 60);
         }
+
+        public FixedDurationAnimation StartNow(int duration, Action<double> updateAction,
+            Action? onCompleted = null, Action<Exception?>? onError = null) =>
+            new(CurrentFrameNumber, duration, updateAction, onCompleted, onError);
+
+        public FixedDurationAnimation StartIn(int framesFromNow, int duration, Action<double> updateAction,
+            Action? onCompleted = null, Action<Exception?>? onError = null) =>
+            new(CurrentFrameNumber + framesFromNow, duration, updateAction, onCompleted, onError);
+
+        public ContinuingAnimation StartNow(Func<bool> updateAction,
+            Action<Exception?>? onError = null) =>
+            new(CurrentFrameNumber, updateAction, onError);
+
+        public ContinuingAnimation StartIn(int framesFromNow, Func<bool> updateAction,
+            Action<Exception?>? onError = null) =>
+            new(CurrentFrameNumber + framesFromNow, updateAction, onError);
     }
 }

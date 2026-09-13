@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -54,10 +54,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             Add([bigNumberElement, bigNumberAnchor, smallNumberElement, smallNumberAnchor]);
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         private Action<TextBlock, TextBlock>[] GetStateMethods()
@@ -148,7 +147,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             Console.WriteLine("FP6: NEXT: Shows one Planck length in meters on the bottom.");
 
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(
+            Animations.ScheduleAnimation(Animations.StartNow(
                 AnimationContext.SecondsToFrames(0.5d),
                 p => bigNumberElement.Opacity = p
             ));
@@ -159,7 +158,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             Console.WriteLine("FP6: NEXT: Divides Avogadro's constant by 10.");
 
-            Animations.ScheduleAnimation(FixedDurationAnimation.StartNow(
+            Animations.ScheduleAnimation(Animations.StartNow(
                 AnimationContext.SecondsToFrames(0.5d),
                 p => smallNumberElement.Opacity = p
             ));

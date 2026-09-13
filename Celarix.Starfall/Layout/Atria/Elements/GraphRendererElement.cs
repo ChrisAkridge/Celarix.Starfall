@@ -102,7 +102,7 @@ public sealed class GraphRendererElement : AtriaElement
         }
     }
 
-    public override void Update(double deltaTime)
+    public override void Update(FrameTime frameTime)
     {
         // Going to assume this is the goAlgo equivalent.
         var isDynamicWeight = true; // This is a placeholder. The original code pulls it from the graph's edge table properties.

@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Rendering.Models;
@@ -44,7 +44,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
             
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
             var now = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(-4d));
             var secondsElapsed = (long)(now - BirthTimestamp).TotalSeconds;

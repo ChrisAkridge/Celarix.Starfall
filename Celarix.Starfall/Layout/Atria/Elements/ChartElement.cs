@@ -89,7 +89,7 @@ public sealed class ChartElement : AtriaElement
         var end = visible ? 1d : 0d;
         Properties.BeginTitleVisibilityChange(visible, start);
         var frames = AnimationContext.SecondsToFrames(VisibilityAnimationDurationSeconds);
-        _titleVisibilityAnimation.Replace(() => FixedDurationAnimation.StartNow(frames,
+        _titleVisibilityAnimation.Replace(() => Animations.StartNow(frames,
             progress => Properties.UpdateTitleVisibilityProgress(start + ((end - start) * progress)),
             () => Properties.CompleteTitleVisibilityChange(visible)), AnimationSlotReplacementBehavior.CancelExisting);
     }
@@ -105,7 +105,7 @@ public sealed class ChartElement : AtriaElement
         var end = visible ? 1d : 0d;
         Properties.BeginInfoPanelVisibilityChange(visible, start);
         var frames = AnimationContext.SecondsToFrames(VisibilityAnimationDurationSeconds);
-        _infoPanelVisibilityAnimation.Replace(() => FixedDurationAnimation.StartNow(frames,
+        _infoPanelVisibilityAnimation.Replace(() => Animations.StartNow(frames,
             progress => Properties.UpdateInfoPanelVisibilityProgress(start + ((end - start) * progress)),
             () => Properties.CompleteInfoPanelVisibilityChange(visible)), AnimationSlotReplacementBehavior.CancelExisting);
     }

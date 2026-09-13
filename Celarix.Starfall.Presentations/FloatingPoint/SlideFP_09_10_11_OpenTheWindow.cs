@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -126,10 +126,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             _element.SetArrowBit(0);
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override SlideAdvanceResult Advance()
@@ -163,7 +162,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private SlideAdvanceResult ZoomInAndShowExponentsAndPlaceValues()
         {
             Console.WriteLine("FP9: Zooming and showing exponents and place values.");
-            var fontSizeAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(2d), p =>
+            var fontSizeAnimation = Animations.StartNow(AnimationContext.SecondsToFrames(2d), p =>
             {
                 _element.BaseFontSize = (float)MathHelpers.Ease(WindowElementBaseFontSize, 120d, p, Easings.Land);
             }, () =>
@@ -179,7 +178,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private SlideAdvanceResult ZoomOutAndHideExponentsAndPlaceValues()
         {
             Console.WriteLine("FP9: Zooming out and hiding exponents and place values.");
-            var fontSizeAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(2d), p =>
+            var fontSizeAnimation = Animations.StartNow(AnimationContext.SecondsToFrames(2d), p =>
             {
                 _element.BaseFontSize = (float)MathHelpers.Ease(120d, WindowElementBaseFontSize, p, Easings.Land);
             }, () =>
@@ -196,7 +195,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private SlideAdvanceResult ShowWindow()
         {
             Console.WriteLine("FP9: Showing the window.");
-            var windowAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            var windowAnimation = Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 _element.WindowOpacity = p;
             }, () => _state = 4);
@@ -229,7 +228,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private SlideAdvanceResult ShowArrow()
         {
             Console.WriteLine("FP9: Showing the arrow.");
-            var arrowAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            var arrowAnimation = Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 _element.ArrowOpacity = p;
             }, () => _state = 6);

@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Rendering.Models;
@@ -78,7 +78,7 @@ namespace Celarix.Starfall.Playground.AtriaTests.Operations
             Add([operationTextElement, yTextElement, operationTextAnchor, yTextAnchor]);
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
             _frameNumber += 1;
 

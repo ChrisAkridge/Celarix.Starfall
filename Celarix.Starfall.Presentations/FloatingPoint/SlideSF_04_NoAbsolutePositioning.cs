@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -31,10 +31,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             BackgroundColor = Constants.StarfallBackground;
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override SlideAdvanceResult Advance()
@@ -92,7 +91,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                         a.Point = MathHelpers.Ease(fromPoint, toPoint, p, Easings.Land);
                     };
 
-                    return FixedDurationAnimation.StartIn(delay, duration, action);
+                    return Animations.StartIn(delay, duration, action);
                 });
 
                 foreach (var transformFunc in transformFuncs)
