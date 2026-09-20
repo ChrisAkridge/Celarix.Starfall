@@ -239,6 +239,7 @@ namespace Celarix.Starfall.Rendering.Models
         public static readonly SColor LightGreen = new(144, 238, 144, 255);
         public static readonly SColor DarkBlue = new(27, 29, 97, 255);
         public static readonly SColor RebeccaPurple = new(0x33, 0x66, 0x99, 255);
+        public static readonly SColor StarfallDefault = new(8, 0, 130, 255);
         #endregion
     }
 }
