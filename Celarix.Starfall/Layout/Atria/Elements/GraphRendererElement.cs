@@ -16,8 +16,10 @@ public sealed class GraphRendererElement : AtriaElement
     private static readonly SFont _vertexFont = new SFontFamily("Calibri", 16f);
 
     private readonly Dictionary<long, Vertex> _vertices = new();
+    private readonly List<Vertex> _vertexList = [];
     private readonly List<Edge> _edges = new();
     private Region? _rootRegion;
+    private int _topologySettlingFramesRemaining;
 
     // okay
     // this is an EXCEPTIONALLY dumb way to do this
@@ -50,28 +52,63 @@ public sealed class GraphRendererElement : AtriaElement
     /// </summary>
     public double ZoomFactor { get; set; } = 1.0d;
 
-    public double EdgeWeightInfluence { get; set; }
-    public double JitterTolerance { get; set; }
-    public double ScalingRatio { get; set; }
-    public double Gravity { get; set; }
-    public double Speed { get; set; }
-    public double SpeedEfficiency { get; set; }
+    public double EdgeWeightInfluence { get; set; } = 1d;
+    public double JitterTolerance { get; set; } = 0.1d;
+    public double SparseScalingFactor { get; set; } = 25d;
+    public double DenseScalingFactor { get; set; } = 15d;
+    public int DenseGraphVertexThreshold { get; set; } = 100;
+
+    /// <summary>
+    /// Gets the force scaling appropriate for the current graph density. Setting this value changes
+    /// the active sparse or dense scaling setting without changing the other setting.
+    /// </summary>
+    public double ScalingFactor
+    {
+        get => _vertexList.Count >= DenseGraphVertexThreshold
+            ? DenseScalingFactor
+            : SparseScalingFactor;
+        set
+        {
+            if (_vertexList.Count >= DenseGraphVertexThreshold)
+            {
+                DenseScalingFactor = value;
+            }
+            else
+            {
+                SparseScalingFactor = value;
+            }
+        }
+    }
+
+    [Obsolete("Use ScalingFactor, SparseScalingFactor, or DenseScalingFactor instead.")]
+    public double ScalingRatio
+    {
+        get => ScalingFactor;
+        set => ScalingFactor = value;
+    }
+
+    public double Gravity { get; set; } = 0.5d;
+    public double Speed { get; set; } = 1d;
+    public double SpeedEfficiency { get; set; } = 1d;
     public bool LinLogMode { get; set; }
     public bool OutboundAttractionDistribution { get; set; }
-    public bool AdjustSizes { get; set; }
+    public bool AdjustSizes { get; set; } = true;
     public bool BarnesHutOptimize { get; set; }
-    public double BarnesHutTheta { get; set; }
+    public double BarnesHutTheta { get; set; } = 1.2d;
     public bool NormalizeEdgeWeights { get; set; }
     public bool StrongGravityMode { get; set; }
     public bool InvertedEdgeWeightsMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of frames during which an expected topology change will not reduce
+    /// the global adaptive speed efficiency. Set to zero to disable topology settling.
+    /// </summary>
+    public int TopologySettlingFrames { get; set; } = 12;
 
     public GraphRendererElement(string atriaIdString)
     {
         Id = AtriaId.Parse(atriaIdString);
 
-        // Initialize as much as we can like in initAlgo()
-        Speed = 1.0d;
-        SpeedEfficiency = 1.0d;
     }
 
     public override void Render(IRenderTarget target)
@@ -91,11 +128,11 @@ public sealed class GraphRendererElement : AtriaElement
             }
         }
 
-        foreach (var vertex in _vertices.Values)
+        foreach (var vertex in _vertexList)
         {
             var screenPosition = GetScreenPosition(vertex.Position);
             var textSize = target.MeasureText(vertex.Label, scaledFont);
-            var circleSize = vertex.Size;
+            var circleSize = vertex.Size * ZoomFactor;
             var textBounds = new SRectF(screenPosition.X - textSize.Width / 2, screenPosition.Y - textSize.Height / 2, textSize.Width, textSize.Height);
             target.DrawEllipse(screenPosition, new SSizeF(circleSize, circleSize), new SColor(0, 127, 255, 255), SPaintStyle.Fill);
             target.DrawText(vertex.Label, scaledFont, textBounds, SColor.White, SAngle.Zero);
@@ -104,10 +141,16 @@ public sealed class GraphRendererElement : AtriaElement
 
     public override void Update(FrameTime frameTime)
     {
+        var frameScale = Math.Clamp(frameTime.Delta.TotalSeconds * 60d, 0d, 2d);
+        var isTopologySettling = _topologySettlingFramesRemaining > 0;
+        if (isTopologySettling)
+        {
+            _topologySettlingFramesRemaining--;
+        }
         // Going to assume this is the goAlgo equivalent.
         var isDynamicWeight = true; // This is a placeholder. The original code pulls it from the graph's edge table properties.
 
-        foreach (var vertex in _vertices.Values)
+        foreach (var vertex in _vertexList)
         {
             vertex.LayoutData ??= new VertexLayoutData();
             vertex.LayoutData.Mass = 1 + GetDegree(vertex);
@@ -119,7 +162,7 @@ public sealed class GraphRendererElement : AtriaElement
 
         if (BarnesHutOptimize)
         {
-            _rootRegion = new Region(_vertices.Values);
+            _rootRegion = new Region(_vertexList);
             _rootRegion.BuildSubregions();
         }
 
@@ -130,21 +173,21 @@ public sealed class GraphRendererElement : AtriaElement
         {
             outboundAttractionCompensation = 0d;
 
-            foreach (var vertex in _vertices.Values)
+            foreach (var vertex in _vertexList)
             {
                 var layout = vertex.LayoutData!;
                 outboundAttractionCompensation += layout.Mass;
             }
 
-            outboundAttractionCompensation /= _vertices.Count;
+            outboundAttractionCompensation /= _vertexList.Count;
         }
 
-        var repulsionForce = new ForceFactory().BuildRepulsion(AdjustSizes, ScalingRatio);
+        var repulsionForce = new ForceFactory().BuildRepulsion(AdjustSizes, ScalingFactor);
         var gravityForce = StrongGravityMode
-            ? new StrongGravity(ScalingRatio)
+            ? new StrongGravity(ScalingFactor)
             : repulsionForce;
-        RunRepulsion([.. _vertices.Values], BarnesHutOptimize, BarnesHutTheta, Gravity,
-            gravityForce, ScalingRatio, _rootRegion, repulsionForce);
+        RunRepulsion(_vertexList, BarnesHutOptimize, BarnesHutTheta, Gravity,
+            gravityForce, ScalingFactor, CenteredAtGraphPosition, _rootRegion, repulsionForce);
 
         // Attraction
         var attraction = new ForceFactory().BuildAttraction(
@@ -245,7 +288,7 @@ public sealed class GraphRendererElement : AtriaElement
         // Auto adjust speed
         var totalSwinging = 0d; // How much irregular movement
         var totalEffectiveTraction = 0d; // How much useful movement
-        foreach (var vertex in _vertices.Values)
+        foreach (var vertex in _vertexList)
         {
             var layout = vertex.LayoutData;
 
@@ -274,16 +317,16 @@ public sealed class GraphRendererElement : AtriaElement
 
         // Optimize jitter tolerance
         // The 'right' jitter tolerance for this network. Bigger networks need more tolerance. Denser networks need less tolerance. Totally empiric.
-        var estimatedOptimalJitterTolerance = 0.05d * Math.Sqrt(_vertices.Count);
+        var estimatedOptimalJitterTolerance = 0.05d * Math.Sqrt(_vertexList.Count);
         var minJitterTolerance = Math.Sqrt(estimatedOptimalJitterTolerance);
         var maxJitterTolerance = 10d;
         var jitterTolerance = JitterTolerance * Math.Max(minJitterTolerance,
-            Math.Min(maxJitterTolerance, estimatedOptimalJitterTolerance * totalEffectiveTraction / Math.Pow(_vertices.Count, 2)));
+            Math.Min(maxJitterTolerance, estimatedOptimalJitterTolerance * totalEffectiveTraction / Math.Pow(_vertexList.Count, 2)));
 
         var minSpeedEfficiency = 0.05d;
 
         // Protection against erractic behavior
-        if (totalSwinging / totalEffectiveTraction > 2.0d)
+        if (!isTopologySettling && totalSwinging / totalEffectiveTraction > 2.0d)
         {
             if (SpeedEfficiency > minSpeedEfficiency)
             {
@@ -303,14 +346,14 @@ public sealed class GraphRendererElement : AtriaElement
 
         // Speed efficiency is how the speed really corresponds to the swinging vs. convergence tradeoff
         // We adjust it slowly and carefully
-        if (totalSwinging > jitterTolerance * totalEffectiveTraction)
+        if (!isTopologySettling && totalSwinging > jitterTolerance * totalEffectiveTraction)
         {
             if (SpeedEfficiency > minSpeedEfficiency)
             {
                 SpeedEfficiency *= 0.7d;
             }
         }
-        else if (Speed < 1000d)
+        else if (!isTopologySettling && Speed < 1000d)
         {
             SpeedEfficiency *= 1.3d;
         }
@@ -342,7 +385,7 @@ public sealed class GraphRendererElement : AtriaElement
         if (AdjustSizes)
         {
             // If nodes overlap prevention is active, it's not possible to trust the swinging mesure.
-            foreach (var vertex in _vertices.Values)
+            foreach (var vertex in _vertexList)
             {
                 var layout = vertex.LayoutData;
                 if (!layout.Fixed)
@@ -350,7 +393,7 @@ public sealed class GraphRendererElement : AtriaElement
                     var swinging = layout.Mass * Math.Sqrt((layout.OldDX - layout.DX) * (layout.OldDX - layout.DX) + (layout.OldDY - layout.DY) * (layout.OldDY - layout.DY));
                     var factor = 0.1d * Speed / (1d + Math.Sqrt(Speed * swinging));
                     var df = Math.Sqrt(Math.Pow(layout.DX, 2) + Math.Pow(layout.DY, 2));
-                    factor = df == 0d ? 0d : Math.Min(factor * df, 10d) / df;
+                    factor = df == 0d ? 0d : Math.Min(factor * df, 10d * frameScale) / df;
 
                     var x = vertex.Position.X + layout.DX * factor;
                     var y = vertex.Position.Y + layout.DY * factor;
@@ -364,7 +407,7 @@ public sealed class GraphRendererElement : AtriaElement
         }
         else
         {
-            foreach (var vertex in _vertices.Values)
+            foreach (var vertex in _vertexList)
             {
                 var layout = vertex.LayoutData;
                 if (!layout.Fixed)
@@ -376,7 +419,7 @@ public sealed class GraphRendererElement : AtriaElement
                         (layout.OldDX - layout.DX) * (layout.OldDX - layout.DX) +
                             (layout.OldDY - layout.DY) * (layout.OldDY - layout.DY));
                     //double factor = speed / (1f + Math.sqrt(speed * swinging));
-                    double factor = Speed / (1f + Math.Sqrt(Speed * swinging));
+                    double factor = Speed / (1f + Math.Sqrt(Speed * swinging)) * frameScale;
 
                     double x = vertex.Position.X + layout.DX * factor;
                     double y = vertex.Position.Y + layout.DY * factor;
@@ -399,16 +442,26 @@ public sealed class GraphRendererElement : AtriaElement
 
     public void AddVertex(Vertex vertex)
     {
+        if (_vertices.TryGetValue(vertex.Id, out var previousVertex))
+        {
+            _vertexList[_vertexList.IndexOf(previousVertex)] = vertex;
+        }
+        else
+        {
+            _vertexList.Add(vertex);
+        }
+
         _vertices[vertex.Id] = vertex;
-        ResetProperties();
+        MarkTopologyChanged();
     }
 
     public bool RemoveVertex(Vertex vertex)
     {
-        if (_vertices.Remove(vertex.Id))
+        if (_vertices.Remove(vertex.Id, out var removedVertex))
         {
+            _vertexList.Remove(removedVertex);
             _edges.RemoveAll(e => e.FromVertexId == vertex.Id || e.ToVertexId == vertex.Id);
-            ResetProperties();
+            MarkTopologyChanged();
             return true;
         }
         return false;
@@ -417,7 +470,7 @@ public sealed class GraphRendererElement : AtriaElement
     public void Connect(Vertex from, Vertex to)
     {
         _edges.Add(new Edge(from.Id, to.Id));
-        ResetProperties();
+        MarkTopologyChanged();
     }
 
     public void Connect(long fromVertexId, long toVertexId)
@@ -425,25 +478,51 @@ public sealed class GraphRendererElement : AtriaElement
         if (!_edges.Any(e => e.FromVertexId == fromVertexId && e.ToVertexId == toVertexId))
         {
             _edges.Add(new Edge(fromVertexId, toVertexId));
-            ResetProperties();
+            MarkTopologyChanged();
         }
     }
 
     public void Disconnect(Vertex from, Vertex to)
     {
-        _edges.RemoveAll(e => (e.FromVertexId == from.Id && e.ToVertexId == to.Id) || (e.FromVertexId == to.Id && e.ToVertexId == from.Id));
-        ResetProperties();
+        if (_edges.RemoveAll(e => (e.FromVertexId == from.Id && e.ToVertexId == to.Id) || (e.FromVertexId == to.Id && e.ToVertexId == from.Id)) > 0)
+        {
+            MarkTopologyChanged();
+        }
     }
 
     public void Disconnect(long fromVertexId, long toVertexId)
     {
-        _edges.RemoveAll(e => (e.FromVertexId == fromVertexId && e.ToVertexId == toVertexId) || (e.FromVertexId == toVertexId && e.ToVertexId == fromVertexId));
-        ResetProperties();
+        if (_edges.RemoveAll(e => (e.FromVertexId == fromVertexId && e.ToVertexId == toVertexId) || (e.FromVertexId == toVertexId && e.ToVertexId == fromVertexId)) > 0)
+        {
+            MarkTopologyChanged();
+        }
     }
 
     public Vertex? GetVertexById(long vertexId)
     {
         return _vertices.TryGetValue(vertexId, out var vertex) ? vertex : null;
+    }
+
+    /// <summary>
+    /// Clears transient solver state while preserving the graph and its configured layout options.
+    /// Use after a deliberately disruptive topology change when a fresh settling pass is desired.
+    /// </summary>
+    public void ResetSolverState()
+    {
+        Speed = 1d;
+        SpeedEfficiency = 1d;
+        _rootRegion = null;
+
+        foreach (var vertex in _vertexList)
+        {
+            if (vertex.LayoutData is { } layout)
+            {
+                layout.DX = 0d;
+                layout.DY = 0d;
+                layout.OldDX = 0d;
+                layout.OldDY = 0d;
+            }
+        }
     }
 
     private SPointF GetScreenPosition(SPointF graphPosition)
@@ -505,12 +584,20 @@ public sealed class GraphRendererElement : AtriaElement
         return degree;
     }
 
+    private void MarkTopologyChanged()
+    {
+        _topologySettlingFramesRemaining = Math.Max(
+            _topologySettlingFramesRemaining,
+            TopologySettlingFrames);
+    }
+
     private void RunRepulsion(IReadOnlyList<Vertex> vertices,
         bool barnesHutOptimize,
         double barnesHutTheta,
         double gravity,
         RepulsionForce gravityForce,
         double scaling,
+        SPointF gravityCenter,
         Region? rootRegion,
         RepulsionForce repulsionForce)
     {
@@ -543,34 +630,7 @@ public sealed class GraphRendererElement : AtriaElement
         for (int vIndex = 0; vIndex < vertices.Count; vIndex++)
         {
             var vertex = vertices[vIndex];
-            gravityForce.Apply(vertex, gravity / scaling);
+            gravityForce.Apply(vertex, gravity / scaling, gravityCenter);
         }
-    }
-
-    public void ResetProperties()
-    {
-        var vertexCount = _vertices.Count;
-
-        if (vertexCount >= 100)
-        {
-            ScalingRatio = 15d;
-        }
-        else
-        {
-            ScalingRatio = 25d;
-        }
-
-        StrongGravityMode = false;
-        InvertedEdgeWeightsMode = false;
-        Gravity = 0.5d;
-        OutboundAttractionDistribution = false;
-        LinLogMode = false;
-        AdjustSizes = true;
-        EdgeWeightInfluence = 1d;
-        NormalizeEdgeWeights = false;
-
-        JitterTolerance = 0.1d;
-        BarnesHutOptimize = vertexCount >= 1000;
-        BarnesHutTheta = 1.2d;
     }
 }

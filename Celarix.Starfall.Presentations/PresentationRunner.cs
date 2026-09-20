@@ -92,6 +92,8 @@ namespace Celarix.Starfall.Presentations
             _slideFactories.Add(new SlideFactory("FP But We'll Just Pick Binary", runtime => new SlideFP_05_ButWellJustPickBinary(runtime, size)));
             _slideFactories.Add(new SlideFactory("FP But Why Scientific Notation?", runtime => new SlideFP_06_ButWhyScientificNotation(runtime, size)));
             _slideFactories.Add(new SlideFactory("FP Rules for Mantissas", runtime => new SlideFP_07_RulesForMantissas(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Choosing Bit Allocation", runtime => new SlideFP_07_5_ChoosingBitAllocation(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Exponent as an Unsigned Integer", runtime => new SlideFP_07_6_ExponentAsUnsignedInteger(runtime, size)));
             _slideFactories.Add(new SlideFactory("FP Floating Point is Scientific Notation", runtime => new SlideFP_08_FloatingPointIsScientificNotation(runtime, size)));
             _slideFactories.Add(new SlideFactory("FP Open the Window", runtime => new SlideFP_09_10_11_OpenTheWindow(runtime, size)));
             _slideFactories.Add(new SlideFactory("FP Implied Leading Bits", runtime => new SlideFP_13_ImpliedLeadingBits(runtime, size)));

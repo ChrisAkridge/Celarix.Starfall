@@ -73,7 +73,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             Console.WriteLine("FP7: Shows a number in scientific notation.");
             var goodExample = new TextBlock("#goodExample")
             {
-                Text = "8.300 × 10⁹",
+                Text = "+8.302 × 10⁹",
                 FontFamily = "Consolas",
                 FontSize = 72f,
                 Color = SColor.White
@@ -92,17 +92,28 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             var goodExample = Query("#goodExample").Single() as TextBlock;
             var characterSize = new SSizeF(goodExample.Size.Width / goodExample.Text.Length,
                 goodExample.Size.Height);
-            var mantissaTargetX = characterSize.Width * 2.5d;
-            var baseTargetX = characterSize.Width * 9d;
-            var exponentTargetX = characterSize.Width * 10.5d;
+            var signTargetX = characterSize.Width * 0.5d;
+            var mantissaTargetX = characterSize.Width * 3.5d;
+            var baseTargetX = characterSize.Width * 10d;
+            var exponentTargetX = characterSize.Width * 11.5d;
             var exponentTargetY = goodExample.Size.Height * 0.25d;
 
             var vBasisLine = new BasisLine(TopCenter, BottomCenter);
             var hBasisHeight = vBasisLine.SplitAndTakeLeft(1f / 3f).Center.Y;
             var hBasisLine = new BasisLine(TopLeft.Down(hBasisHeight), TopRight.Down(hBasisHeight));
+            var signLabelAnchor = new BasisPoint(hBasisLine.SplitAndTakeLeft(1f / 6f).Center, "#signLabelAnchor");
             var mantissaLabelAnchor = new BasisPoint(hBasisLine.SplitAndTakeLeft(1f / 3f).Center, "#mantissaLabelAnchor");
             var baseLabelAnchor = new BasisPoint(hBasisLine.Center, "#baseLabelAnchor");
             var exponentLabelAnchor = new BasisPoint(hBasisLine.SplitAndTakeRight(3f / 4f).Center, "#exponentLabelAnchor");
+
+            var signLabel = new TextBlock("#signLabel")
+            {
+                Text = "Sign",
+                FontFamily = "Consolas",
+                FontSize = 36f,
+                Color = SColor.White
+            };
+            signLabel.AnchorCenterTo(signLabelAnchor);
 
             var mantissaLabel = new TextBlock("#mantissaLabel")
             {
@@ -131,6 +142,14 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             };
             exponentLabel.AnchorCenterTo(exponentLabelAnchor);
 
+            var signLine = LineElement.Between(
+                signLabelAnchor.Point,
+                new SPointF(signTargetX + goodExample.Position.X, goodExample.Bounds.Center.Y),
+                "#signLine",
+                SColor.White.WithOpacity(0.25d),
+                4d);
+            signLine.AnchorTopLeftTo(signLabelAnchor);
+
             var mantissaLine = LineElement.Between(
                 mantissaLabelAnchor.Point,
                 new SPointF(mantissaTargetX + goodExample.Position.X, goodExample.Bounds.Center.Y),
@@ -155,7 +174,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 4d);
             exponentLine.AnchorTopLeftTo(exponentLabelAnchor);
 
-            Add([mantissaLabel, baseLabel, exponentLabel, mantissaLine, baseLine, exponentLine, mantissaLabelAnchor, baseLabelAnchor, exponentLabelAnchor])
+            Add([signLabel, mantissaLabel, baseLabel, exponentLabel, signLine, mantissaLine, baseLine, exponentLine, signLabelAnchor, mantissaLabelAnchor, baseLabelAnchor, exponentLabelAnchor])
                 .AnimateBasic(0.5d, AnimationTypes.FadeIn, Easings.Linear);
         }
 
@@ -165,9 +184,11 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             // CANIMPROVE: Fading out elements and then removing them can be done a LOT better than this.
             Console.WriteLine("FP7: Hides the parts labels and lines.");
             AtriaElement[] elementsToFadeOut = [
+                Query("#signLabel").Single(),
                 Query("#mantissaLabel").Single(),
                 Query("#baseLabel").Single(),
                 Query("#exponentLabel").Single(),
+                Query("#signLine").Single(),
                 Query("#mantissaLine").Single(),
                 Query("#baseLine").Single(),
                 Query("#exponentLine").Single()
@@ -181,7 +202,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }, () =>
             {
                 Remove(elementsToFadeOut);
-                Remove([(ISlideAddable)QueryBasis("#mantissaLabelAnchor").Single(),
+                Remove([(ISlideAddable)QueryBasis("#signLabelAnchor").Single(),
+                    (ISlideAddable)QueryBasis("#mantissaLabelAnchor").Single(),
                     (ISlideAddable)QueryBasis("#baseLabelAnchor").Single(),
                     (ISlideAddable)QueryBasis("#exponentLabelAnchor").Single()]);
             }));
@@ -203,7 +225,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             // Make and show the bad examples immediately
             var badExample1 = new TextBlock("#badExample1")
             {
-                Text = "83.00 × 10⁸",
+                Text = "+83.02 × 10⁸",
                 FontFamily = "Consolas",
                 FontSize = 72f,
                 Color = SColor.White
@@ -213,7 +235,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
             var badExample2 = new TextBlock("#badExample2")
             {
-                Text = "0.8300 × 10¹⁰",
+                Text = "+0.830 × 10¹⁰",
                 FontFamily = "Consolas",
                 FontSize = 72f,
                 Color = SColor.White

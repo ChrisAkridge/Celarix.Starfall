@@ -56,7 +56,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
                 var imageElements = imagePaths.Select((path, index) => ImageElement.FromFile(path, $"#image{index}"))
                     .ToArray();
-                
+
                 var imageAnchors = imageElements.Select((e, i) => new BasisPoint(points[i], $"#imageAnchor{i}")).ToArray();
                 for (var i = 0; i < imageElements.Length; i++)
                 {

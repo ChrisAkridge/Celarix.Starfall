@@ -45,6 +45,7 @@ public sealed class BarChartDisplay : IChartDisplay
 
     // Animation slots and their referents.
     private IReadOnlyList<FittedAxisLabel<BigInteger>> _xAxisLabels = [];
+    private IReadOnlyList<double> _xAxisTickPositions = [];
     private IReadOnlyList<FittedLabel> _yAxisLabels = [];
     private IReadOnlyList<FittedLabel> _nextYAxisLabels;
     private IReadOnlyList<(SRectF Bar, SColor color)> _barRenderables = [];
@@ -190,32 +191,16 @@ public sealed class BarChartDisplay : IChartDisplay
         target.DrawLine(new SPointF(left, mainGridlineY), new SPointF(right, mainGridlineY), mainGridlineColor,
             (float)XAxisProperties.GridlineThickness);
 
-        // Check to see if we can draw the ticks/gridlines.
-        var canDrawTicks = !IsDense(barChartBounds) && XAxisProperties.GridlineStyle != GridlineStyle.None;
-        if (canDrawTicks)
+        if (_xAxisTickPositions.Count != 0)
         {
-            var totalSlots = GetVisualSlotCount();
-            var slotWidth = (double)((BigDecimal)barChartBounds.Width / totalSlots);
-            var minSlotWidthToDrawTicks = XAxisProperties.GridlineThickness * 2d;
-            if (slotWidth < minSlotWidthToDrawTicks)
-            {
-                canDrawTicks = false;
-            }
-        }
-        if (canDrawTicks)
-        {
-            // Draw the ticks/gridlines for each slot.
             var lineLength = XAxisProperties.GridlineStyle switch
             {
                 GridlineStyle.Tick => TickLength,
                 GridlineStyle.Gridline => barChartBounds.Height,
                 _ => throw new NotImplementedException($"Gridline style {XAxisProperties.GridlineStyle} is not implemented.")
             };
-            for (var x = Properties.XRange.Minimum; x <= Properties.XRange.Maximum; x++)
+            foreach (var tickX in _xAxisTickPositions)
             {
-                var slotBounds = GetXSlotBounds(x, barChartBounds);
-                var tickX = slotBounds.Center.X;
-
                 if (tickX >= right)
                 {
                     continue;
@@ -452,6 +437,7 @@ public sealed class BarChartDisplay : IChartDisplay
         {
             _barData = [];
             _xAxisLabels = [];
+            _xAxisTickPositions = [];
             _yAxisLabels = [];
             _barRenderables = [];
             _needStaticInvalidation = false;
@@ -479,6 +465,8 @@ public sealed class BarChartDisplay : IChartDisplay
         _lastXAxisLabelViewportSpan = viewportSpan;
         _forceXAxisLabelDensityRecalculation = false;
 
+        _xAxisTickPositions = BuildXAxisTickPositions(barChartBounds);
+
         _yAxisEm = _measurementService.MeasureText("M", YAxisProperties.LabelFont).Width;
         var minimumYGridline = yGridLines.MinMultiple * YAxisProperties.GridlineGap;
         var maximumYGridline = yGridLines.MaxMultiple * YAxisProperties.GridlineGap;
@@ -494,6 +482,28 @@ public sealed class BarChartDisplay : IChartDisplay
         BuildRenderables(barChartBounds);
 
         _needStaticInvalidation = false;
+    }
+
+    private IReadOnlyList<double> BuildXAxisTickPositions(SRectF barChartBounds)
+    {
+        if (XAxisProperties.GridlineStyle == GridlineStyle.None || IsDense(barChartBounds))
+        {
+            return [];
+        }
+
+        var totalSlots = GetVisualSlotCount();
+        var slotWidth = (double)((BigDecimal)barChartBounds.Width / totalSlots);
+        if (slotWidth < XAxisProperties.GridlineThickness * 2d)
+        {
+            return [];
+        }
+
+        var tickPositions = new List<double>();
+        for (var x = Properties.XRange.Minimum; x <= Properties.XRange.Maximum; x++)
+        {
+            tickPositions.Add(GetXSlotBounds(x, barChartBounds).Center.X);
+        }
+        return tickPositions;
     }
 
     private void BuildRenderables(SRectF barChartBounds)
