@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Mathematics;
@@ -27,7 +27,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         private double _leftXOf2ToThe0Bit = 0d;
         private double _drawnWindowLeftX;
         private double? _desiredWindowLeftX;
-        private AnimationContext _animationContext = new AnimationContext();
         private readonly Random _random = new Random();
 
         public double DotsOnRow { get; set; }
@@ -113,11 +112,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             }
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
-
-            if (!AnimationRunning || (AtriaLayoutEngine.GlobalFrameNumber % FramesBetweenUpdates != 0)) { return; }
+            if (!AnimationRunning || (frameTime.Number % FramesBetweenUpdates != 0)) { return; }
 
             var accumulator = BuildFloatFromRow(0);
             var nextAddend = BuildFloatFromRow(1);
@@ -129,7 +126,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 _windowLeftExponent = newExponent;
                 _desiredWindowLeftX = ExponentToScreenX(_windowLeftExponent);
                 var oldWindowLeftX = _drawnWindowLeftX;
-                _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(FramesBetweenUpdates, p =>
+                Animations.ScheduleAnimation(Animations.StartNow(FramesBetweenUpdates, p =>
                 {
                     _drawnWindowLeftX = MathHelpers.Ease(oldWindowLeftX, _desiredWindowLeftX.Value, p, Easings.Linear);
                 }, () => _desiredWindowLeftX = null));

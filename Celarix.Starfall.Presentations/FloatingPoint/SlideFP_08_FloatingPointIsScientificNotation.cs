@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -31,7 +31,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private int _exponent;
 
         private StateMachine<State> _stateMachine;
-        private AnimationContext _animationContext;
 
         private float Value
         {
@@ -59,10 +58,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
         }
 
-        public SlideFP_08_FloatingPointIsScientificNotation(int width, int height) : base(width, height)
+        public SlideFP_08_FloatingPointIsScientificNotation(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             _stateMachine = new StateMachine<State>(this, State.Initial);
-            _animationContext = new AnimationContext();
             _sign = false;
             _mantissa = 0;
             _exponent = 0;
@@ -73,10 +71,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             BackgroundColor = Constants.FloatingPointBackground;
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override SlideAdvanceResult Advance()
@@ -128,7 +125,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             var scientificNotationAnchor = (BasisPoint)QueryBasis("#scientificNotationAnchor").Single();
             var scientificNotationInitialPosition = scientificNotationAnchor.Point;
             var scientificNotationTargetPosition = TopCenter.Down(Size.Height / 3f);
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 scientificNotationAnchor.Point = MathHelpers.Ease(scientificNotationInitialPosition, scientificNotationTargetPosition, p, Easings.Land);
             }));
@@ -164,7 +161,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 return (int)(sine * MaxMantissa);
             };
 
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(20d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(20d), p =>
             {
                 var mantissa = sweepFunction(p);
                 if (mantissa < 0)
@@ -200,7 +197,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 var exponentOffset = (int)(sine * exponentRange);
                 return (exponentOffset + MinExponent + MaxExponent) / 2; // Center the sweep around the midpoint of the exponent range
             };
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(20d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(20d), p =>
             {
                 _exponent = sweepFunction(p);
                 scientificNotationElement.Text = ScientificNotation;

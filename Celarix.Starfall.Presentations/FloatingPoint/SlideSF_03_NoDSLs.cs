@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -14,7 +14,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
     {
         private int _state;
 
-        public SlideSF_03_NoDSLs(int width, int height) : base(width, height)
+        public SlideSF_03_NoDSLs(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

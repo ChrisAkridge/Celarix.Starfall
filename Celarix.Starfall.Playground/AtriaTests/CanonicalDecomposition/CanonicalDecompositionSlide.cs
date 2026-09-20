@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
@@ -44,7 +44,7 @@ namespace Celarix.Starfall.Playground.AtriaTests.CanonicalDecomposition
             }
         }
 
-        public CanonicalDecompositionSlide(string imagePath, int width, int height) : base(width, height)
+        public CanonicalDecompositionSlide(string imagePath, AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             BackgroundColor = new SColor(8, 0, 130, 255);
 
@@ -74,9 +74,9 @@ namespace Celarix.Starfall.Playground.AtriaTests.CanonicalDecomposition
             }
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            _elapsedTime += deltaTime;
+            _elapsedTime += frameTime.Delta.TotalSeconds;
 
             if (_currentCameraMoveEnd.HasValue)
             {

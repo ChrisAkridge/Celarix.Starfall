@@ -26,6 +26,9 @@ namespace Celarix.Starfall.Rendering.Models
             return new SRectF(X, Y, size.Width, size.Height);
         }
 
+        public SPointF WithX(double newX) => new SPointF(newX, Y);
+        public SPointF WithY(double newY) => new SPointF(X, newY);
+
         public SPointF Up(double distance) => new SPointF(X, Y - distance);
         public SPointF Down(double distance) => new SPointF(X, Y + distance);
         public SPointF Left(double distance) => new SPointF(X - distance, Y);

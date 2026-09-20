@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -19,7 +19,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private int _state;
         private FloatingPointWindowElement _element;
         private SingleBinaryViewElement _binaryView;
-        private readonly AnimationContext _animationContext = new();
 
         private bool _isNegative;
         private int _exponent = 0;
@@ -103,7 +102,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
         }
 
-        public SlideFP_09_10_11_OpenTheWindow(int width, int height) : base(width, height)
+        public SlideFP_09_10_11_OpenTheWindow(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             
         }
@@ -127,10 +126,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             _element.SetArrowBit(0);
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override SlideAdvanceResult Advance()
@@ -164,7 +162,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private SlideAdvanceResult ZoomInAndShowExponentsAndPlaceValues()
         {
             Console.WriteLine("FP9: Zooming and showing exponents and place values.");
-            var fontSizeAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(2d), p =>
+            var fontSizeAnimation = Animations.StartNow(AnimationContext.SecondsToFrames(2d), p =>
             {
                 _element.BaseFontSize = (float)MathHelpers.Ease(WindowElementBaseFontSize, 120d, p, Easings.Land);
             }, () =>
@@ -173,14 +171,14 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 _element.SetShowPlaceValues(show: true);
                 _state = 2;
             });
-            _animationContext.ScheduleAnimation(fontSizeAnimation);
+            Animations.ScheduleAnimation(fontSizeAnimation);
             return SlideAdvanceResult.InternalStateChanged;
         }
 
         private SlideAdvanceResult ZoomOutAndHideExponentsAndPlaceValues()
         {
             Console.WriteLine("FP9: Zooming out and hiding exponents and place values.");
-            var fontSizeAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(2d), p =>
+            var fontSizeAnimation = Animations.StartNow(AnimationContext.SecondsToFrames(2d), p =>
             {
                 _element.BaseFontSize = (float)MathHelpers.Ease(120d, WindowElementBaseFontSize, p, Easings.Land);
             }, () =>
@@ -190,18 +188,18 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                 _element.MoveWindowToExponent(0);
                 _state = 3;
             });
-            _animationContext.ScheduleAnimation(fontSizeAnimation);
+            Animations.ScheduleAnimation(fontSizeAnimation);
             return SlideAdvanceResult.InternalStateChanged;
         }
 
         private SlideAdvanceResult ShowWindow()
         {
             Console.WriteLine("FP9: Showing the window.");
-            var windowAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            var windowAnimation = Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 _element.WindowOpacity = p;
             }, () => _state = 4);
-            _animationContext.ScheduleAnimation(windowAnimation);
+            Animations.ScheduleAnimation(windowAnimation);
             return SlideAdvanceResult.InternalStateChanged;
         }
 
@@ -230,11 +228,11 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private SlideAdvanceResult ShowArrow()
         {
             Console.WriteLine("FP9: Showing the arrow.");
-            var arrowAnimation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            var arrowAnimation = Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
             {
                 _element.ArrowOpacity = p;
             }, () => _state = 6);
-            _animationContext.ScheduleAnimation(arrowAnimation);
+            Animations.ScheduleAnimation(arrowAnimation);
 
             SetTarget((float)Math.PI);
 

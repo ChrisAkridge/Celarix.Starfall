@@ -1,6 +1,8 @@
-﻿using Celarix.Starfall.Layout.Helium;
+﻿using Celarix.Starfall.Extensions;
+using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Rendering.Converters;
 using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Models.Path;
 using FastCache;
 using HarfBuzzSharp;
 using SkiaSharp;
@@ -20,6 +22,18 @@ namespace Celarix.Starfall.Rendering.Targets
             canvas.Clear(color.ToSKColor());
         }
 
+        public static void PushTransform(SKCanvas canvas, STransform2D transform)
+        {
+            canvas.Save();
+            canvas.Translate((float)transform.Translation.X, (float)transform.Translation.Y);
+            canvas.Scale((float)transform.Scale.Width, (float)transform.Scale.Height);
+        }
+
+        public static void PopTransform(SKCanvas canvas)
+        {
+            canvas.Restore();
+        }
+
         public static void DrawRectangle(SKCanvas canvas, SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle angle)
         {
             SKRect rect = bounds.ToSKRect();
@@ -32,7 +46,7 @@ namespace Celarix.Starfall.Rendering.Targets
 
             if (angle == SAngle.Zero)
             {
-                
+
                 canvas.DrawRect(rect, paint);
             }
             else
@@ -52,7 +66,7 @@ namespace Celarix.Starfall.Rendering.Targets
                 Style = paintStyle.ToSKPaintStyle(),
                 IsAntialias = true
             };
-            
+
             var cx = center.X;
             var cy = center.Y;
             var rx = size.Width / 2;
@@ -194,7 +208,7 @@ namespace Celarix.Starfall.Rendering.Targets
                 IsAntialias = true
             };
             SKRect skRect = bounds.ToSKRect();
-            
+
             if (rotation == SAngle.Zero)
             {
                 canvas.DrawImage(image.ToSKImage(), skRect, paint);
@@ -257,6 +271,48 @@ namespace Celarix.Starfall.Rendering.Targets
             };
 
             canvas.DrawCircle(center.ToSKPoint(), (float)radius, paint);
+        }
+
+        public static void DrawPath(SKCanvas canvas, IEnumerable<SPathCommand> pathCommands, SPathStyle pathStyle)
+        {
+            var skPath = CreateSkiaPath(pathCommands);
+            using var paint = pathStyle.ToSKPaint();
+            canvas.DrawPath(skPath, paint);
+        }
+
+        private static SKPath CreateSkiaPath(IEnumerable<SPathCommand> pathCommands)
+        {
+            var skPath = new SKPath();
+            foreach (var command in pathCommands)
+            {
+                switch (command)
+                {
+                    case SMoveTo moveTo:
+                        skPath.MoveTo(new((float)moveTo.X, (float)moveTo.Y));
+                        break;
+                    case SLineTo lineTo:
+                        skPath.LineTo(new((float)lineTo.X, (float)lineTo.Y));
+                        break;
+                    case SQuadraticTo quadTo:
+                        skPath.QuadTo(new((float)quadTo.ControlX,
+                            (float)quadTo.ControlY),
+                            new((float)quadTo.X, (float)quadTo.Y));
+                        break;
+                    case SCubicTo cubicTo:
+                        skPath.CubicTo(new((float)cubicTo.Control1X,
+                            (float)cubicTo.Control1Y),
+                            new((float)cubicTo.Control2X,
+                            (float)cubicTo.Control2Y),
+                            new((float)cubicTo.X, (float)cubicTo.Y));
+                        break;
+                    case SClosePath close:
+                        skPath.Close();
+                        break;
+                    default:
+                        throw new NotSupportedException($"Unsupported path command type: {command.GetType().Name}");
+                }
+            }
+            return skPath;
         }
     }
 }

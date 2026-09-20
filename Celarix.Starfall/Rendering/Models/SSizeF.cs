@@ -32,6 +32,12 @@ namespace Celarix.Starfall.Rendering.Models
                 Height - (heightAmount * 2));
         }
 
+        public SSizeF ShrinkTowardCenterByFactor(double widthFactor, double heightFactor)
+        {
+            return new SSizeF(Width * (1 - widthFactor),
+                Height * (1 - heightFactor));
+        }
+
         public SSizeF FitAspectRatioInside(double desiredAspectRatio)
         {
             var currentAspectRatio = Width / Height;
@@ -49,10 +55,26 @@ namespace Celarix.Starfall.Rendering.Models
             }
         }
 
+        public void ThrowIfNotPositive(string? parameterName = null)
+        {
+            if (Width <= 0 || Height <= 0)
+            {
+                throw new ArgumentOutOfRangeException(parameterName, $"Width and Height must be positive. Actual: {this}");
+            }
+        }
+
+        public SSizeF ZeroIfNotPositive()
+        {
+            var width = Width <= 0 ? 0 : Width;
+            var height = Height <= 0 ? 0 : Height;
+            return new SSizeF(width, height);
+        }
+
         public static bool operator ==(SSizeF left, SSizeF right) => left.Equals(right);
         public static bool operator !=(SSizeF left, SSizeF right) => !(left == right);
 
         public static SSizeF operator +(SSizeF a, SSizeF b) => new(a.Width + b.Width, a.Height + b.Height);
         public static SSizeF operator *(SSizeF size, double scalar) => new(size.Width * scalar, size.Height * scalar);
+        public static SSizeF operator *(SSizeF a, SSizeF b) => new(a.Width * b.Width, a.Height * b.Height);
     }
 }

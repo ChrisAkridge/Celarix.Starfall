@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Audio;
+using Celarix.Starfall.Audio;
 using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
@@ -37,7 +37,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private int _state;
         private FloatingPointWindowElement _element;
         private SingleBinaryViewElement _binaryView;
-        private readonly AnimationContext _animationContext = new();
         private readonly SImage _cursedNaNStatic;
 
         private bool _isNegative;
@@ -143,7 +142,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             _soundPlayer.LoadSound("glassBreaking", "Assets/Sounds/159197__justbrando__glass-breaking.wav");
         }
 
-        public SlideFP_14_15_SpecialExponents(int width, int height) : base(width, height)
+        public SlideFP_14_15_SpecialExponents(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             _cursedNaNStatic = SImage.FromSKImage(SKImage.FromEncodedData("Assets/Images/3317968666_f46dbaac72_o_cropped.jpg"));
         }
@@ -198,7 +197,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             Console.WriteLine("FP14: The floating point window fell off the screen and shattered.");
             UpdateVisibleValues();
             var valuesBlock = (MultilineTextBlock)Query("#values").Single();
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartIn(AnimationContext.SecondsToFrames(2d),
+            Animations.ScheduleAnimation(Animations.StartIn(AnimationContext.SecondsToFrames(2d),
                 AnimationContext.SecondsToFrames(0.5d),
                 p =>
                 {
@@ -207,10 +206,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             _soundPlayer.PlaySound("glassBreaking");
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override void Render(IRenderTarget target)
@@ -330,7 +328,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             var valuesBlock = (MultilineTextBlock)Query("#values").Single();
             valuesBlock.Font = new SFontFamily("Consolas", 30f);
 
-            _animationContext.ScheduleContinuingAnimation(ContinuingAnimation.StartNow(() =>
+            Animations.ScheduleContinuingAnimation(Animations.StartNow(() =>
             {
                 _addingMantissa += 1;
                 SetMantissaValue(_currentMantissa, _addingMantissa);
@@ -353,7 +351,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             _isAddingToMantissa = false;
 
             var valuesBlock = (MultilineTextBlock)Query("#values").Single();
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d),
                 p =>
                 {
                     valuesBlock.Opacity = 1d - p;
@@ -390,7 +388,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             // Start by setting a few bits in the row after I said "you can't set bits up here" when
             // the window fell off and shattered.
             var bitsLeftToSet = 9;
-            _animationContext.ScheduleContinuingAnimation(ContinuingAnimation.StartNow(() =>
+            Animations.ScheduleContinuingAnimation(Animations.StartNow(() =>
             {
                 if (random.NextDouble() < (0.025d * (10 - bitsLeftToSet))) // Make it more likely to set a bit as time goes on
                 {
@@ -423,7 +421,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             _element.WindowWidthInBits = 23;
             _element.MoveWindowToExponent(127);
 
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d),
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(1d),
                 p =>
                 {
                     _element.WindowOpacity = flickeringEasing(p);

@@ -38,36 +38,8 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             StartFrame = startFrame;
             Duration = duration;
             _updateAction = updateAction;
-            
-            // Kinda hackish, but ensure that we always do a P = 1.00 step at the very end to reach the final state.
-            if (onCompleted == null)
-            {
-                OnCompleted = () => updateAction(1d);
-            }
-            else
-            {
-                OnCompleted = () =>
-                {
-                    updateAction(1d);
-                    onCompleted();
-                };
-            }
-
+            OnCompleted = onCompleted;
             _onError = onError;
-        }
-
-        public static FixedDurationAnimation StartNow(int duration, Action<double> updateAction,
-            Action? onCompleted = null,
-            Action<Exception?>? onError = null)
-        {
-            return new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber, duration, updateAction, onCompleted, onError);
-        }
-
-        public static FixedDurationAnimation StartIn(int framesFromNow, int duration, Action<double> updateAction,
-            Action? onCompleted = null,
-            Action<Exception?>? onError = null)
-        {
-            return new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber + framesFromNow, duration, updateAction, onCompleted, onError);
         }
 
         public void Update(int currentFrame)
@@ -91,8 +63,7 @@ namespace Celarix.Starfall.Layout.Atria.Animation
 
             if (currentFrame == EndFrame)
             {
-                OnCompleted?.Invoke();
-                Completed = true;
+                Complete();
             }
         }
 
@@ -103,6 +74,29 @@ namespace Celarix.Starfall.Layout.Atria.Animation
                 StartFrame = currentFrame;
             }
             EndFrame = currentFrame;
+        }
+
+        public virtual void ForceFinish()
+        {
+            if (Completed) { return; }
+            Complete();
+        }
+
+        private void Complete()
+        {
+            try
+            {
+                _updateAction(1d);
+                OnCompleted?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                _onError?.Invoke(ex);
+            }
+            finally
+            {
+                Completed = true;
+            }
         }
     }
 }

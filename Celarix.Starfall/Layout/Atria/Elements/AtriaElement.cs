@@ -10,12 +10,30 @@ using System.Text;
 
 namespace Celarix.Starfall.Layout.Atria.Elements
 {
-    public abstract class AtriaElement : IAtriaIdentified, ISlideAddable
+    public abstract class AtriaElement : IAtriaIdentified, ISlideAddable, IDisposable
     {
         private SPointF? _position;
         private Anchor? _anchor;
+        private AtriaElementContext? _context;
+        private bool _disposed;
 
-        public AtriaSlide? Slide { get; set; }
+        protected Alignment? AnchoredPosition
+        {
+            get
+            {
+                if (_anchor == null) { return null; }
+                return _anchor.AnchoredPoint;
+            }
+        }
+
+        public AtriaSlide? Slide
+        {
+            get => _context?.Slide;
+            set => throw new InvalidOperationException("Elements are attached by AtriaSlide.Add.");
+        }
+        protected AtriaElementContext Context => _context
+            ?? throw new InvalidOperationException("Element must be added to a slide before using its context.");
+        protected AnimationContext Animations => Context.Animations;
         
         public AtriaId Id { get; protected set; }
         public SPointF Position
@@ -53,7 +71,23 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             _anchor = null;
         }
 
-        public virtual void Update(double deltaTime)
+        public virtual void Update(FrameTime frameTime)
+        {
+        }
+
+        internal void Attach(AtriaSlide slide)
+        {
+            if (_context != null)
+            {
+                throw new InvalidOperationException("An element may only be added to one slide.");
+            }
+
+            _context = new AtriaElementContext(slide.Runtime, slide,
+                slide.AnimationContexts.CreateFor(this));
+            OnAttached();
+        }
+
+        protected virtual void OnAttached()
         {
         }
 
@@ -61,8 +95,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
 
         public void Animate<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector, Easing easing, double duration, TProp from, TProp to)
         {
-            var animation = new ActiveAnimation<TProp>(this, propertySelector, easing, duration, from, to);
-            Slide?.AddAnimation(animation);
+            SchedulePropertyAnimation(propertySelector, easing, duration, delay: 0d, from, to);
         }
 
         public void AnimateTo<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector, Easing easing, double duration, TProp to)
@@ -84,11 +117,7 @@ namespace Celarix.Starfall.Layout.Atria.Elements
 
         public void AnimateWithDelay<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector, Easing easing, double duration, double delay, TProp from, TProp to)
         {
-            var animation = new ActiveAnimation<TProp>(this, propertySelector, easing, duration, from, to)
-            {
-                Delay = delay
-            };
-            Slide?.AddAnimation(animation);
+            SchedulePropertyAnimation(propertySelector, easing, duration, delay, from, to);
         }
 
         public void AnimateToWithDelay<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector, Easing easing, double duration, double delay, TProp to)
@@ -108,6 +137,43 @@ namespace Celarix.Starfall.Layout.Atria.Elements
             AnimateToWithDelay(propertySelector, Easings.Linear, duration, delay, to);
         }
 
+        private void SchedulePropertyAnimation<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector,
+            Easing easing,
+            double duration,
+            double delay,
+            TProp from,
+            TProp to)
+        {
+            var interpolator = Interpolators.Get<TProp>();
+            var setter = CreateSetterExpression(propertySelector).Compile();
+            var durationFrames = Math.Max(1, AnimationContext.SecondsToFrames(duration));
+            var delayFrames = Math.Max(0, AnimationContext.SecondsToFrames(delay));
+            var animation = Animations.StartIn(delayFrames, durationFrames, progress =>
+            {
+                var easedProgress = easing(progress);
+                var currentValue = interpolator.Interpolate(from, to, easedProgress);
+                setter(this, currentValue);
+            });
+
+            Animations.ScheduleAnimation(animation);
+        }
+
+        private static Expression<Action<AtriaElement, TProp>> CreateSetterExpression<TProp>(Expression<Func<AtriaElement, TProp>> propertySelector)
+        {
+            if (propertySelector.Body is MemberExpression memberExpr && memberExpr.Member is System.Reflection.PropertyInfo propInfo)
+            {
+                var parameter = Expression.Parameter(typeof(TProp), "value");
+                var setMethod = propInfo.GetSetMethod() ?? throw new InvalidOperationException("The property must have a setter.");
+                var setterCall = Expression.Call(
+                    Expression.Convert(propertySelector.Parameters[0], typeof(AtriaElement)),
+                    setMethod,
+                    parameter
+                );
+                return Expression.Lambda<Action<AtriaElement, TProp>>(setterCall, propertySelector.Parameters[0], parameter);
+            }
+            throw new InvalidOperationException("Property selector must be a simple property access.");
+        }
+
         public void AnchorTopLeftTo(BasisPoint point) => Anchor(point, Alignment.TopLeft);
         public void AnchorTopCenterTo(BasisPoint point) => Anchor(point, Alignment.TopCenter);
         public void AnchorTopRightTo(BasisPoint point) => Anchor(point, Alignment.TopRight);
@@ -117,5 +183,12 @@ namespace Celarix.Starfall.Layout.Atria.Elements
         public void AnchorBottomLeftTo(BasisPoint point) => Anchor(point, Alignment.BottomLeft);
         public void AnchorBottomCenterTo(BasisPoint point) => Anchor(point, Alignment.BottomCenter);
         public void AnchorBottomRightTo(BasisPoint point) => Anchor(point, Alignment.BottomRight);
+
+        public virtual void Dispose()
+        {
+            if (_disposed) { return; }
+            _context?.Animations.Dispose();
+            _disposed = true;
+        }
     }
 }

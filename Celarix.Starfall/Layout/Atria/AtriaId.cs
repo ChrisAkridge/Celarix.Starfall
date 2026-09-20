@@ -1,19 +1,13 @@
-﻿using System;
+﻿using Celarix.Starfall.Identity;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Celarix.Starfall.Layout.Atria
 {
-    public sealed class AtriaId
+    public sealed class AtriaId : IIdentifiable
     {
-        private enum SelectorAccumulatorState
-        {
-            Default,
-            IdSelector,
-            ClassSelector
-        }
-
-        private readonly List<string> _classes = new();
+        private readonly List<string> _classes = [];
 
         public string? Id { get; }
         public IReadOnlyList<string> Classes => _classes;
@@ -26,93 +20,22 @@ namespace Celarix.Starfall.Layout.Atria
 
         public bool Matches(string selector)
         {
-            // Step 1. Remove any whitespace, interior and exterior, from the selector
-            var selectorTrimmed = selector.RemoveWhitespace();
-
-            // Step 2. Accumulate class and ID selectors
-            var state = SelectorAccumulatorState.Default;
-            var selectorBuilder = new StringBuilder();
-            var selectors = new List<(SelectorAccumulatorState Type, string Selector)>();
-
-            for (int i = 0; i < selectorTrimmed.Length; i++)
-            {
-                char c = selectorTrimmed[i];
-                if (c == '#')
-                {
-                    // Flush previous selector if exists
-                    if (selectorBuilder.Length > 0)
-                    {
-                        selectors.Add((state, selectorBuilder.ToString()));
-                        selectorBuilder.Clear();
-                    }
-                    state = SelectorAccumulatorState.IdSelector;
-                }
-                else if (c == '.')
-                {
-                    // Flush previous selector if exists
-                    if (selectorBuilder.Length > 0)
-                    {
-                        selectors.Add((state, selectorBuilder.ToString()));
-                        selectorBuilder.Clear();
-                    }
-                    state = SelectorAccumulatorState.ClassSelector;
-                }
-                else
-                {
-                    selectorBuilder.Append(c);
-                }
-            }
-
-            // Flush any remaining selector
-            if (selectorBuilder.Length > 0)
-            {
-                selectors.Add((state, selectorBuilder.ToString()));
-            }
-
-            // Step 3. For now, we don't actually want any Default selectors, this might change
-            if (selectors.Any(s => s.Type == SelectorAccumulatorState.Default))
-            {
-                throw new ArgumentException($"Selector '{selector}' must contain selectors that are only ID selectors (i.e. #id) or class selectors (i.e. .class).");
-            }
-
-            // Step 4. Check if any selector matches
-            foreach (var (type, sel) in selectors)
-            {
-                if (type == SelectorAccumulatorState.IdSelector)
-                {
-                    if (Id == sel)
-                    {
-                        return true;
-                    }
-                }
-                else if (type == SelectorAccumulatorState.ClassSelector)
-                {
-                    if (Classes.Contains(sel))
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
+            return Identification.Matches(this, selector);
         }
 
-        public static AtriaId Parse(string idString)
+        public static AtriaId Parse(string idString) => Identification.Parse(idString, (id, classes) => new AtriaId(id, classes));
+
+        public override string ToString()
         {
-            var parts = idString.Split(['.', '#'], StringSplitOptions.RemoveEmptyEntries);
-            string? id = null;
-            var classes = new List<string>();
-            foreach (var part in parts)
+            string idPart = "";
+            if (Id != null)
             {
-                if (id == null && idString.Contains('#' + part))
-                {
-                    id = part;
-                }
-                else
-                {
-                    classes.Add(part);
-                }
+                idPart = $"#{Id}";
             }
-            return new AtriaId(id, classes);
+
+            var classPart = string.Join("", _classes.Select(c => $".{c}"));
+
+            return $"{idPart}{classPart}";
         }
     }
 }

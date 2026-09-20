@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -43,7 +43,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             }
         }
 
-        public SlideSF_05_BinaryDrawing(int width, int height) : base(width, height)
+        public SlideSF_05_BinaryDrawing(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             _currentFilePath = @"Assets\Files\Celarix.Starfall.dll";
             _currentFileSize = new FileInfo(_currentFilePath).Length;

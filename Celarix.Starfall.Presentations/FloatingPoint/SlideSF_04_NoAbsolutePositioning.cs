@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -21,9 +21,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private readonly Random _random = new();
         private int _state;
-        private AnimationContext _animationContext = new();
 
-        public SlideSF_04_NoAbsolutePositioning(int width, int height) : base(width, height)
+        public SlideSF_04_NoAbsolutePositioning(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 
@@ -32,10 +31,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             BackgroundColor = Constants.StarfallBackground;
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override SlideAdvanceResult Advance()
@@ -58,7 +56,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
                 var imageElements = imagePaths.Select((path, index) => ImageElement.FromFile(path, $"#image{index}"))
                     .ToArray();
-                
+
                 var imageAnchors = imageElements.Select((e, i) => new BasisPoint(points[i], $"#imageAnchor{i}")).ToArray();
                 for (var i = 0; i < imageElements.Length; i++)
                 {
@@ -93,12 +91,12 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
                         a.Point = MathHelpers.Ease(fromPoint, toPoint, p, Easings.Land);
                     };
 
-                    return FixedDurationAnimation.StartIn(delay, duration, action);
+                    return Animations.StartIn(delay, duration, action);
                 });
 
                 foreach (var transformFunc in transformFuncs)
                 {
-                    _animationContext.ScheduleAnimation(transformFunc);
+                    Animations.ScheduleAnimation(transformFunc);
                 }
                 _state = 2;
                 return SlideAdvanceResult.InternalStateChanged;

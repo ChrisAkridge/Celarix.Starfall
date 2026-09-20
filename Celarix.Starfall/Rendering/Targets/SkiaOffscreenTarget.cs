@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Models.Path;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,10 @@ namespace Celarix.Starfall.Rendering.Targets
         }
 
         public void Clear(SColor color) => SkiaCommon.Clear(_surface.Canvas, color);
+
+        public void PushTransform(STransform2D transform) => SkiaCommon.PushTransform(_surface.Canvas, transform);
+
+        public void PopTransform() => SkiaCommon.PopTransform(_surface.Canvas);
 
         public void Complete()
         {
@@ -56,6 +61,9 @@ namespace Celarix.Starfall.Rendering.Targets
         public void DrawPoint(SPointF point, SColor color) =>
             SkiaCommon.DrawPoint(_surface.Canvas, point, color);
 
+        public void DrawPath(IEnumerable<SPathCommand> pathCommands, SPathStyle pathStyle) =>
+            SkiaCommon.DrawPath(_surface.Canvas, pathCommands, pathStyle);
+
         public float FitTextToHeight(string text, SFont font, float height) =>
             SkiaTextRendering.FitTextToHeight(text, font, height);
 
@@ -64,6 +72,12 @@ namespace Celarix.Starfall.Rendering.Targets
 
         public SSizeF MeasureText(string text, SFont font) =>
             SkiaTextRendering.GetFont(font).MeasureShapedText(text);
+
+        public SFontMetrics GetFontMetrics(SFont font)
+        {
+            var f = SkiaTextRendering.GetFont(font).GetFontMetrics(out var skMetrics);
+            return new SFontMetrics(skMetrics.Ascent, skMetrics.Descent, skMetrics.Leading);
+        }
 
         public void Start() { }
 

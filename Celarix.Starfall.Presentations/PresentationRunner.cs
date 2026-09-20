@@ -17,9 +17,9 @@ namespace Celarix.Starfall.Presentations
         private class SlideFactory
         {
             public string Name { get; set; }
-            public Func<AtriaSlide> Factory { get; set; }
+            public Func<AtriaRuntime, AtriaSlide> Factory { get; set; }
 
-            public SlideFactory(string name, Func<AtriaSlide> factory)
+            public SlideFactory(string name, Func<AtriaRuntime, AtriaSlide> factory)
             {
                 Name = name;
                 Factory = factory;
@@ -30,7 +30,6 @@ namespace Celarix.Starfall.Presentations
 
         private readonly List<SlideFactory> _slideFactories = new();
         private AtriaLayoutEngine _layoutEngine;
-        private MeasurementService _measurementService;
         private bool _rewindOccurred;
 
         // A hackish, terrible way to do this, but O(N) is basically O(1) for N = like 15
@@ -81,30 +80,31 @@ namespace Celarix.Starfall.Presentations
                 monitorIndex);
             tkTarget.KeyUp += TkTarget_KeyUp;
 
-            _layoutEngine.SetRenderTarget(tkTarget);
-            _measurementService = new MeasurementService(tkTarget);
-            _layoutEngine.MeasurementService = _measurementService;
+            _layoutEngine.Attach(tkTarget);
             _layoutEngine.OnException += LayoutEngine_OnException;
 
             // Register slide factories here
-            _slideFactories.Add(new SlideFactory("FP Title", () => new SlideFP_01_TitleSlide(args.ViewportWidth, args.ViewportHeight, _measurementService)));
-            _slideFactories.Add(new SlideFactory("FP Integers are Good at Math", () => new SlideFP_02_IntegersAreGoodAtMath(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("FP Floats are Good at Math", () => new SlideFP_03_FloatsAreGoodAtMath(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("FP No Escape from Infinite Expansions", () => new SlideFP_04_NoEscapeFromInfiniteExpansions(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("FP But We'll Just Pick Binary", () => new SlideFP_05_ButWellJustPickBinary(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("FP But Why Scientific Notation?", () => new SlideFP_06_ButWhyScientificNotation(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("FP Rules for Mantissas", () => new SlideFP_07_RulesForMantissas(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("FP Floating Point is Scientific Notation", () => new SlideFP_08_FloatingPointIsScientificNotation(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("FP Open the Window", () => new SlideFP_09_10_11_OpenTheWindow(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("FP Implied Leading Bits", () => new SlideFP_13_ImpliedLeadingBits(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("FP Special Exponents", () => new SlideFP_14_15_SpecialExponents(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("FP Loss of Precision", () => new SlideFP_16_LossOfPrecision(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("SF This Should Be Programmable", () => new SlideSF_01_ThisShouldBeProgrammable(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("SF Introducing Starfall", () => new SlideSF_02_IntroducingStarfall(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("SF No DSLs", () => new SlideSF_03_NoDSLs(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("SF No Absolute Positioning", () => new SlideSF_04_NoAbsolutePositioning(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("SF Binary Drawing Example", () => new SlideSF_05_BinaryDrawing(args.ViewportWidth, args.ViewportHeight)));
-            _slideFactories.Add(new SlideFactory("SF Thank You", () => new SlideSF_06_ThankYou(args.ViewportWidth, args.ViewportHeight)));
+            var size = new SSizeF(args.ViewportWidth, args.ViewportHeight);
+            _slideFactories.Add(new SlideFactory("FP Title", runtime => new SlideFP_01_TitleSlide(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Integers are Good at Math", runtime => new SlideFP_02_IntegersAreGoodAtMath(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Floats are Good at Math", runtime => new SlideFP_03_FloatsAreGoodAtMath(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP No Escape from Infinite Expansions", runtime => new SlideFP_04_NoEscapeFromInfiniteExpansions(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP But We'll Just Pick Binary", runtime => new SlideFP_05_ButWellJustPickBinary(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP But Why Scientific Notation?", runtime => new SlideFP_06_ButWhyScientificNotation(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Rules for Mantissas", runtime => new SlideFP_07_RulesForMantissas(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Choosing Bit Allocation", runtime => new SlideFP_07_5_ChoosingBitAllocation(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Exponent as an Unsigned Integer", runtime => new SlideFP_07_6_ExponentAsUnsignedInteger(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Floating Point is Scientific Notation", runtime => new SlideFP_08_FloatingPointIsScientificNotation(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Open the Window", runtime => new SlideFP_09_10_11_OpenTheWindow(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Implied Leading Bits", runtime => new SlideFP_13_ImpliedLeadingBits(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Special Exponents", runtime => new SlideFP_14_15_SpecialExponents(runtime, size)));
+            _slideFactories.Add(new SlideFactory("FP Loss of Precision", runtime => new SlideFP_16_LossOfPrecision(runtime, size)));
+            _slideFactories.Add(new SlideFactory("SF This Should Be Programmable", runtime => new SlideSF_01_ThisShouldBeProgrammable(runtime, size)));
+            _slideFactories.Add(new SlideFactory("SF Introducing Starfall", runtime => new SlideSF_02_IntroducingStarfall(runtime, size)));
+            _slideFactories.Add(new SlideFactory("SF No DSLs", runtime => new SlideSF_03_NoDSLs(runtime, size)));
+            _slideFactories.Add(new SlideFactory("SF No Absolute Positioning", runtime => new SlideSF_04_NoAbsolutePositioning(runtime, size)));
+            _slideFactories.Add(new SlideFactory("SF Binary Drawing Example", runtime => new SlideSF_05_BinaryDrawing(runtime, size)));
+            _slideFactories.Add(new SlideFactory("SF Thank You", runtime => new SlideSF_06_ThankYou(runtime, size)));
 
             // Initialize and switch to the first slide
             InitializeAndSwitchToSlide(0);
@@ -205,7 +205,7 @@ namespace Celarix.Starfall.Presentations
             Console.WriteLine($"INFO: Switching to slide {slideIndex}: {_slideFactories[slideIndex].Name}");
 
             var slideFactory = _slideFactories[slideIndex];
-            var slide = slideFactory.Factory();
+            var slide = slideFactory.Factory(_layoutEngine.Runtime!);
 
             // Remove and replace the current slide in the layout engine
             var currentSlideName = _layoutEngine.CurrentSlideName;

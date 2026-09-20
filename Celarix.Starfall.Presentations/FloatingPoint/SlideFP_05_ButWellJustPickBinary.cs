@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Mathematics;
@@ -22,9 +22,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         }
 
         private StateMachine<State> _stateMachine;
-        private AnimationContext _animationContext;
 
-        public SlideFP_05_ButWellJustPickBinary(int width, int height) : base(width, height)
+        public SlideFP_05_ButWellJustPickBinary(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 
@@ -32,7 +31,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             BackgroundColor = Constants.FloatingPointBackground;
             _stateMachine = new StateMachine<State>(this, State.Initial);
-            _animationContext = new AnimationContext();
 
             var binaryElement = new FloatingPointWindowElement("#binaryElement", MeasurementService)
             {
@@ -71,10 +69,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             return SlideAdvanceResult.InternalStateChanged;
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
-            base.Update(deltaTime);
+            base.Update(frameTime);
         }
 
         // Forward transitions
@@ -101,7 +98,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             var binaryAnchor = (BasisPoint)QueryBasis("#binaryAnchor").Single();
             var oldBinaryAnchorPosition = binaryAnchor.Point;
             var newBinaryAnchorPosition = new BasisLine(TopCenter, BottomCenter).SplitAndTakeRight(2f / 3f).Center;
-            var moveBinaryAnchorAnimation = new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber, 30, p =>
+            var moveBinaryAnchorAnimation = Animations.StartNow(30, p =>
             {
                 binaryAnchor.Point = MathHelpers.Ease(oldBinaryAnchorPosition, newBinaryAnchorPosition, p, Easings.Land);
             });
@@ -121,13 +118,13 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             // I know we're adding an anchor just to move it immediately but I think it'll look cool
             var oldDecimalAnchorPosition = decimalAnchor.Point;
             var newDecimalAnchorPosition = new BasisLine(TopCenter, BottomCenter).SplitAndTakeLeft(1f / 3f).Center;
-            var moveDecimalAnchorAnimation = new FixedDurationAnimation(AtriaLayoutEngine.GlobalFrameNumber, 30, p =>
+            var moveDecimalAnchorAnimation = Animations.StartNow(30, p =>
             {
                 decimalAnchor.Point = MathHelpers.Ease(oldDecimalAnchorPosition, newDecimalAnchorPosition, p, Easings.Land);
             });
 
-            _animationContext.ScheduleAnimation(moveBinaryAnchorAnimation);
-            _animationContext.ScheduleAnimation(moveDecimalAnchorAnimation);
+            Animations.ScheduleAnimation(moveBinaryAnchorAnimation);
+            Animations.ScheduleAnimation(moveDecimalAnchorAnimation);
         }
 
         [StateTransition<State>(State.ShowDecimalElement, State.ShowDecimalPlaceValuesAndExponents)]

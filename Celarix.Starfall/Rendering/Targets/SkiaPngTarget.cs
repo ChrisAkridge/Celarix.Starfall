@@ -1,6 +1,7 @@
 ﻿using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Converters;
 using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Models.Path;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
@@ -35,6 +36,10 @@ namespace Celarix.Starfall.Rendering.Targets
         public bool IsAnimating { get; set; }
 
         public void Clear(SColor color) => SkiaCommon.Clear(_canvas, color);
+
+        public void PushTransform(STransform2D transform) => SkiaCommon.PushTransform(_canvas, transform);
+
+        public void PopTransform() => SkiaCommon.PopTransform(_canvas);
 
         public void Complete()
         {
@@ -85,6 +90,9 @@ namespace Celarix.Starfall.Rendering.Targets
         public void DrawPoint(SPointF point, SColor color) =>
             SkiaCommon.DrawPoint(_canvas, point, color);
 
+        public void DrawPath(IEnumerable<SPathCommand> pathCommands, SPathStyle pathStyle) =>
+            SkiaCommon.DrawPath(_canvas, pathCommands, pathStyle);
+
         public float FitTextToHeight(string text, SFont font, float height) =>
             SkiaTextRendering.FitTextToHeight(text, font, height);
 
@@ -92,6 +100,12 @@ namespace Celarix.Starfall.Rendering.Targets
             SkiaTextRendering.FitTextToWidth(text, font, width);
 
         public SSizeF MeasureText(string text, SFont font) => SkiaTextRendering.GetFont(font).MeasureShapedText(text);
+
+        public SFontMetrics GetFontMetrics(SFont font)
+        {
+            var f = SkiaTextRendering.GetFont(font).GetFontMetrics(out var skMetrics);
+            return new SFontMetrics(skMetrics.Ascent, skMetrics.Descent, skMetrics.Leading);
+        }
 
         public IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size) => new SkiaOffscreenTarget((int)size.Width, (int)size.Height);
 

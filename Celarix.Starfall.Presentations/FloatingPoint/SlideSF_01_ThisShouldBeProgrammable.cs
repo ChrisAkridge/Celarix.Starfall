@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -12,22 +12,19 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideSF_01_ThisShouldBeProgrammable : AtriaSlide
     {
-        private AnimationContext _animationContext = new();
-
-        public SlideSF_01_ThisShouldBeProgrammable(int width, int height) : base(width, height)
+        public SlideSF_01_ThisShouldBeProgrammable(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override void Initialize()
         {
             BackgroundColor = Constants.FloatingPointBackground;
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(1d), p =>
             {
                 BackgroundColor = MathHelpers.InterpolateColor(Constants.FloatingPointBackground, Constants.StarfallBackground, p);
             }));

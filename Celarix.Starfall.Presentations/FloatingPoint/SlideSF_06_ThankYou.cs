@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -14,9 +14,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
     internal sealed class SlideSF_06_ThankYou : AtriaSlide
     {
         private bool _elementAdded;
-        private readonly AnimationContext _animationContext = new();
 
-        public SlideSF_06_ThankYou(int width, int height) : base(width, height)
+        public SlideSF_06_ThankYou(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 
@@ -25,10 +24,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             BackgroundColor = Constants.StarfallBackground;
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         public override SlideAdvanceResult Advance()
@@ -36,7 +34,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             if (!_elementAdded)
             {
                 Console.WriteLine("SF06: Making the stars fall!");
-                _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d), p =>
+                Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(1d), p =>
                 {
                     BackgroundColor = MathHelpers.InterpolateColor(Constants.StarfallBackground, Constants.FloatingPointBackground, p);
                 }, AddElementAndText));

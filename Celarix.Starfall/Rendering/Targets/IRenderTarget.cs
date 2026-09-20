@@ -1,4 +1,5 @@
 ﻿using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Models.Path;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,6 +14,9 @@ namespace Celarix.Starfall.Rendering.Targets
         void Start();
         void Complete();
 
+        void PushTransform(STransform2D transform);
+        void PopTransform();
+
         void Clear(SColor color);
         void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation);
         void DrawEllipse(SPointF center, SSizeF size, SColor color, SPaintStyle paintStyle);
@@ -24,10 +28,12 @@ namespace Celarix.Starfall.Rendering.Targets
         void DrawImage(SImage image, SRectF bounds, double opacity = 1d, SAngle? rotation = null);
         void DrawCroppedImage(SImage image, SRectF sourceRect, SRectF destRect, double opacity = 1d);
         void DrawPoint(SPointF point, SColor color);
+        void DrawPath(IEnumerable<SPathCommand> pathCommands, SPathStyle pathStyle);
 
         float FitTextToWidth(string text, SFont font, float width);
         float FitTextToHeight(string text, SFont font, float height);
         SSizeF MeasureText(string text, SFont font);
+        SFontMetrics GetFontMetrics(SFont font);
 
         IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size);
     }

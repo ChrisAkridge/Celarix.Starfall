@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Layout.Helium;
@@ -82,7 +82,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
         private readonly List<CloudCircle> _clouds = new();
         private readonly List<FallingStar> _fallingStars = new();
         private readonly Random _random = new();
-        private readonly AnimationContext _animationContext = new();
         private double _cloudDrawYOffset = -400d;
 
         static StarfallElement()
@@ -110,9 +109,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             _fallingStarImage = SImage.FromFile("Assets/Images/hp_gold_star.png");
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
 
             if (_clouds.Count == 0)
             {
@@ -184,7 +182,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             // Check to see if we need to move the clouds down.
             if (_cloudDrawYOffset == -400d)
             {
-                _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d), p =>
+                Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(1d), p =>
                 {
                     _cloudDrawYOffset = MathHelpers.Ease(-400d, 0d, p, Easings.Land);
                 }));

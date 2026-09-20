@@ -9,7 +9,7 @@ namespace Celarix.Starfall.Rendering.Color
     {
         private SColor _from;
         private SColor _to;
-        
+
         public GradientProvider(SColor from, SColor to)
         {
             _from = from;

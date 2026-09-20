@@ -1,9 +1,12 @@
-﻿using Celarix.Starfall.Layout.Atria;
+﻿using Celarix.Starfall.Extensions;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Playground.AtriaTests;
 using Celarix.Starfall.Playground.AtriaTests.CanonicalDecomposition;
 using Celarix.Starfall.Playground.AtriaTests.Operations;
+using Celarix.Starfall.Playground.MathFun;
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Rendering.Targets;
+using Celarix.Starfall.Rendering.Models;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
@@ -14,6 +17,13 @@ namespace Celarix.Starfall.Playground.Presentations
 {
     internal static class AtriaCurrent
     {
+        private static Func<AtriaRuntime, AtriaSlide>[] _factories = [
+            runtime => new SquareRootSearchSlide(runtime, new SSizeF(1280, 720)),
+            runtime => new MathFunSlide(runtime, new SSizeF(1280, 720)),
+            runtime => new StatsSlide(runtime, new SSizeF(1280, 720)),
+            runtime => new GraphSlide(runtime, new SSizeF(1280, 720))
+        ];
+
         public static void Run()
         {
             var engineOptions = new PresentationEngineOptions
@@ -22,18 +32,25 @@ namespace Celarix.Starfall.Playground.Presentations
             };
             var layoutEngine = new AtriaLayoutEngine(1280, 720);
             var tkTarget = new SkiaTkTarget(1280, 720, 60, "Starfall Playground", layoutEngine);
-            tkTarget.KeyUp += TkTarget_KeyUp;
+            tkTarget.KeyUp += (sender, args) =>
+            {
+                layoutEngine.KeyUp(args.ToSKeyboardEvent());
+            };
+            tkTarget.KeyDown += (sender, args) =>
+            {
+                layoutEngine.KeyDown(args.ToSKeyboardEvent());
+            };
 
-            layoutEngine.SetRenderTarget(tkTarget);
-            var measurementService = new Rendering.MeasurementService(tkTarget);
-            layoutEngine.MeasurementService = measurementService;
+            layoutEngine.Attach(tkTarget);
 
             // var timeProgressSlide = new TimeProgressSlide(1280, 720);
             // var timeProgressSlide = new GigasecondSlide(1920, 188);
             // var timeProgressSlide = new ByteOperationSlide((x, y) => (byte)(x & y), "x & y", 1280, 720);
             // var timeProgressSlide = new ShortOperationSlide((x, y) => Quadrant(x), "quadrant(x)", 1280, 720);
-            var timeProgressSlide = new CanonicalDecompositionSlide(@"E:\Documents\Files\Pictures\Pictures\S Series\1s Series\1s000335.png",
-                1280, 720);
+            //var timeProgressSlide = new CanonicalDecompositionSlide(@"E:\Documents\Files\Pictures\Pictures\S Series\1s Series\1s000335.png",
+            //    1280, 720);
+            //var timeProgressSlide = new DelphinusSlide(1280, 720);
+            var timeProgressSlide = _factories[3](layoutEngine.Runtime!);
             layoutEngine.AddSlide(timeProgressSlide, "timeProgress");
             layoutEngine.SetCurrentSlide("timeProgress");
             layoutEngine.Start();

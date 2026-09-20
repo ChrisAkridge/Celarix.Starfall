@@ -1,6 +1,7 @@
 ﻿using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Rendering.Initialization;
 using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Models.Path;
 using FastCache;
 using OpenTK.Graphics.ES11;
 using OpenTK.Windowing.Common;
@@ -135,15 +136,22 @@ namespace Celarix.Starfall.Rendering.Targets
         // Inbound Event Handlers
         // ======
         public event EventHandler<KeyboardKeyEventArgs> KeyUp;
+        public event EventHandler<KeyboardKeyEventArgs> KeyDown;
 
         private void RegisterEventHandlers()
         {
             window.KeyUp += OnKeyUp;
+            window.KeyDown += OnKeyDown;
         }
 
         private void OnKeyUp(KeyboardKeyEventArgs e)
         {
             KeyUp?.Invoke(this, e);
+        }
+
+        private void OnKeyDown(KeyboardKeyEventArgs e)
+        {
+            KeyDown?.Invoke(this, e);
         }
 
         // =======
@@ -164,6 +172,18 @@ namespace Celarix.Starfall.Rendering.Targets
             if (surface?.Canvas == null) { return; }
 
             SkiaCommon.Clear(surface.Canvas, color);
+        }
+
+        public void PushTransform(STransform2D transform)
+        {
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.PushTransform(surface.Canvas, transform);
+        }
+
+        public void PopTransform()
+        {
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.PopTransform(surface.Canvas);
         }
 
         public void DrawRectangle(SRectF bounds, SColor color, SPaintStyle paintStyle, SAngle rotation)
@@ -229,6 +249,12 @@ namespace Celarix.Starfall.Rendering.Targets
             SkiaCommon.DrawPoint(surface.Canvas, point, color);
         }
 
+        public void DrawPath(IEnumerable<SPathCommand> pathCommands, SPathStyle pathStyle)
+        {
+            if (surface?.Canvas == null) { return; }
+            SkiaCommon.DrawPath(surface.Canvas, pathCommands, pathStyle);
+        }
+
         public IOffscreenRenderTarget CreateOffscreenTarget(SSizeF size) => new SkiaOffscreenTarget((int)size.Width, (int)size.Height, grContext);
 
         // TODO: Cache these text/font measurements, as a lot of the time, the same text will be measured
@@ -238,5 +264,11 @@ namespace Celarix.Starfall.Rendering.Targets
         public float FitTextToHeight(string text, SFont font, float height) => SkiaTextRendering.FitTextToHeight(text, font, height);
 
         public SSizeF MeasureText(string text, SFont font) => SkiaTextRendering.GetFont(font).MeasureShapedText(text);
+
+        public SFontMetrics GetFontMetrics(SFont font)
+        {
+            var f = SkiaTextRendering.GetFont(font).GetFontMetrics(out var skMetrics);
+            return new SFontMetrics(skMetrics.Ascent, skMetrics.Descent, skMetrics.Leading);
+        }
     }
 }

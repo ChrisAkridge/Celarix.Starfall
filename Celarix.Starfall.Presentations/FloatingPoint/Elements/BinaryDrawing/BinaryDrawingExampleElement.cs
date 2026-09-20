@@ -1,4 +1,4 @@
-﻿using AngleSharp.Attributes;
+using AngleSharp.Attributes;
 using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -34,7 +34,6 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
         private byte[] _data;
         private Rgba32[] _pixels;
         private SImage? _binaryDrawnImage;
-        private AnimationContext _animationContext = new();
 
         // Transition fields
         private BinaryDrawingStage _stage;
@@ -104,9 +103,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
             DrawImage(target);
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
             if (!_inTransition) { return; }
         }
 
@@ -397,8 +395,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
             _byteYOffset = initialYOffset;
             var targetYOffset = initialYOffset / 2d;
 
-            _animationContext.ScheduleAnimation(
-                FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            Animations.ScheduleAnimation(
+                Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
                 {
                     _byteYOffset = MathHelpers.Ease(initialYOffset, targetYOffset, p, Easings.Land);
                 }, () => _stage = BinaryDrawingStage.ShowBytes)
@@ -407,8 +405,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
 
         public void ShowBoxes()
         {
-            _animationContext.ScheduleAnimation(
-                FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            Animations.ScheduleAnimation(
+                Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
                 {
                     double easedProgress = MathHelpers.Ease(0d, 1d, p, Easings.Linear);
                     _tripletsOpacity = easedProgress;
@@ -419,8 +417,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
 
         public void ColorBoxes()
         {
-            _animationContext.ScheduleAnimation(
-                FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            Animations.ScheduleAnimation(
+                Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
                 {
                     _boxesColoringProgress = MathHelpers.Ease(0d, 1d, p, Easings.Linear);
                 }, () => _stage = BinaryDrawingStage.ColorBoxes)
@@ -429,8 +427,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
 
         public void MergeBoxes()
         {
-            _animationContext.ScheduleAnimation(
-                FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d), p =>
+            Animations.ScheduleAnimation(
+                Animations.StartNow(AnimationContext.SecondsToFrames(1d), p =>
                 {
                     _boxesMergeProgress = MathHelpers.Ease(0d, 1d, p, Easings.Smoothstep);
                 }, () => _stage = BinaryDrawingStage.MergeBoxes)
@@ -452,8 +450,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
             }
 
             _boxesOpacity = 0d;
-            _animationContext.ScheduleAnimation(
-                FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            Animations.ScheduleAnimation(
+                Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
                 {
                     _tripletsOpacity = MathHelpers.Ease(1d, 0d, p, Easings.Linear);
                 }));
@@ -469,7 +467,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
                 var iCopy = i;
                 var initialPosition = pixel.Rectangle.Position;
                 var targetPosition = new SPointF(targetLeftX, targetTopY);
-                animationFactories.Enqueue(() => FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+                animationFactories.Enqueue(() => Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
                 {
                     var easedPosition = MathHelpers.Ease(initialPosition, targetPosition, p, Easings.Smoothstep);
                     var newBounds = _firstRowPixels[iCopy].Rectangle.At(easedPosition);
@@ -477,7 +475,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
                 }));
                 targetLeftX += pixel.Rectangle.Width;
             }
-            _animationContext.StaggerAnimations(animationFactories, 1, () =>
+            Animations.StaggerAnimations(animationFactories, 1, () =>
             {
                 _stage = BinaryDrawingStage.BuildPixelRow;
             });
@@ -497,7 +495,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
             var targetTopY = targetCenterY - (ByteSquare.Height / 2d);
             _drawnImagePosition = new SPointF(imageInitialX, targetTopY);
 
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(1d), p =>
             {
                 _pixelScaleFactor = MathHelpers.Ease(initialPixelScaleFactor, 1d, p, Easings.Smoothstep);
                 _drawnImagePosition = new SPointF(MathHelpers.Ease(imageInitialX, imageTargetX, p, Easings.Smoothstep), targetTopY);
@@ -528,7 +526,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing
 
             var initialByteYOffset = _byteYOffset;
             var targetByteYOffset = Slide!.Size.Height; // Move the bytes off the screen
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(1d), p =>
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(1d), p =>
             {
                 _drawnImageRows = (int)MathHelpers.Ease(initialDrawnImageRows, targetDrawnImageRows, p, Easings.Smoothstep);
                 _byteYOffset = MathHelpers.Ease(initialByteYOffset, targetByteYOffset, p, Easings.Smoothstep);

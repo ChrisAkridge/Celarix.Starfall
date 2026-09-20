@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -15,11 +15,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private const string InitialPlanckLengthText = "0.00000000000000000000000000000000001616255";
 
         private int _state;
-        private AnimationContext _animationContext;
 
-        public SlideFP_06_ButWhyScientificNotation(int width, int height) : base(width, height)
+        public SlideFP_06_ButWhyScientificNotation(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
-            _animationContext = new AnimationContext();
         }
 
         public override void Initialize()
@@ -56,10 +54,9 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             Add([bigNumberElement, bigNumberAnchor, smallNumberElement, smallNumberAnchor]);
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
-            _animationContext.Update(AtriaLayoutEngine.GlobalFrameNumber);
+            base.Update(frameTime);
         }
 
         private Action<TextBlock, TextBlock>[] GetStateMethods()
@@ -150,7 +147,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             Console.WriteLine("FP6: NEXT: Shows one Planck length in meters on the bottom.");
 
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(
+            Animations.ScheduleAnimation(Animations.StartNow(
                 AnimationContext.SecondsToFrames(0.5d),
                 p => bigNumberElement.Opacity = p
             ));
@@ -161,7 +158,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         {
             Console.WriteLine("FP6: NEXT: Divides Avogadro's constant by 10.");
 
-            _animationContext.ScheduleAnimation(FixedDurationAnimation.StartNow(
+            Animations.ScheduleAnimation(Animations.StartNow(
                 AnimationContext.SecondsToFrames(0.5d),
                 p => smallNumberElement.Opacity = p
             ));

@@ -1,0 +1,14 @@
+﻿using Celarix.Starfall.Charts.Models;
+using System;
+using System.Collections.Generic;
+using System.Numerics;
+using System.Text;
+
+namespace Celarix.Starfall.Charts.DataResolution;
+
+public interface IDataSource
+{
+    event EventHandler? DataChanged;
+    ResolvedDataPoint ResolveBucket(XRange bucket);
+    InfoPanelData GetInfoPanelData(IEnumerable<decimal> percentiles);
+}

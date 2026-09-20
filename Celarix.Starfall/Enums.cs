@@ -67,6 +67,14 @@ namespace Celarix.Starfall
         All = Left | Top | Right | Bottom
     }
 
+    public enum Side
+    {
+        Left,
+        Top,
+        Right,
+        Bottom
+    }
+
     // okay yes this is straight from SkiaSharp
     // but it's the first render target, so it will kind of shape things
     public enum FontWeight
@@ -175,5 +183,75 @@ namespace Celarix.Starfall
         Saturation,
         Color,
         Luminosity
+    }
+
+    public enum SelectorAccumulatorState
+    {
+        Default,
+        IdSelector,
+        ClassSelector
+    }
+
+    public enum SStrokeCap
+    {
+        /// <summary>
+        /// Begin/end contours with no extension. This is the default behavior.
+        /// </summary>
+        Butt,
+
+        /// <summary>
+        /// Begin/end contours with a semicircular extension.
+        /// </summary>
+        Round,
+
+        /// <summary>
+        /// Begin/end contours with a square extension.
+        /// </summary>
+        Square
+    }
+
+    public enum SStrokeJoin
+    {
+        /// <summary>
+        /// Connect path segments with a sharp join. This is the default behavior.
+        /// </summary>
+        Miter,
+        /// <summary>
+        /// Connect path segments with a rounded join.
+        /// </summary>
+        Round,
+        /// <summary>
+        /// Connect path segments with a beveled join.
+        /// </summary>
+        Bevel
+    }
+
+    public enum FenceType
+    {
+        Parentheses,
+        SquareBrackets,
+        CurlyBraces,
+        AngleBrackets,
+        SingleVerticalBars,
+        DoubleVerticalBars,
+        Floor,
+        Ceiling,
+        FancyAngleBrackets,
+        FancyDoubleAngleBrackets
+    }
+
+    public enum FenceRenderingMode
+    {
+        Automatic,
+        Glyph,
+        Procedural
+    }
+
+    public enum AnimatedVisiblity
+    {
+        Invisible,
+        Appearing,
+        Visible,
+        Disappearing
     }
 }

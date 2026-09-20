@@ -1,6 +1,7 @@
 ﻿using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace Celarix.Starfall.Mathematics
@@ -29,6 +30,14 @@ namespace Celarix.Starfall.Mathematics
             double width = start.Width + (end.Width - start.Width) * easedProgress;
             double height = start.Height + (end.Height - start.Height) * easedProgress;
             return new SRectF(x, y, width, height);
+        }
+
+        public static SSizeF Ease(SSizeF start, SSizeF end, double progress, Easing easingFunction)
+        {
+            double easedProgress = easingFunction(Math.Clamp(progress, 0, 1));
+            double width = start.Width + (end.Width - start.Width) * easedProgress;
+            double height = start.Height + (end.Height - start.Height) * easedProgress;
+            return new SSizeF(width, height);
         }
 
         public static double SmoothStep(double start, double end, double progress)
@@ -118,6 +127,51 @@ namespace Celarix.Starfall.Mathematics
             var range = max - min;
             var sample = random.NextDouble() * range;
             return sample + min;
+        }
+
+        public static double PadSides(double width, double padding)
+        {
+            return width + (padding * 2);
+        }
+
+        public static double CenterOf(double a, double b)
+        {
+            return (a + b) / 2;
+        }
+
+        public static IEnumerable<double> SolveQuadratic(double a, double b, double c)
+        {
+            var discriminant = (b * b) - (4 * a * c);
+            if (discriminant < 0)
+            {
+                throw new InvalidOperationException("No real roots exist for the given quadratic equation.");
+            }
+            var sqrtDiscriminant = Math.Sqrt(discriminant);
+            var root1 = (-b + sqrtDiscriminant) / (2 * a);
+            var root2 = (-b - sqrtDiscriminant) / (2 * a);
+            yield return root1;
+            yield return root2;
+        }
+
+        public static double EvaluateQuadraticBezier(SPointF p0, SPointF p1, SPointF p2, double t)
+        {
+            var mt = 1 - t;
+            return (mt * mt * p0.X) + (2 * mt * t * p1.X) + (t * t * p2.X);
+        }
+
+        public static double BigIntegerRatioToDouble(BigInteger numerator, BigInteger denominator)
+        {
+            const int precisionBits = 53;
+
+            var scale = BigInteger.One << precisionBits;
+            var scaled = (numerator * scale) / denominator;
+
+            return (double)scaled / (1L << precisionBits);
+        }
+
+        public static double Distance(double xDistance, double yDistance)
+        {
+            return Math.Sqrt((xDistance * xDistance) + (yDistance * yDistance));
         }
     }
 }

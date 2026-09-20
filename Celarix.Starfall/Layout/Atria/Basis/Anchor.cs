@@ -9,17 +9,19 @@ namespace Celarix.Starfall.Layout.Atria.Basis
     internal sealed class Anchor
     {
         private readonly BasisPoint _point;
-        private readonly Alignment _anchoredPoint;
+
+        public Alignment AnchoredPoint { get; }
 
         public Anchor(BasisPoint point, Alignment anchoredPoint)
         {
             _point = point;
-            _anchoredPoint = anchoredPoint;
+            AnchoredPoint = anchoredPoint;
         }
+
 
         public SPointF GetPosition(SSizeF elementSize)
         {
-            return _anchoredPoint switch
+            return AnchoredPoint switch
             {
                 Alignment.TopLeft => _point.Point,
                 Alignment.TopCenter => _point.Point + new SSizeF(-elementSize.Width / 2, 0),
@@ -30,7 +32,7 @@ namespace Celarix.Starfall.Layout.Atria.Basis
                 Alignment.BottomLeft => _point.Point + new SSizeF(0, -elementSize.Height),
                 Alignment.BottomCenter => _point.Point + new SSizeF(-elementSize.Width / 2, -elementSize.Height),
                 Alignment.BottomRight => _point.Point + new SSizeF(-elementSize.Width, -elementSize.Height),
-                _ => throw new InvalidOperationException($"Unsupported alignment: {_anchoredPoint}")
+                _ => throw new InvalidOperationException($"Unsupported alignment: {AnchoredPoint}")
             };
         }
     }

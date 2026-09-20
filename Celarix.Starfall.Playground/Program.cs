@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Celarix.Starfall.Playground.Presentations;
+using ExtendedNumerics;
 
 namespace Celarix.Starfall.Playground
 {
@@ -7,6 +8,10 @@ namespace Celarix.Starfall.Playground
     {
         private static void Main(string[] args)
         {
+            BigDecimal.Precision = 20;
+            BigDecimal.AlwaysTruncate = true;
+            BigDecimal.AlwaysNormalize = true;
+
             if (args.Length != 1)
             {
                 Console.WriteLine("Please provide a presentation name as an argument.");

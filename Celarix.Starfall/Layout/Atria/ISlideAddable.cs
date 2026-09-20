@@ -6,6 +6,6 @@ namespace Celarix.Starfall.Layout.Atria
 {
     public interface ISlideAddable
     {
-        AtriaSlide Slide { get; set; }
+        AtriaSlide? Slide { get; set; }
     }
 }

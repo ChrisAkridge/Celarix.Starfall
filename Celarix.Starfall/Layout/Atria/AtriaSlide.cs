@@ -10,14 +10,17 @@ using System.Text;
 
 namespace Celarix.Starfall.Layout.Atria
 {
-    public abstract class AtriaSlide
+    public abstract class AtriaSlide : IDisposable
     {
         private readonly List<AtriaElement> _elements = new();
         private readonly List<BasisElement> _basisElements = new();
-        private readonly List<ActiveAnimation> _activeAnimations = new();
+        private bool _disposed;
 
-        public MeasurementService MeasurementService { get; private set; }
-        public DebugMode DebugMode { get; private set; }
+        public AtriaRuntime Runtime { get; }
+        public MeasurementService MeasurementService => Runtime.MeasurementService;
+        public DebugMode DebugMode => Runtime.DebugMode;
+        public AnimationContextRegistry AnimationContexts => Runtime.AnimationContexts;
+        protected AnimationContext Animations { get; }
         public SColor BackgroundColor { get; set; }
         public SSizeF Size { get; }
 
@@ -35,34 +38,30 @@ namespace Celarix.Starfall.Layout.Atria
         public SPointF BottomCenter => new SPointF(Size.Width / 2, Size.Height);
         public SPointF BottomRight => new SPointF(Size.Width, Size.Height);
 
-        public AtriaSlide(int width, int height)
+        public AtriaSlide(AtriaRuntime runtime, SSizeF size)
         {
-            Size = new SSizeF(width, height);
-        }
-
-        internal void SetProtectedProperties(MeasurementService measurementService, DebugMode debugMode)
-        {
-            MeasurementService = measurementService;
-            DebugMode = debugMode;
+            Runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+            Size = size;
+            Animations = Runtime.AnimationContexts.CreateFor(this);
         }
 
         public abstract void Initialize();
 
-        public virtual void Update(double deltaTime)
+        public virtual void KeyDown(SKeyboardEvent keyboardEvent)
         {
-            for (int i = _activeAnimations.Count - 1; i >= 0; i--)
-            {
-                var animation = _activeAnimations[i];
-                animation.Update(deltaTime);
-                if (animation.IsCompleted)
-                {
-                    _activeAnimations.RemoveAt(i);
-                }
-            }
+            // Default implementation does nothing. Override in derived classes to handle key down events.
+        }
 
+        public virtual void KeyUp(SKeyboardEvent keyboardEvent)
+        {
+            // Default implementation does nothing. Override in derived classes to handle key up events.
+        }
+
+        public virtual void Update(FrameTime frameTime)
+        {
             foreach (var element in _elements)
             {
-                element.Update(deltaTime);
+                element.Update(frameTime);
             }
         }
 
@@ -72,6 +71,14 @@ namespace Celarix.Starfall.Layout.Atria
             foreach (var element in _elements)
             {
                 element.Render(target);
+            }
+
+            if (DebugMode.ShowAnchors)
+            {
+                foreach (var basisElement in _basisElements)
+                {
+                    basisElement.RenderDebug(target);
+                }
             }
         }
 
@@ -87,21 +94,30 @@ namespace Celarix.Starfall.Layout.Atria
             return SlideAdvanceResult.CanAdvance;
         }
 
-        public AddedElementOptions Add(IEnumerable<ISlideAddable> addables)
+        public virtual AddedElementOptions Add(IEnumerable<ISlideAddable> addables)
+        {
+            return AddCore(addables);
+        }
+
+        protected AddedElementOptions AddCore(IEnumerable<ISlideAddable> addables)
         {
             var newAddables = addables.ToArray();
             var newElements = new List<AtriaElement>();
             var newBasisElements = new List<BasisElement>();
             foreach (var addable in newAddables)
             {
-                addable.Slide = this;
                 if (addable is AtriaElement element)
                 {
+                    element.Attach(this);
                     _elements.Add(element);
                     newElements.Add(element);
                 }
                 else if (addable is BasisElement basisElement)
                 {
+                    if (basisElement is ISlideAddable basisAddable)
+                    {
+                        basisAddable.Slide = this;
+                    }
                     _basisElements.Add(basisElement);
                     newBasisElements.Add(basisElement);
                 }
@@ -109,13 +125,14 @@ namespace Celarix.Starfall.Layout.Atria
             return new AddedElementOptions(this, [.. newElements], [.. newBasisElements]);
         }
 
-        public void Remove(IEnumerable<ISlideAddable> removeables)
+        public virtual void Remove(IEnumerable<ISlideAddable> removeables)
         {
             foreach (var removeable in removeables)
             {
                 if (removeable is AtriaElement element)
                 {
                     _elements.Remove(element);
+                    element.Dispose();
                 }
                 else if (removeable is BasisElement basisElement)
                 {
@@ -160,9 +177,19 @@ namespace Celarix.Starfall.Layout.Atria
             return matchedElements;
         }
 
-        internal void AddAnimation(ActiveAnimation animation)
+        public virtual void Dispose()
         {
-            _activeAnimations.Add(animation);
+            if (_disposed) { return; }
+
+            GC.SuppressFinalize(this);
+
+            foreach (var element in _elements)
+            {
+                element.Dispose();
+            }
+
+            AnimationContexts?.DisposeOwnedBy(this);
+            _disposed = true;
         }
     }
 }

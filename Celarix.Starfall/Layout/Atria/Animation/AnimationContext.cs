@@ -1,35 +1,69 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Celarix.Starfall.Layout.Atria.Animation
 {
-    public sealed class AnimationContext
+    public sealed class AnimationContext : IDisposable
     {
+        private readonly AnimationContextRegistry? _registry;
         private readonly List<FixedDurationAnimation> _fixedDurationAnimations = [];
         private readonly List<ContinuingAnimation> _continuingAnimations = [];
+        private readonly List<AnimationSlot> _slots = [];
+        private int? _lastUpdatedFrame;
+        private bool _disposed;
+
+        public object? Owner { get; }
+        public bool IsAnimating => _fixedDurationAnimations.Any(a => !a.Completed)
+            || _continuingAnimations.Any(a => !a.Completed);
+        public int RunningAnimationCount => _fixedDurationAnimations.Count(a => !a.Completed)
+            + _continuingAnimations.Count(a => !a.Completed);
+        public int CurrentFrameNumber => _registry?.CurrentFrame.Number ?? _lastUpdatedFrame ?? 0;
+        internal bool IsDisposed => _disposed;
+
+        public AnimationContext()
+        {
+        }
+
+        internal AnimationContext(AnimationContextRegistry registry, object owner)
+        {
+            _registry = registry;
+            Owner = owner;
+        }
 
         public void ScheduleAnimation(FixedDurationAnimation animation)
         {
+            ThrowIfDisposed();
             _fixedDurationAnimations.Add(animation);
         }
         
         public void ScheduleContinuingAnimation(ContinuingAnimation animation)
         {
+            ThrowIfDisposed();
             _continuingAnimations.Add(animation);
+        }
+
+        public AnimationSlot CreateSlot(string? debugName = null)
+        {
+            ThrowIfDisposed();
+            var slot = new AnimationSlot(this, debugName);
+            _slots.Add(slot);
+            return slot;
         }
 
         public void StaggerAnimations(Queue<Func<FixedDurationAnimation>> animationFactories, int frameDelay,
             Action? onCompleted = null)
         {
+            ThrowIfDisposed();
             onCompleted ??= () => { };
 
-            var globalFrameRemainder = AtriaLayoutEngine.GlobalFrameNumber % frameDelay;
+            var frameRemainder = CurrentFrameNumber % frameDelay;
             var animationCount = animationFactories.Count;
-            var staggeredAnimation = ContinuingAnimation.StartNow(() =>
+            var staggeredAnimation = StartNow(() =>
             {
-                var currentGlobalFrame = AtriaLayoutEngine.GlobalFrameNumber;
-                if ((currentGlobalFrame % frameDelay) == globalFrameRemainder)
+                var currentFrame = CurrentFrameNumber;
+                if ((currentFrame % frameDelay) == frameRemainder)
                 {
                     if (animationFactories.Count != 0)
                     {
@@ -55,10 +89,125 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             ScheduleContinuingAnimation(staggeredAnimation);
         }
 
-        public void Update(int currentFrame)
+        public void Update(FrameTime frameTime)
         {
+            ThrowIfDisposed();
+            var currentFrame = frameTime.Number;
+            if (_lastUpdatedFrame == currentFrame)
+            {
+                return;
+            }
+
+            _lastUpdatedFrame = currentFrame;
             UpdateFixedDurationAnimations(currentFrame);
             UpdateContinuingAnimations(currentFrame);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) { return; }
+            ForceFinishAll();
+            _fixedDurationAnimations.Clear();
+            _continuingAnimations.Clear();
+            _slots.Clear();
+            _disposed = true;
+            _registry?.Unregister(this);
+        }
+
+        public void ForceFinishAll()
+        {
+            ThrowIfDisposed();
+
+            foreach (var slot in _slots.ToArray())
+            {
+                try
+                {
+                    slot.FinishNow();
+                }
+                catch
+                {
+                    // Disposal and force-finish paths should keep trying to finish the rest.
+                }
+            }
+
+            ForceFinishAnimations(_continuingAnimations);
+            ForceFinishAnimations(_fixedDurationAnimations);
+            _continuingAnimations.RemoveAll(a => a.Completed);
+            _fixedDurationAnimations.RemoveAll(a => a.Completed);
+        }
+
+        internal void RemoveAnimation(FixedDurationAnimation animation)
+        {
+            _fixedDurationAnimations.Remove(animation);
+        }
+
+        internal void RemoveAnimation(ContinuingAnimation animation)
+        {
+            _continuingAnimations.Remove(animation);
+        }
+
+        internal void RemoveSlot(AnimationSlot slot)
+        {
+            _slots.Remove(slot);
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(AnimationContext));
+            }
+        }
+
+        private static void ForceFinishAnimations<TAnimation>(List<TAnimation> animations)
+            where TAnimation : class
+        {
+            var forceFinishCount = 0;
+            while (animations.Any(a => !IsCompleted(a)))
+            {
+                foreach (var animation in animations.Where(a => !IsCompleted(a)).ToArray())
+                {
+                    try
+                    {
+                        ForceFinish(animation);
+                    }
+                    catch
+                    {
+                        // Keep force-finishing the rest even if one animation's completion code fails.
+                    }
+                }
+
+                forceFinishCount += 1;
+                if (forceFinishCount > 10000)
+                {
+                    return;
+                }
+            }
+        }
+
+        private static bool IsCompleted<TAnimation>(TAnimation animation)
+            where TAnimation : class
+        {
+            return animation switch
+            {
+                FixedDurationAnimation fixedDurationAnimation => fixedDurationAnimation.Completed,
+                ContinuingAnimation continuingAnimation => continuingAnimation.Completed,
+                _ => true
+            };
+        }
+
+        private static void ForceFinish<TAnimation>(TAnimation animation)
+            where TAnimation : class
+        {
+            switch (animation)
+            {
+                case FixedDurationAnimation fixedDurationAnimation:
+                    fixedDurationAnimation.ForceFinish();
+                    break;
+                case ContinuingAnimation continuingAnimation:
+                    continuingAnimation.ForceFinish();
+                    break;
+            }
         }
 
         private void UpdateFixedDurationAnimations(int currentFrame)
@@ -102,5 +251,21 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             // kind of setting or constant somewhere. For now, we'll just hardcode it to 60fps.
             return (int)(seconds * 60);
         }
+
+        public FixedDurationAnimation StartNow(int duration, Action<double> updateAction,
+            Action? onCompleted = null, Action<Exception?>? onError = null) =>
+            new(CurrentFrameNumber, duration, updateAction, onCompleted, onError);
+
+        public FixedDurationAnimation StartIn(int framesFromNow, int duration, Action<double> updateAction,
+            Action? onCompleted = null, Action<Exception?>? onError = null) =>
+            new(CurrentFrameNumber + framesFromNow, duration, updateAction, onCompleted, onError);
+
+        public ContinuingAnimation StartNow(Func<bool> updateAction,
+            Action<Exception?>? onError = null) =>
+            new(CurrentFrameNumber, updateAction, onError);
+
+        public ContinuingAnimation StartIn(int framesFromNow, Func<bool> updateAction,
+            Action<Exception?>? onError = null) =>
+            new(CurrentFrameNumber + framesFromNow, updateAction, onError);
     }
 }

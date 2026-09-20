@@ -1,0 +1,701 @@
+﻿using Celarix.Starfall.Charts.DataResolution;
+using Celarix.Starfall.Charts.Models;
+using Celarix.Starfall.Layout.Atria.Animation;
+using Celarix.Starfall.Layout.Helium;
+using Celarix.Starfall.Libra.Metrics;
+using Celarix.Starfall.Libra.Renderables;
+using Celarix.Starfall.Mathematics;
+using Celarix.Starfall.Rendering;
+using Celarix.Starfall.Rendering.Color;
+using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Targets;
+using ExtendedNumerics;
+using OpenTK.Mathematics;
+using System;
+using System.Collections.Generic;
+using System.Numerics;
+using System.Text;
+
+namespace Celarix.Starfall.Charts.Displays;
+
+public sealed class BarChartDisplay : IChartDisplay
+{
+    // maybe make this a property later
+    private const double TickLength = 15d;
+
+    public event EventHandler? DataChanged;
+
+    private readonly MeasurementService _measurementService;
+    private readonly IDataSource _dataSource;
+    private IReadOnlyList<ResolvedDataPoint> _barData = [];
+    private bool _needStaticInvalidation;
+    private bool _connected;
+
+    private double _xAxisEm;
+    private double _yAxisEm;
+    private double _opacity = 1d;
+
+    // Libra fields.
+    private LibraRenderingContext _xAxisLabelContext;
+    private readonly LibraRenderingContext _yAxisLabelContext;
+    private readonly IntegralAxisLabelLayout _xAxisLabelLayout = new();
+    private double? _lastXAxisLabelPlotWidth;
+    private BigDecimal? _lastXAxisLabelViewportSpan;
+    private bool _forceXAxisLabelDensityRecalculation = true;
+
+    // Animation slots and their referents.
+    private IReadOnlyList<FittedAxisLabel<BigInteger>> _xAxisLabels = [];
+    private IReadOnlyList<double> _xAxisTickPositions = [];
+    private IReadOnlyList<FittedLabel> _yAxisLabels = [];
+    private IReadOnlyList<FittedLabel> _nextYAxisLabels;
+    private IReadOnlyList<(SRectF Bar, SColor color)> _barRenderables = [];
+    private IReadOnlyList<(SRectF Bar, SColor color)> _nextBarRenderables;
+    private double? _revealXAxisProgress;
+    private double? _revealYAxisProgress;
+    private AnimationSlot _moveRangeAnimation;
+    private AnimationSlot _changeDataAnimation;
+    private AnimationSlot _revealChartAnimation;
+    private AnimationSlot _hideChartAnimation;
+
+    public BarChartProperties Properties { get; }
+    public AxisProperties<BigInteger> XAxisProperties { get; }
+    public AxisProperties<double> YAxisProperties { get; }
+    public InfoPanelProviderProperties<double, BigInteger> InfoPanelProviderProperties { get; }
+    public AnimationContext? AnimationContext { get; set; }
+
+    public BarChartDisplay(
+        MeasurementService measurementService,
+        DataSeries dataSeries,
+        BarChartProperties properties,
+        AxisProperties<BigInteger> xAxisProperties,
+        AxisProperties<double> yAxisProperties,
+        InfoPanelProviderProperties<double, BigInteger> infoPanelProviderProperties)
+        : this(measurementService, new DataSeriesDataSource(dataSeries, new StandardResolutionStrategy()), properties, xAxisProperties, yAxisProperties, infoPanelProviderProperties)
+    { }
+
+    public BarChartDisplay(
+        MeasurementService measurementService,
+        IDataSource dataSource,
+        BarChartProperties properties,
+        AxisProperties<BigInteger> xAxisProperties,
+        AxisProperties<double> yAxisProperties,
+        InfoPanelProviderProperties<double, BigInteger> infoPanelProviderProperties)
+    {
+        _measurementService = measurementService;
+        _dataSource = dataSource;
+        Properties = properties;
+        XAxisProperties = xAxisProperties;
+        InfoPanelProviderProperties = infoPanelProviderProperties;
+        YAxisProperties = yAxisProperties;
+
+        Connect();
+
+        _xAxisLabelContext = new LibraRenderingContext(measurementService,
+            XAxisProperties.LabelFont, LibraMetrics.Default, FenceRenderingMode.Automatic);
+        _yAxisLabelContext = new LibraRenderingContext(measurementService,
+            YAxisProperties.LabelFont, LibraMetrics.Default, FenceRenderingMode.Automatic);
+
+        _needStaticInvalidation = true;
+    }
+
+    public void Connect()
+    {
+        if (_connected) return;
+        _dataSource.DataChanged += (sender, e) =>
+        {
+            DependencyChanged(sender, e);
+            DataChanged?.Invoke(this, EventArgs.Empty);
+        };
+        Properties.PropertiesChanged += DependencyChanged;
+        XAxisProperties.PropertiesChanged += DependencyChanged;
+        YAxisProperties.PropertiesChanged += DependencyChanged;
+        _connected = true;
+        _needStaticInvalidation = true;
+    }
+
+    public void Disconnect()
+    {
+        if (!_connected) return;
+        _dataSource.DataChanged -= DependencyChanged;
+        Properties.PropertiesChanged -= DependencyChanged;
+        XAxisProperties.PropertiesChanged -= DependencyChanged;
+        YAxisProperties.PropertiesChanged -= DependencyChanged;
+        _connected = false;
+    }
+
+    private void DependencyChanged(object? sender, EventArgs e)
+    {
+        _needStaticInvalidation = true;
+        if (ReferenceEquals(sender, XAxisProperties))
+        {
+            _xAxisLabelLayout.InvalidateMeasurements();
+            _xAxisLabelContext = new LibraRenderingContext(_measurementService,
+                XAxisProperties.LabelFont, LibraMetrics.Default, FenceRenderingMode.Automatic);
+            _forceXAxisLabelDensityRecalculation = true;
+        }
+    }
+
+    // Rendering
+    public void Render(IRenderTarget target, SRectF displayBounds)
+    {
+        _moveRangeAnimation ??= new AnimationSlot(AnimationContext!, "BarChartDisplay.MoveRangeAnimation");
+        _changeDataAnimation ??= new AnimationSlot(AnimationContext!, "BarChartDisplay.ChangeDataAnimation");
+        _revealChartAnimation ??= new AnimationSlot(AnimationContext!, "BarChartDisplay.RevealChartAnimation");
+        _hideChartAnimation ??= new AnimationSlot(AnimationContext!, "BarChartDisplay.HideChartAnimation");
+
+        if (_needStaticInvalidation)
+        {
+            Invalidate(displayBounds);
+        }
+
+        // Let's draw this all piece-by-piece.
+        var barChartBounds = GetBarChartBounds(displayBounds);
+        if (!CanRenderPlot(barChartBounds))
+        {
+            return;
+        }
+        var xAxisBounds = GetXAxisBounds(displayBounds, barChartBounds);
+        var yAxisBounds = GetYAxisBounds(displayBounds, barChartBounds);
+        var yRange = Properties.YMaximum - Properties.YMinimum;
+
+        DrawYEquals0Line(target, barChartBounds, yRange);
+        DrawXAxis(target, xAxisBounds, barChartBounds);
+        DrawYAxis(target, yAxisBounds, barChartBounds);
+        DrawBars(target, barChartBounds);
+    }
+
+    private void DrawYEquals0Line(IRenderTarget target, SRectF barChartBounds, double yRange)
+    {
+        // First, let's draw the line at Y = 0.
+        if (YAxisProperties.GridlineStyle == GridlineStyle.None)
+        {
+            return;
+        }
+
+        var zeroY = GetYBaseline(barChartBounds);
+        var rightX = barChartBounds.Left + (barChartBounds.Width * (_revealXAxisProgress ?? 1d));
+        SPointF left = new(barChartBounds.Left, (float)zeroY);
+        SPointF right = new SPointF(rightX, (float)zeroY);
+        target.DrawLine(left, right, SColor.White.WithOpacity(_opacity),
+            (float)YAxisProperties.GridlineThickness);
+    }
+
+    private void DrawXAxis(IRenderTarget target, SRectF xAxisBounds, SRectF barChartBounds)
+    {
+        var left = xAxisBounds.Left;
+        var right = xAxisBounds.Left + (xAxisBounds.Width * (_revealXAxisProgress ?? 1d));
+
+        // Draw the main gridline at the bottom of the bar chart. Use the label color for this line.
+        var mainGridlineColor = XAxisProperties.LabelColor.WithOpacity(_opacity);
+        var mainGridlineY = xAxisBounds.Top;
+        target.DrawLine(new SPointF(left, mainGridlineY), new SPointF(right, mainGridlineY), mainGridlineColor,
+            (float)XAxisProperties.GridlineThickness);
+
+        if (_xAxisTickPositions.Count != 0)
+        {
+            var lineLength = XAxisProperties.GridlineStyle switch
+            {
+                GridlineStyle.Tick => TickLength,
+                GridlineStyle.Gridline => barChartBounds.Height,
+                _ => throw new NotImplementedException($"Gridline style {XAxisProperties.GridlineStyle} is not implemented.")
+            };
+            foreach (var tickX in _xAxisTickPositions)
+            {
+                if (tickX >= right)
+                {
+                    continue;
+                }
+
+                var tickStartY = mainGridlineY;
+                var tickEndY = mainGridlineY - lineLength;
+                target.DrawLine(new SPointF(tickX, tickStartY), new SPointF(tickX, tickEndY), mainGridlineColor,
+                    (float)XAxisProperties.GridlineThickness);
+            }
+        }
+
+        // Draw the labels for each slot.
+        foreach (var label in _xAxisLabels)
+        {
+            var position = label.Position;
+            var renderedBounds = label.LibraLayoutResult.Bounds.At(position);
+
+            // Completely intentional! This creates a cool shrinking effect as the chart is hidden.
+            var scaleFactor = _opacity;
+
+            if (!SRectF.Intersects(renderedBounds, xAxisBounds) || renderedBounds.Right >= right)
+            {
+                continue;
+            }
+
+            foreach (var renderable in label.LibraLayoutResult.Renderables)
+            {
+                renderable.RenderAt(target, position, scaleFactor);
+            }
+        }
+    }
+
+    private void DrawYAxis(IRenderTarget target, SRectF yAxisBounds, SRectF barChartBounds)
+    {
+        var top = yAxisBounds.Bottom - (yAxisBounds.Height * (_revealYAxisProgress ?? 1d));
+        var bottom = yAxisBounds.Bottom;
+
+        // Draw the main gridline at the left of the bar chart. Use the label color for this line.
+        var mainGridlineColor = YAxisProperties.LabelColor.WithOpacity(_opacity);
+        var mainGridlineX = yAxisBounds.Right;
+        target.DrawLine(new SPointF(mainGridlineX, top), new SPointF(mainGridlineX, bottom), mainGridlineColor,
+            (float)YAxisProperties.GridlineThickness);
+
+        // Draw the ticks/gridlines given the gridline style and the spacing.
+        if (YAxisProperties.GridlineStyle != GridlineStyle.None)
+        {
+            var (minMultiple, maxMultiple) = GetYGridlines();
+
+            for (int multiple = minMultiple; multiple <= maxMultiple; multiple++)
+            {
+                if (multiple == 0) continue;
+                var y = multiple * YAxisProperties.GridlineGap;
+                DrawTickOrGridline(y);
+            }
+        }
+
+        // Completely intentional! This creates a cool shrinking effect as the chart is hidden.
+        var scaleFactor = _opacity;
+
+        // Draw the labels for each slot.
+        foreach (var label in _yAxisLabels)
+        {
+            var position = label.Position;
+            foreach (var renderable in label.LibraLayoutResult.Renderables)
+            {
+                var renderedBounds = label.LibraLayoutResult.Bounds.At(position);
+                if (renderedBounds.Top < top)
+                {
+                    continue;
+                }
+
+                renderable.RenderAt(target, position, scaleFactor);
+            }
+        }
+
+        void DrawTickOrGridline(double y)
+        {
+            var ySlotCenter = GetYSlotCenter(y, barChartBounds);
+            if (ySlotCenter < top)
+            {
+                return;
+            }
+
+            var lineLength = YAxisProperties.GridlineStyle switch
+            {
+                GridlineStyle.Tick => TickLength,
+                GridlineStyle.Gridline => barChartBounds.Width,
+                _ => throw new NotImplementedException($"Gridline style {YAxisProperties.GridlineStyle} is not implemented.")
+            };
+            var tickStartX = mainGridlineX;
+            var tickEndX = mainGridlineX + lineLength;
+            target.DrawLine(new SPointF(tickStartX, ySlotCenter), new SPointF(tickEndX, ySlotCenter), mainGridlineColor,
+                (float)YAxisProperties.GridlineThickness);
+        }
+    }
+
+    private void DrawBars(IRenderTarget target, SRectF barChartBounds)
+    {
+        var right = barChartBounds.Left + (barChartBounds.Width * (_revealXAxisProgress ?? 1d));
+        var top = barChartBounds.Top + (barChartBounds.Height * (_revealYAxisProgress ?? 1d));
+
+        foreach (var (bar, color) in _barRenderables)
+        {
+            if (bar.Right < barChartBounds.Left || bar.Left > right || bar.Top > barChartBounds.Bottom || bar.Bottom < top)
+            {
+                continue;
+            }
+
+            target.DrawRectangle(bar, color.WithOpacity(_opacity), SPaintStyle.Fill, SAngle.Zero);
+        }
+    }
+
+    // Animation
+    public void AnimateScrollToXRange(BigDecimal newXMinimum, BigDecimal newXMaximum, double duration, Easing? easing = null)
+    {
+        if (newXMinimum > newXMaximum)
+        {
+            throw new ArgumentException("newXMinimum must be less than or equal to newXMaximum.");
+        }
+
+        easing ??= Easings.Linear;
+
+        var oldXMinimum = Properties.XMinimum;
+        var oldXMaximum = Properties.XMaximum;
+        var xMinRange = newXMinimum - oldXMinimum;
+        var xMaxRange = newXMaximum - oldXMaximum;
+
+        Action<double> updateAction = d =>
+        {
+            var fraction = (BigDecimal)d;
+
+            Properties.UpdatePropertiesAtomic(() =>
+            {
+                Properties.XMinimum = oldXMinimum + (xMinRange * fraction);
+                Properties.XMaximum = oldXMaximum + (xMaxRange * fraction);
+
+                Console.WriteLine($"[FRAME] xMin: {Properties.XMinimum}, xMax: {Properties.XMaximum}");
+            });
+        };
+
+        Action onCompleted = () =>
+        {
+            Properties.XMinimum = newXMinimum;
+            Properties.XMaximum = newXMaximum;
+
+            Console.WriteLine($"[ END ] xMin: {Properties.XMinimum}, xMax: {Properties.XMaximum}");
+        };
+
+        _moveRangeAnimation.Replace(AnimationContext!.StartNow(AnimationContext.SecondsToFrames(duration),
+            updateAction, onCompleted), AnimationSlotReplacementBehavior.CancelExisting);
+    }
+
+    public void Reveal(double duration, Easing? easing = null)
+    {
+        easing ??= Easings.Linear;
+        _opacity = 1d;
+        _revealXAxisProgress = 0d;
+        _revealYAxisProgress = 0d;
+
+        Action<double> updateAction = d =>
+        {
+            var fraction = easing(d);
+            _revealXAxisProgress = fraction;
+            _revealYAxisProgress = fraction;
+        };
+        Action onCompleted = () =>
+        {
+            _revealXAxisProgress = null;
+            _revealYAxisProgress = null;
+        };
+
+        _revealChartAnimation.Replace(AnimationContext!.StartNow(AnimationContext.SecondsToFrames(duration),
+            updateAction, onCompleted), AnimationSlotReplacementBehavior.CancelExisting);
+    }
+
+    public void Hide(double duration, Easing? easing = null)
+    {
+        easing ??= Easings.Linear;
+        _opacity = 1d;
+        Action<double> updateAction = d =>
+        {
+            var fraction = easing(d);
+            _opacity = 1d - fraction;
+        };
+        Action onCompleted = () =>
+        {
+            _opacity = 0d;
+        };
+
+        _hideChartAnimation.Replace(AnimationContext!.StartNow(AnimationContext.SecondsToFrames(duration),
+            updateAction, onCompleted), AnimationSlotReplacementBehavior.CancelExisting);
+    }
+
+    // Info panel
+    public InfoPanelText GetInfoPanelText(IEnumerable<decimal> percentiles)
+    {
+        var yFormatter = InfoPanelProviderProperties.FormatData;
+        var yFormatterAlternate = InfoPanelProviderProperties.FormatDataAlternate ?? (y => ChartText.Empty);
+        var xFormatter = InfoPanelProviderProperties.FormatKey;
+        var xFormatterAlternate = InfoPanelProviderProperties.FormatKeyAlternate ?? (x => ChartText.Empty);
+
+        var data = _dataSource.GetInfoPanelData(percentiles);
+        var percentileTexts = data.Percentiles
+            ?.Select(p => new InfoPanelPercentileText(p.Percentile, yFormatter(p.Value)))
+            .ToArray();
+        var countText = yFormatter((double)data.Count);
+        var sumText = yFormatter(data.Sum);
+
+        return new InfoPanelText(yFormatter(data.CurrentValue), yFormatterAlternate(data.CurrentValue),
+            yFormatter(data.Minimum), yFormatterAlternate(data.Minimum),
+            yFormatter(data.Maximum), yFormatterAlternate(data.Maximum),
+            yFormatter(data.Range), yFormatterAlternate(data.Range),
+            yFormatter(data.Midpoint), yFormatterAlternate(data.Midpoint),
+            yFormatter(data.Mean), yFormatterAlternate(data.Mean),
+            yFormatter(data.Median), yFormatterAlternate(data.Median),
+            yFormatter(data.Mode), yFormatterAlternate(data.Mode),
+            yFormatter(data.PopulationStandardDeviation), yFormatterAlternate(data.PopulationStandardDeviation),
+            yFormatter(data.SampleStandardDeviation), yFormatterAlternate(data.SampleStandardDeviation),
+            percentileTexts, ChartHelpers.FormatCountAndSum(countText, sumText));
+    }
+
+    // Invalidation
+    public void OnContainerChanged()
+    {
+        _needStaticInvalidation = true;
+        _forceXAxisLabelDensityRecalculation = true;
+    }
+
+    private void Invalidate(SRectF displayBounds)
+    {
+        var barChartBounds = GetBarChartBounds(displayBounds);
+        if (!CanRenderPlot(barChartBounds))
+        {
+            _barData = [];
+            _xAxisLabels = [];
+            _xAxisTickPositions = [];
+            _yAxisLabels = [];
+            _barRenderables = [];
+            _needStaticInvalidation = false;
+            return;
+        }
+        var totalSlots = Properties.XRange.Range + 1;
+        int trueSlots = totalSlots < (BigInteger)barChartBounds.Width ? (int)totalSlots : (int)Math.Floor(barChartBounds.Width);
+        _barData = trueSlots > 0
+            ? DataResolver.Resolve(_dataSource, Properties.XRange, trueSlots)
+            : [];
+        var yGridLines = GetYGridlines();
+
+        _xAxisEm = _measurementService.MeasureText("M", XAxisProperties.LabelFont).Width;
+        var viewportSpan = Properties.XMaximum - Properties.XMinimum;
+        var recalculateXAxisLabelDensity = _forceXAxisLabelDensityRecalculation
+            || _lastXAxisLabelPlotWidth != barChartBounds.Width
+            || _lastXAxisLabelViewportSpan != viewportSpan;
+        _xAxisLabels = _xAxisLabelLayout.Update(Properties.XRange,
+            x => XAxisProperties.TickFormatter(x).Layout(_xAxisLabelContext, XAxisProperties.LabelColor),
+            x => GetXSlotBounds(x, barChartBounds),
+            Side.Bottom, XAxisProperties.LabelMarginEm * _xAxisEm,
+            XAxisProperties.LabelFitExtentMultiplier,
+            recalculateXAxisLabelDensity);
+        _lastXAxisLabelPlotWidth = barChartBounds.Width;
+        _lastXAxisLabelViewportSpan = viewportSpan;
+        _forceXAxisLabelDensityRecalculation = false;
+
+        _xAxisTickPositions = BuildXAxisTickPositions(barChartBounds);
+
+        _yAxisEm = _measurementService.MeasureText("M", YAxisProperties.LabelFont).Width;
+        var minimumYGridline = yGridLines.MinMultiple * YAxisProperties.GridlineGap;
+        var maximumYGridline = yGridLines.MaxMultiple * YAxisProperties.GridlineGap;
+        _yAxisLabels = ChartHelpers.FitLabelsForDoubleAxis(minimumYGridline,
+            maximumYGridline,
+            y => YAxisProperties.TickFormatter(y).Layout(_yAxisLabelContext, YAxisProperties.LabelColor),
+            y => GetYSlotCenter(y, barChartBounds),
+            Side.Left, barChartBounds.Left,
+            YAxisProperties.LabelMarginEm * _yAxisEm,
+            yGridLines.MaxMultiple - yGridLines.MinMultiple + 1,
+            YAxisProperties.LabelFitExtentMultiplier);
+
+        BuildRenderables(barChartBounds);
+
+        _needStaticInvalidation = false;
+    }
+
+    private IReadOnlyList<double> BuildXAxisTickPositions(SRectF barChartBounds)
+    {
+        if (XAxisProperties.GridlineStyle == GridlineStyle.None || IsDense(barChartBounds))
+        {
+            return [];
+        }
+
+        var totalSlots = GetVisualSlotCount();
+        var slotWidth = (double)((BigDecimal)barChartBounds.Width / totalSlots);
+        if (slotWidth < XAxisProperties.GridlineThickness * 2d)
+        {
+            return [];
+        }
+
+        var tickPositions = new List<double>();
+        for (var x = Properties.XRange.Minimum; x <= Properties.XRange.Maximum; x++)
+        {
+            tickPositions.Add(GetXSlotBounds(x, barChartBounds).Center.X);
+        }
+        return tickPositions;
+    }
+
+    private void BuildRenderables(SRectF barChartBounds)
+    {
+        var yBaseline = GetYBaseline(barChartBounds);
+        var barRenderables = new List<(SRectF Bar, SColor color)>();
+        foreach (var dataPoint in _barData)
+        {
+            if (dataPoint is IndividualDataPoint individualDataPoint)
+            {
+                var slotBounds = GetXSlotBounds(individualDataPoint.X, barChartBounds);
+                var yCenter = GetYSlotCenter(individualDataPoint.Y, barChartBounds);
+                var barLeft = slotBounds.Left;
+                var barTop = Math.Min(yCenter, yBaseline);
+                var barBottom = Math.Max(yCenter, yBaseline);
+                var barHeight = barBottom - barTop;
+                var barWidth = slotBounds.Width;
+                if (ShouldInsetBarWidths(barChartBounds))
+                {
+                    barWidth *= Properties.BarWidthRatioOfSlotWidth;
+                    barLeft += (slotBounds.Width - barWidth) / 2f;
+                }
+
+                Console.Write($"{barWidth:F2}, ");
+                var barRect = SRectF.GetIntersection(new SRectF(barLeft, barTop, barWidth, barHeight), barChartBounds);
+
+                if (barRect != SRectF.Empty)
+                {
+                    barRenderables.Add((barRect, Properties.BarColorFormatter(individualDataPoint.Y)));
+                }
+            }
+            else if (dataPoint is AggregatedDataPoint aggregatedDataPoint)
+            {
+                var slotBounds = GetXRangeBounds(aggregatedDataPoint.Range, barChartBounds);
+                var meanYBarCenter = GetYSlotCenter(aggregatedDataPoint.AverageY, barChartBounds);
+                var barMinColor = Properties.BarColorFormatter(aggregatedDataPoint.AverageY);
+                var barShades = ColorHelpers.LightnessRamp(barMinColor, 0.1d, 3).ToArray();
+                var barMeanColor = barShades[1];
+                var barMaxColor = barShades[2];
+
+                var minBarYCenter = GetYSlotCenter(aggregatedDataPoint.MinimumY, barChartBounds);
+                var maxBarYCenter = GetYSlotCenter(aggregatedDataPoint.MaximumY, barChartBounds);
+
+                var minBarTop = Math.Min(minBarYCenter, yBaseline);
+                var minBarBottom = Math.Max(minBarYCenter, yBaseline);
+                var minBarHeight = minBarBottom - minBarTop;
+                var minBarRect = SRectF.GetIntersection(new SRectF(slotBounds.Left, minBarTop, slotBounds.Width, minBarHeight), barChartBounds);
+
+                var meanBarTop = Math.Min(meanYBarCenter, yBaseline);
+                var meanBarBottom = Math.Max(meanYBarCenter, yBaseline);
+                var meanBarHeight = meanBarBottom - meanBarTop;
+                var meanBarRect = SRectF.GetIntersection(new SRectF(slotBounds.Left, meanBarTop, slotBounds.Width, meanBarHeight), barChartBounds);
+
+                var maxBarTop = Math.Min(maxBarYCenter, yBaseline);
+                var maxBarBottom = Math.Max(maxBarYCenter, yBaseline);
+                var maxBarHeight = maxBarBottom - maxBarTop;
+                var maxBarRect = SRectF.GetIntersection(new SRectF(slotBounds.Left, maxBarTop, slotBounds.Width, maxBarHeight), barChartBounds);
+                if (minBarRect != SRectF.Empty)
+                {
+                    barRenderables.Add((minBarRect, barMinColor));
+                }
+                if (meanBarRect != SRectF.Empty)
+                {
+                    barRenderables.Add((meanBarRect, barMeanColor));
+                }
+                if (maxBarRect != SRectF.Empty)
+                {
+                    barRenderables.Add((maxBarRect, barMaxColor));
+                }
+            }
+        }
+
+        Console.WriteLine();
+        _barRenderables = barRenderables;
+    }
+
+    private SRectF GetBarChartBounds(SRectF displayBounds)
+    {
+        var xAxisHeight = displayBounds.Height * XAxisProperties.SizeRatioOfParent;
+        var yAxisWidth = displayBounds.Width * YAxisProperties.SizeRatioOfParent;
+        var allocatedBounds = new SRectF(
+            displayBounds.X + yAxisWidth,
+            displayBounds.Y,
+            displayBounds.Width - yAxisWidth,
+            displayBounds.Height - xAxisHeight
+        );
+        return Properties.PlotInsets.ApplyTo(allocatedBounds);
+    }
+
+    private SRectF GetXAxisBounds(SRectF displayBounds, SRectF barChartBounds)
+    {
+        // The X-axis is strictly below only the bar chart, so it starts more leftward than the display area.
+        // Pass in barChartBounds because we just calculated it and don't want to recalculate it here.
+        var barChartLeft = barChartBounds.Left;
+        var xAxisHeight = displayBounds.Height * XAxisProperties.SizeRatioOfParent;
+        return new SRectF(
+            barChartLeft,
+            barChartBounds.Bottom,
+            barChartBounds.Width,
+            xAxisHeight
+        );
+    }
+
+    private SRectF GetYAxisBounds(SRectF displayBounds, SRectF barChartBounds)
+    {
+        // The Y-axis is strictly to the left of only the bar chart, so it ends more upward than the display area.
+        // Pass in barChartBounds because we just calculated it and don't want to recalculate it here.
+        return new SRectF(
+            displayBounds.X,
+            barChartBounds.Top,
+            Math.Max(0d, barChartBounds.Left - displayBounds.Left),
+            barChartBounds.Height
+        );
+    }
+
+    private static bool CanRenderPlot(SRectF bounds) => bounds.Width >= 1d && bounds.Height >= 1d;
+
+    private bool IsDense(SRectF barChartBounds)
+    {
+        var totalSlots = GetVisualSlotCount();
+        return totalSlots > (BigInteger)barChartBounds.Width;
+    }
+
+    private bool ShouldInsetBarWidths(SRectF barChartBounds)
+    {
+        var totalSlots = GetVisualSlotCount();
+        var slotWidth = (double)((BigDecimal)barChartBounds.Width / totalSlots);
+
+        // TODO: lift totally arbitrary 3f threshold into a constant
+        return slotWidth >= 3f;
+    }
+
+    private SRectF GetXSlotBounds(BigInteger x, SRectF barChartBounds)
+    {
+        var totalSlots = GetVisualSlotCount();
+        var slotIndex = x - Properties.XMinimum;
+
+        if (!IsDense(barChartBounds))
+        {
+            var slotWidth = (BigDecimal)barChartBounds.Width / totalSlots;
+            var slotLeft = barChartBounds.Left + (slotIndex * slotWidth);
+
+            return new SRectF((double)slotLeft, barChartBounds.Top, (double)slotWidth, barChartBounds.Height);
+        }
+        else
+        {
+            var pixelIndex = (int)BigDecimal.Floor((BigDecimal)barChartBounds.Width * (slotIndex / totalSlots));
+            return new SRectF(barChartBounds.Left + pixelIndex, barChartBounds.Top, 1, barChartBounds.Height);
+        }
+    }
+
+    private BigDecimal GetVisualSlotCount() =>
+        (Properties.XMaximum - Properties.XMinimum) + BigDecimal.One;
+
+    private SRectF GetXRangeBounds(XRange range, SRectF barChartBounds)
+    {
+        var first = GetXSlotBounds(range.Minimum, barChartBounds);
+        var last = GetXSlotBounds(range.Maximum, barChartBounds);
+        return new SRectF(first.Left, barChartBounds.Top, last.Right - first.Left, barChartBounds.Height);
+    }
+
+    private double GetYSlotCenter(double y, SRectF barChartBounds)
+    {
+        var yRange = Properties.YMaximum - Properties.YMinimum;
+        var yRatio = (y - Properties.YMinimum) / yRange;
+        var yPixel = barChartBounds.Bottom - (yRatio * barChartBounds.Height);
+        return yPixel;
+    }
+
+    private double GetYBaseline(SRectF barChartBounds)
+    {
+        if (Properties.YMaximum < 0)
+        {
+            return barChartBounds.Top;
+        }
+        else if (Properties.YMinimum > 0)
+        {
+            return barChartBounds.Bottom;
+        }
+        else
+        {
+            var yRange = Properties.YMaximum - Properties.YMinimum;
+            var zeroY = barChartBounds.Top + ((Properties.YMaximum / yRange) * barChartBounds.Height);
+            return zeroY;
+        }
+    }
+
+    private (int MinMultiple, int MaxMultiple) GetYGridlines()
+    {
+        var gap = YAxisProperties.GridlineGap;
+        var minimum = checked((int)Math.Ceiling(Properties.YMinimum / gap));
+        var maximum = checked((int)Math.Floor(Properties.YMaximum / gap));
+        return (minimum, maximum);
+    }
+}

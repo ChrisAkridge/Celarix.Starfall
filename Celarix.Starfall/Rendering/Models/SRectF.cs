@@ -61,6 +61,16 @@ namespace Celarix.Starfall.Rendering.Models
             return new SRectF(rect.X - point.X, rect.Y - point.Y, rect.Width, rect.Height);
         }
 
+        public static SRectF operator *(SRectF rect, SSizeF size)
+        {
+            return new SRectF(rect.X, rect.Y, rect.Width * size.Width, rect.Height * size.Height);
+        }
+
+        public static SRectF operator *(SRectF rect, double factor)
+        {
+            return new SRectF(rect.X, rect.Y, rect.Width * factor, rect.Height * factor);
+        }
+
         public static bool operator ==(SRectF a, SRectF b)
         {
             return a.X == b.X && a.Y == b.Y && a.Width == b.Width && a.Height == b.Height;
@@ -74,6 +84,22 @@ namespace Celarix.Starfall.Rendering.Models
         public static bool Intersects(SRectF a, SRectF b)
         {
             return a.Left < b.Right && a.Right > b.Left && a.Top < b.Bottom && a.Bottom > b.Top;
+        }
+
+        public static bool AnyIntersection(IReadOnlyList<SRectF> rects)
+        {
+            // Sure, it's O(n^2), but we'll keep it this way until perf kills us
+            for (int i = 0; i < rects.Count; i++)
+            {
+                for (int j = i + 1; j < rects.Count; j++)
+                {
+                    if (Intersects(rects[i], rects[j]))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         public static bool RotatedIntersects(SRectF a, SRectF b, SAngle rotationA, SAngle rotationB)
@@ -145,12 +171,31 @@ namespace Celarix.Starfall.Rendering.Models
             return new SRectF(newX, newY, newWidth, newHeight);
         }
 
+        public SRectF Shrink(double left, double right, double top, double bottom)
+        {
+            var newX = X + left;
+            var newY = Y + top;
+            var newWidth = Math.Max(0, Width - left - right);
+            var newHeight = Math.Max(0, Height - top - bottom);
+
+            return new SRectF(newX, newY, newWidth, newHeight);
+        }
+
         public SRectF Expand(double horizontalAmount, double verticalAmount)
         {
             var newX = X - horizontalAmount;
             var newY = Y - verticalAmount;
             var newWidth = Width + 2 * horizontalAmount;
             var newHeight = Height + 2 * verticalAmount;
+            return new SRectF(newX, newY, newWidth, newHeight);
+        }
+
+        public SRectF Expand(double left, double right, double top, double bottom)
+        {
+            var newX = X - left;
+            var newY = Y - top;
+            var newWidth = Width + left + right;
+            var newHeight = Height + top + bottom;
             return new SRectF(newX, newY, newWidth, newHeight);
         }
 
@@ -205,6 +250,80 @@ namespace Celarix.Starfall.Rendering.Models
             var minDimension = Math.Min(Width, Height);
             var squareSize = new SSizeF(minDimension, minDimension);
             return new(AlignmentHelper.Align(alignment, this, squareSize), squareSize);
+        }
+
+        public static SRectF BoundsOf(IEnumerable<SRectF> rectangles)
+        {
+            var left = double.MaxValue;
+            var right = double.MinValue;
+            var top = double.MaxValue;
+            var bottom = double.MinValue;
+
+            foreach (var rect in rectangles)
+            {
+                if (rect.Left < left) { left = rect.Left; }
+                if (rect.Right > right) { right = rect.Right; }
+                if (rect.Top < top) { top = rect.Top; }
+                if (rect.Bottom > bottom) { bottom = rect.Bottom; }
+            }
+
+            return FromSides(top, right, bottom, left);
+        }
+
+        public SPointF GetEdgePoint(Alignment alignment)
+        {
+            return alignment switch
+            {
+                Alignment.TopLeft => TopLeft,
+                Alignment.TopCenter => TopCenter,
+                Alignment.TopRight => TopRight,
+                Alignment.BottomLeft => BottomLeft,
+                Alignment.BottomCenter => BottomCenter,
+                Alignment.BottomRight => BottomRight,
+                Alignment.LeftCenter => CenterLeft,
+                Alignment.RightCenter => CenterRight,
+                Alignment.Center => Center,
+                _ => throw new ArgumentOutOfRangeException(nameof(alignment), alignment, null)
+            };
+        }
+
+        public (SRectF First, SRectF Second) SplitHorizontal(SRectF outer, double firstRatio)
+        {
+            var firstWidth = outer.Width * firstRatio;
+            var secondWidth = outer.Width - firstWidth;
+            var firstRect = new SRectF(outer.X, outer.Y, firstWidth, outer.Height);
+            var secondRect = new SRectF(outer.X + firstWidth, outer.Y, secondWidth, outer.Height);
+            return (firstRect, secondRect);
+        }
+
+        public (SRectF First, SRectF Second) SplitVertical(SRectF outer, double firstRatio)
+        {
+            var firstHeight = outer.Height * firstRatio;
+            var secondHeight = outer.Height - firstHeight;
+            var firstRect = new SRectF(outer.X, outer.Y, outer.Width, firstHeight);
+            var secondRect = new SRectF(outer.X, outer.Y + firstHeight, outer.Width, secondHeight);
+            return (firstRect, secondRect);
+        }
+
+        public SRectF UpBy(double distance) => new(X, Y - distance, Width, Height);
+        public SRectF DownBy(double distance) => new(X, Y + distance, Width, Height);
+        public SRectF LeftBy(double distance) => new(X - distance, Y, Width, Height);
+        public SRectF RightBy(double distance) => new(X + distance, Y, Width, Height);
+
+        public static SRectF GetIntersection(SRectF a, SRectF b)
+        {
+            var left = Math.Max(a.Left, b.Left);
+            var right = Math.Min(a.Right, b.Right);
+            var top = Math.Max(a.Top, b.Top);
+            var bottom = Math.Min(a.Bottom, b.Bottom);
+            if (left < right && top < bottom)
+            {
+                return FromSides(top, right, bottom, left);
+            }
+            else
+            {
+                return Empty;
+            }
         }
     }
 }
