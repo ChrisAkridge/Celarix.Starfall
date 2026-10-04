@@ -12,7 +12,7 @@
 //		- Left arrow: Go back to the previous slide/go back within current slide
 
 using Celarix.Starfall;
-using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Atria;
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Presentations;
 using Celarix.Starfall.Presentations.FloatingPoint;

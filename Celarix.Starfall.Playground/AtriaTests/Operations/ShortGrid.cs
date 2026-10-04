@@ -1,6 +1,6 @@
 using Celarix.Starfall;
 using Celarix.Starfall.Extensions;
-using Celarix.Starfall.Layout.Atria.Elements;
+using Celarix.Starfall.Atria.Elements;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;

@@ -1,8 +1,6 @@
 using Celarix.Starfall.Audio;
-using Celarix.Starfall.Layout.Atria;
-using Celarix.Starfall.Layout.Atria.Animation;
-using Celarix.Starfall.Layout.Atria.Basis;
-using Celarix.Starfall.Layout.Atria.Elements;
+using Celarix.Starfall.Atria;
+using Celarix.Starfall.Atria.Elements;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Presentations.FloatingPoint.Elements;
 using Celarix.Starfall.Rendering.Models;

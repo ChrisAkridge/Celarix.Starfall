@@ -1,4 +1,3 @@
-﻿using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Libra.Renderables;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Models;

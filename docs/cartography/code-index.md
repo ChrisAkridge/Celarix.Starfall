@@ -12,15 +12,15 @@ This index points to architectural entry points, not every type.
 
 ## Atria
 
-- `Celarix.Starfall/Layout/Atria/AtriaLayoutEngine.cs` — current-slide lifecycle and frame orchestration.
-- `Celarix.Starfall/Layout/Atria/AtriaSlide.cs` — base slide lifecycle, elements, navigation, update, and rendering.
-- `Celarix.Starfall/Layout/Atria/LayeredAtriaSlide.cs` — explicit layer-order rendering.
-- `Celarix.Starfall/Layout/Atria/Elements/AtriaElement.cs` — reusable element base class.
-- `Celarix.Starfall/Layout/Atria/Components/LayoutNode.cs` — normalized split/inset layout tree.
-- `Celarix.Starfall/Layout/Atria/Components/Grid.cs` and `LayoutStacker.cs` — reusable layout containers.
-- `Celarix.Starfall/Layout/Atria/Animation/AnimationContext.cs` — scheduling and owner-scoped lifetime.
-- `Celarix.Starfall/Layout/Atria/Animation/AnimationSlot.cs` — animation replacement policy.
-- `Celarix.Starfall/Layout/Atria/StateMachine.cs` — attribute-discovered slide transitions; linear helper is incomplete.
+- `Celarix.Starfall/Atria/AtriaLayoutEngine.cs` — current-slide lifecycle and frame orchestration.
+- `Celarix.Starfall/Atria/AtriaSlide.cs` — base slide lifecycle, elements, navigation, update, and rendering.
+- `Celarix.Starfall/Atria/LayeredAtriaSlide.cs` — explicit layer-order rendering.
+- `Celarix.Starfall/Atria/Elements/AtriaElement.cs` — reusable element base class.
+- `Celarix.Starfall/Atria/LayoutNode.cs` — normalized split/inset layout tree.
+- `Celarix.Starfall/Atria/Grid.cs` and `LayoutStacker.cs` — reusable layout containers.
+- `Celarix.Starfall/Atria/AnimationContext.cs` — scheduling and owner-scoped lifetime.
+- `Celarix.Starfall/Atria/AnimationSlot.cs` — animation replacement policy.
+- `Celarix.Starfall/Atria/StateMachine.cs` — attribute-discovered slide transitions; linear helper is incomplete.
 
 ## Rendering
 
@@ -50,8 +50,8 @@ This index points to architectural entry points, not every type.
 - `Celarix.Starfall/Charts/DataResolution/IResolutionStrategy.cs` — bucket aggregation boundary.
 - `Celarix.Starfall/Charts/DataResolution/StandardResolutionStrategy.cs` — standard empty/individual/aggregate policy.
 - `Celarix.Starfall/Charts/Displays/IChartDisplay.cs` — plot-rendering boundary.
-- `Celarix.Starfall/Layout/Atria/Elements/ChartElement.cs` — Atria container and chart chrome.
-- `Celarix.Starfall/Layout/Atria/Elements/BarChartElement.cs` — older self-contained bar chart.
+- `Celarix.Starfall/Atria/Elements/ChartElement.cs` — Atria container and chart chrome.
+- `Celarix.Starfall/Atria/Elements/BarChartElement.cs` — older self-contained bar chart.
 
 ## Tests and design notes
 

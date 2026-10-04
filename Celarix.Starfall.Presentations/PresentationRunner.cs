@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+﻿using Celarix.Starfall.Atria;
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Presentations.FloatingPoint;
 using Celarix.Starfall.Rendering;

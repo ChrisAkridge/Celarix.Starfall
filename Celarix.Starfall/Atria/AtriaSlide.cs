@@ -1,0 +1,193 @@
+﻿using Celarix.Starfall.Atria.Elements;
+using Celarix.Starfall.Rendering;
+using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Targets;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Celarix.Starfall.Atria
+{
+    public abstract class AtriaSlide : IDisposable
+    {
+        private readonly List<AtriaElement> _elements = new();
+        private readonly List<BasisElement> _basisElements = new();
+        private bool _disposed;
+
+        public AtriaRuntime Runtime { get; }
+        public MeasurementService MeasurementService => Runtime.MeasurementService;
+        public DebugMode DebugMode => Runtime.DebugMode;
+        public AnimationContextRegistry AnimationContexts => Runtime.AnimationContexts;
+        protected AnimationContext Animations { get; }
+        public SColor BackgroundColor { get; set; }
+        public SSizeF Size { get; }
+
+        protected IReadOnlyList<AtriaElement> Elements => _elements;
+        protected IReadOnlyList<BasisElement> BasisElements => _basisElements;
+
+        // Points
+        public SPointF TopLeft => SPointF.Zero;
+        public SPointF TopCenter => new SPointF(Size.Width / 2, 0);
+        public SPointF TopRight => new SPointF(Size.Width, 0);
+        public SPointF LeftCenter => new SPointF(0, Size.Height / 2);
+        public SPointF Center => new SPointF(Size.Width / 2, Size.Height / 2);
+        public SPointF RightCenter => new SPointF(Size.Width, Size.Height / 2);
+        public SPointF BottomLeft => new SPointF(0, Size.Height);
+        public SPointF BottomCenter => new SPointF(Size.Width / 2, Size.Height);
+        public SPointF BottomRight => new SPointF(Size.Width, Size.Height);
+
+        public AtriaSlide(AtriaRuntime runtime, SSizeF size)
+        {
+            Runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+            Size = size;
+            Animations = Runtime.AnimationContexts.CreateFor(this);
+        }
+
+        public abstract void Initialize();
+
+        public virtual void KeyDown(SKeyboardEvent keyboardEvent)
+        {
+            // Default implementation does nothing. Override in derived classes to handle key down events.
+        }
+
+        public virtual void KeyUp(SKeyboardEvent keyboardEvent)
+        {
+            // Default implementation does nothing. Override in derived classes to handle key up events.
+        }
+
+        public virtual void Update(FrameTime frameTime)
+        {
+            foreach (var element in _elements)
+            {
+                element.Update(frameTime);
+            }
+        }
+
+        public virtual void Render(IRenderTarget target)
+        {
+            target.Clear(BackgroundColor);
+            foreach (var element in _elements)
+            {
+                element.Render(target);
+            }
+
+            if (DebugMode.ShowAnchors)
+            {
+                foreach (var basisElement in _basisElements)
+                {
+                    basisElement.RenderDebug(target);
+                }
+            }
+        }
+
+        public virtual SlideAdvanceResult Rewind()
+        {
+            // Basic implementation assuming no state machine.
+            return SlideAdvanceResult.CanRewind;
+        }
+
+        public virtual SlideAdvanceResult Advance()
+        {
+            // Basic implementation assuming no state machine.
+            return SlideAdvanceResult.CanAdvance;
+        }
+
+        public virtual AddedElementOptions Add(IEnumerable<ISlideAddable> addables)
+        {
+            return AddCore(addables);
+        }
+
+        protected AddedElementOptions AddCore(IEnumerable<ISlideAddable> addables)
+        {
+            var newAddables = addables.ToArray();
+            var newElements = new List<AtriaElement>();
+            var newBasisElements = new List<BasisElement>();
+            foreach (var addable in newAddables)
+            {
+                if (addable is AtriaElement element)
+                {
+                    element.Attach(this);
+                    _elements.Add(element);
+                    newElements.Add(element);
+                }
+                else if (addable is BasisElement basisElement)
+                {
+                    if (basisElement is ISlideAddable basisAddable)
+                    {
+                        basisAddable.Slide = this;
+                    }
+                    _basisElements.Add(basisElement);
+                    newBasisElements.Add(basisElement);
+                }
+            }
+            return new AddedElementOptions(this, [.. newElements], [.. newBasisElements]);
+        }
+
+        public virtual void Remove(IEnumerable<ISlideAddable> removeables)
+        {
+            foreach (var removeable in removeables)
+            {
+                if (removeable is AtriaElement element)
+                {
+                    _elements.Remove(element);
+                    element.Dispose();
+                }
+                else if (removeable is BasisElement basisElement)
+                {
+                    _basisElements.Remove(basisElement);
+                }
+            }
+        }
+
+        public IReadOnlyList<AtriaElement> QueryMultiple(params IEnumerable<string> selectors)
+        {
+            var matchedElements = new List<AtriaElement>();
+            foreach (var selector in selectors)
+            {
+                matchedElements.AddRange(Query(selector));
+            }
+            return matchedElements;
+        }
+
+        public IReadOnlyList<AtriaElement> Query(string selector)
+        {
+            var matchedElements = new List<AtriaElement>();
+            foreach (var element in _elements)
+            {
+                if (element.Id.Matches(selector))
+                {
+                    matchedElements.Add(element);
+                }
+            }
+            return matchedElements;
+        }
+
+        public IReadOnlyList<BasisElement> QueryBasis(string selector)
+        {
+            var matchedElements = new List<BasisElement>();
+            foreach (var element in _basisElements)
+            {
+                if (element.Id.Matches(selector))
+                {
+                    matchedElements.Add(element);
+                }
+            }
+            return matchedElements;
+        }
+
+        public virtual void Dispose()
+        {
+            if (_disposed) { return; }
+
+            GC.SuppressFinalize(this);
+
+            foreach (var element in _elements)
+            {
+                element.Dispose();
+            }
+
+            AnimationContexts?.DisposeOwnedBy(this);
+            _disposed = true;
+        }
+    }
+}

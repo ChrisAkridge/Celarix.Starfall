@@ -1,4 +1,3 @@
-﻿using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Mathematics;
 using System;
 using System.Collections.Generic;

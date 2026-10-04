@@ -1,5 +1,5 @@
 ﻿using Celarix.Starfall.Extensions;
-using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Atria;
 using Celarix.Starfall.Playground.AtriaTests;
 using Celarix.Starfall.Playground.AtriaTests.CanonicalDecomposition;
 using Celarix.Starfall.Playground.AtriaTests.Operations;
@@ -50,7 +50,6 @@ namespace Celarix.Starfall.Playground.Presentations
             // var timeProgressSlide = new ShortOperationSlide((x, y) => Quadrant(x), "quadrant(x)", 1280, 720);
             //var timeProgressSlide = new CanonicalDecompositionSlide(@"E:\Documents\Files\Pictures\Pictures\S Series\1s Series\1s000335.png",
             //    1280, 720);
-            //var timeProgressSlide = new DelphinusSlide(1280, 720);
             var timeProgressSlide = _factories[0](layoutEngine.Runtime!);
             layoutEngine.AddSlide(timeProgressSlide, "timeProgress");
             layoutEngine.SetCurrentSlide("timeProgress");
