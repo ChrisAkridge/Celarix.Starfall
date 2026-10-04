@@ -1,0 +1,272 @@
+using Celarix.Starfall.Atria;
+using Celarix.Starfall.Atria.Elements;
+using Celarix.Starfall.Mathematics;
+using Celarix.Starfall.Rendering.Models;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Celarix.Starfall.Decks.FloatingPoint
+{
+    internal sealed class SlideFP_07_RulesForMantissas : AtriaSlide
+    {
+        public override string Notes => "TODO: notes for SlideFP_07_RulesForMantissas.";
+
+        private enum State
+        {
+            Initial,
+            ShowScientificNotationNumber,
+            ShowPartsLabelsAndLines,
+            HidePartsLabelsAndLines,
+            ShowBadExamples,
+            ColorHighMantissaRed,
+            ColorLowMantissaRed
+        }
+
+        private static readonly SFontFamily _slideFont = new SFontFamily("Consolas", 72f);
+        private static readonly double partMargin = 10d;
+
+        private StateMachine<State> _stateMachine;
+
+        public SlideFP_07_RulesForMantissas(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
+        {
+            _stateMachine = new StateMachine<State>(this, State.Initial);
+        }
+
+        public override void Initialize()
+        {
+            BackgroundColor = Constants.FloatingPointBackground;
+        }
+
+        public override void Update(FrameTime frameTime)
+        {
+            base.Update(frameTime);
+        }
+
+        public override SlideAdvanceResult Advance()
+        {
+            if (_stateMachine.CurrentState == State.ColorLowMantissaRed)
+            {
+                return SlideAdvanceResult.CanAdvance;
+            }
+
+            var nextState = _stateMachine.CurrentState + 1;
+            _stateMachine.GoToState(nextState);
+            return SlideAdvanceResult.InternalStateChanged;
+        }
+
+        public override SlideAdvanceResult Rewind()
+        {
+            if (_stateMachine.CurrentState == State.Initial)
+            {
+                return SlideAdvanceResult.CanRewind;
+            }
+
+            var previousState = _stateMachine.CurrentState - 1;
+            _stateMachine.GoToState(previousState);
+            return SlideAdvanceResult.InternalStateChanged;
+        }
+
+        [StateTransition<State>(State.Initial, State.ShowScientificNotationNumber)]
+        private void ShowScientificNotationNumber()
+        {
+            Console.WriteLine("FP7: Shows a number in scientific notation.");
+            var goodExample = new TextBlock("#goodExample")
+            {
+                Text = "+8.302 × 10⁹",
+                FontFamily = "Consolas",
+                FontSize = 72f,
+                Color = SColor.White
+            };
+            var goodAnchor = new BasisPoint(Center, "#goodExampleAnchor");
+            goodExample.AnchorCenterTo(goodAnchor);
+
+            Add([goodExample, goodAnchor])
+                .AnimateBasic(0.5d, AnimationTypes.FadeIn, Easings.Linear);
+        }
+
+        [StateTransition<State>(State.ShowScientificNotationNumber, State.ShowPartsLabelsAndLines)]
+        private void ShowPartsLabelsAndLines()
+        {
+            Console.WriteLine("FP7: Shows the parts of that number.");
+            var goodExample = Query("#goodExample").Single() as TextBlock;
+            var characterSize = new SSizeF(goodExample.Size.Width / goodExample.Text.Length,
+                goodExample.Size.Height);
+            var signTargetX = characterSize.Width * 0.5d;
+            var mantissaTargetX = characterSize.Width * 3.5d;
+            var baseTargetX = characterSize.Width * 10d;
+            var exponentTargetX = characterSize.Width * 11.5d;
+            var exponentTargetY = goodExample.Size.Height * 0.25d;
+
+            var vBasisLine = new BasisLine(TopCenter, BottomCenter);
+            var hBasisHeight = vBasisLine.SplitAndTakeLeft(1f / 3f).Center.Y;
+            var hBasisLine = new BasisLine(TopLeft.Down(hBasisHeight), TopRight.Down(hBasisHeight));
+            var signLabelAnchor = new BasisPoint(hBasisLine.SplitAndTakeLeft(1f / 6f).Center, "#signLabelAnchor");
+            var mantissaLabelAnchor = new BasisPoint(hBasisLine.SplitAndTakeLeft(1f / 3f).Center, "#mantissaLabelAnchor");
+            var baseLabelAnchor = new BasisPoint(hBasisLine.Center, "#baseLabelAnchor");
+            var exponentLabelAnchor = new BasisPoint(hBasisLine.SplitAndTakeRight(3f / 4f).Center, "#exponentLabelAnchor");
+
+            var signLabel = new TextBlock("#signLabel")
+            {
+                Text = "Sign",
+                FontFamily = "Consolas",
+                FontSize = 36f,
+                Color = SColor.White
+            };
+            signLabel.AnchorCenterTo(signLabelAnchor);
+
+            var mantissaLabel = new TextBlock("#mantissaLabel")
+            {
+                Text = "Mantissa",
+                FontFamily = "Consolas",
+                FontSize = 36f,
+                Color = SColor.White
+            };
+            mantissaLabel.AnchorCenterTo(mantissaLabelAnchor);
+
+            var baseLabel = new TextBlock("#baseLabel")
+            {
+                Text = "Base",
+                FontFamily = "Consolas",
+                FontSize = 36f,
+                Color = SColor.White
+            };
+            baseLabel.AnchorCenterTo(baseLabelAnchor);
+
+            var exponentLabel = new TextBlock("#exponentLabel")
+            {
+                Text = "Exponent",
+                FontFamily = "Consolas",
+                FontSize = 36f,
+                Color = SColor.White
+            };
+            exponentLabel.AnchorCenterTo(exponentLabelAnchor);
+
+            var signLine = LineElement.Between(
+                signLabelAnchor.Point,
+                new SPointF(signTargetX + goodExample.Position.X, goodExample.Bounds.Center.Y),
+                "#signLine",
+                SColor.White.WithOpacity(0.25d),
+                4d);
+            signLine.AnchorTopLeftTo(signLabelAnchor);
+
+            var mantissaLine = LineElement.Between(
+                mantissaLabelAnchor.Point,
+                new SPointF(mantissaTargetX + goodExample.Position.X, goodExample.Bounds.Center.Y),
+                "#mantissaLine",
+                SColor.White.WithOpacity(0.25d),
+                4d);
+            mantissaLine.AnchorTopLeftTo(mantissaLabelAnchor);
+
+            var baseLine = LineElement.Between(
+                baseLabelAnchor.Point,
+                new SPointF(baseTargetX + goodExample.Position.X, goodExample.Bounds.Center.Y),
+                "#baseLine",
+                SColor.White.WithOpacity(0.25d),
+                4d);
+            baseLine.AnchorTopLeftTo(baseLabelAnchor);
+
+            var exponentLine = LineElement.Between(
+                exponentLabelAnchor.Point,
+                new SPointF(exponentTargetX + goodExample.Position.X, exponentTargetY + goodExample.Position.Y),
+                "#exponentLine",
+                SColor.White.WithOpacity(0.25d),
+                4d);
+            exponentLine.AnchorTopLeftTo(exponentLabelAnchor);
+
+            Add([signLabel, mantissaLabel, baseLabel, exponentLabel, signLine, mantissaLine, baseLine, exponentLine, signLabelAnchor, mantissaLabelAnchor, baseLabelAnchor, exponentLabelAnchor])
+                .AnimateBasic(0.5d, AnimationTypes.FadeIn, Easings.Linear);
+        }
+
+        [StateTransition<State>(State.ShowPartsLabelsAndLines, State.HidePartsLabelsAndLines)]
+        private void HidePartsLabelsAndLines()
+        {
+            // CANIMPROVE: Fading out elements and then removing them can be done a LOT better than this.
+            Console.WriteLine("FP7: Hides the parts labels and lines.");
+            AtriaElement[] elementsToFadeOut = [
+                Query("#signLabel").Single(),
+                Query("#mantissaLabel").Single(),
+                Query("#baseLabel").Single(),
+                Query("#exponentLabel").Single(),
+                Query("#signLine").Single(),
+                Query("#mantissaLine").Single(),
+                Query("#baseLine").Single(),
+                Query("#exponentLine").Single()
+            ];
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            {
+                foreach (var element in elementsToFadeOut)
+                {
+                    element.Opacity = 1d - p;
+                }
+            }, () =>
+            {
+                Remove(elementsToFadeOut);
+                Remove([(ISlideAddable)QueryBasis("#signLabelAnchor").Single(),
+                    (ISlideAddable)QueryBasis("#mantissaLabelAnchor").Single(),
+                    (ISlideAddable)QueryBasis("#baseLabelAnchor").Single(),
+                    (ISlideAddable)QueryBasis("#exponentLabelAnchor").Single()]);
+            }));
+        }
+
+        [StateTransition<State>(State.HidePartsLabelsAndLines, State.ShowBadExamples)]
+        private void ShowBadExamples()
+        {
+            Console.WriteLine("FP7: Shows two examples of numbers that are not in proper scientific notation.");
+            var goodExampleAnchor = (BasisPoint)QueryBasis("#goodExampleAnchor").Single();
+            var vBasisLine = new BasisLine(TopCenter, BottomCenter);
+            var startPosition = goodExampleAnchor.Point;
+            var targetPosition = new SPointF(goodExampleAnchor.Point.X, vBasisLine.SplitAndTakeLeft(1f / 3f).Center.Y);
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            {
+                goodExampleAnchor.Point = MathHelpers.Ease(startPosition, targetPosition, p, Easings.Land);
+            }));
+
+            // Make and show the bad examples immediately
+            var badExample1 = new TextBlock("#badExample1")
+            {
+                Text = "+83.02 × 10⁸",
+                FontFamily = "Consolas",
+                FontSize = 72f,
+                Color = SColor.White
+            };
+            var badAnchor = new BasisPoint(Center, "#badExample1Anchor");
+            badExample1.AnchorCenterTo(badAnchor);
+
+            var badExample2 = new TextBlock("#badExample2")
+            {
+                Text = "+0.830 × 10¹⁰",
+                FontFamily = "Consolas",
+                FontSize = 72f,
+                Color = SColor.White
+            };
+            var bad2Anchor = new BasisPoint(vBasisLine.SplitAndTakeRight(2f / 3f).Center, "#badExample2Anchor");
+            badExample2.AnchorCenterTo(bad2Anchor);
+
+            Add([badExample1, badAnchor, badExample2, bad2Anchor])
+                .AnimateBasic(0.5d, AnimationTypes.FadeIn, Easings.Linear);
+        }
+
+        [StateTransition<State>(State.ShowBadExamples, State.ColorHighMantissaRed)]
+        private void ColorHighMantissaRed()
+        {
+            Console.WriteLine("FP7: Colors the mantissa with too many digits to the left of the decimal point in red.");
+            var badExample1 = (TextBlock)Query("#badExample1").Single();
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            {
+                badExample1.Color = MathHelpers.InterpolateColor(SColor.White, SColor.Red, p);
+            }));
+        }
+
+        [StateTransition<State>(State.ColorHighMantissaRed, State.ColorLowMantissaRed)]
+        private void ColorLowMantissaRed()
+        {
+            Console.WriteLine("FP7: Colors the mantissa with a 0 to the left of the decimal point in red.");
+            var badExample2 = (TextBlock)Query("#badExample2").Single();
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(0.5d), p =>
+            {
+                badExample2.Color = MathHelpers.InterpolateColor(SColor.White, SColor.Red, p);
+            }));
+        }
+    }
+}

@@ -15,7 +15,7 @@ using Celarix.Starfall;
 using Celarix.Starfall.Atria;
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Presentations;
-using Celarix.Starfall.Presentations.FloatingPoint;
+using Celarix.Starfall.Decks.FloatingPoint;
 using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Targets;
 using SixLabors.ImageSharp;
