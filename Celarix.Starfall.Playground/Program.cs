@@ -12,7 +12,7 @@ namespace Celarix.Starfall.Playground
             BigDecimal.AlwaysTruncate = true;
             BigDecimal.AlwaysNormalize = true;
 
-            if (args.Length != 1)
+            if (args.Length < 1)
             {
                 Console.WriteLine("Please provide a presentation name as an argument.");
                 return;
@@ -27,6 +27,10 @@ namespace Celarix.Starfall.Playground
             else if (presentationName == "atriapng")
             {
                 AtriaPngCurrent.Run();
+            }
+            else if (presentationName == "atriaffmpeg")
+            {
+                AtriaFfmpegCurrent.Run(args[1..]);
             }
             else
             {

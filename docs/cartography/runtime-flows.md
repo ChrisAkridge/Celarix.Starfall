@@ -52,3 +52,5 @@ A chart display receives these resolved values and draws inside bounds supplied 
 
 The playground can pair Atria with `SkiaPngTarget`. It follows the same update/draw contract, but `Complete` encodes the current bitmap as `frame_########.png`, disposes the frame canvas/bitmap, and allocates a fresh pair. `Start` is a no-op, so the caller is responsible for driving frames.
 
+`SkiaFfmpegTarget` follows the same contract but writes each completed frame to an ffmpeg process as raw BGRA (unpremultiplied) instead of encoding a PNG. The caller drives frames the same way and calls `Finish` after the last one so ffmpeg can finalize the file. The playground `atriaffmpeg [output] [seconds] [h264|prores]` runner is the example.
+

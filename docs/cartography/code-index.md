@@ -27,6 +27,7 @@ This index points to architectural entry points, not every type.
 - `Celarix.Starfall/Rendering/Targets/IRenderTarget.cs` — backend contract.
 - `Celarix.Starfall/Rendering/Targets/SkiaTkTarget.cs` — interactive OpenTK/Skia target.
 - `Celarix.Starfall/Rendering/Targets/SkiaPngTarget.cs` — numbered PNG-frame target.
+- `Celarix.Starfall/Rendering/Targets/SkiaFfmpegTarget.cs` — video target that pipes raw frames to ffmpeg (H.264 or ProRes 4444 with alpha).
 - `Celarix.Starfall/Rendering/Targets/SkiaOffscreenTarget.cs` — image-producing target for composition.
 - `Celarix.Starfall/Rendering/Targets/SkiaCommon.cs` — shared Skia primitive implementation.
 - `Celarix.Starfall/Rendering/MeasurementService.cs` — cached target-specific text measurement.

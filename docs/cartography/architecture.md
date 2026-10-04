@@ -36,7 +36,7 @@ This host-level slide list is currently the effective presentation graph. Right-
 
 ### Rendering owns pixels, not layout semantics
 
-`IRenderTarget` exposes Starfall-native geometry, color, font, image, path, transform, and text-measurement operations. `SkiaCommon` and the Skia text helpers contain shared backend implementation. The interactive target presents an OpenTK-backed Skia surface; the PNG target emits a numbered file for every completed frame; the offscreen target returns an `SImage` for composition.
+`IRenderTarget` exposes Starfall-native geometry, color, font, image, path, transform, and text-measurement operations. `SkiaCommon` and the Skia text helpers contain shared backend implementation. The interactive target presents an OpenTK-backed Skia surface; the PNG target emits a numbered file for every completed frame; the ffmpeg target pipes each completed frame to an ffmpeg process as raw video; the offscreen target returns an `SImage` for composition.
 
 `MeasurementService` wraps target-specific text measurement and caches results. Atria injects the service into slides so layout code can measure without reaching into a concrete backend.
 
