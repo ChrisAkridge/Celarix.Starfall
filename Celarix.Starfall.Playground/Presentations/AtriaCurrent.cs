@@ -18,6 +18,7 @@ namespace Celarix.Starfall.Playground.Presentations
     internal static class AtriaCurrent
     {
         private static Func<AtriaRuntime, AtriaSlide>[] _factories = [
+            runtime => new SundayNightLights(runtime, new SSizeF(1280, 720)),
             runtime => new SquareRootSearchSlide(runtime, new SSizeF(1280, 720)),
             runtime => new MathFunSlide(runtime, new SSizeF(1280, 720)),
             runtime => new StatsSlide(runtime, new SSizeF(1280, 720)),
@@ -50,7 +51,7 @@ namespace Celarix.Starfall.Playground.Presentations
             //var timeProgressSlide = new CanonicalDecompositionSlide(@"E:\Documents\Files\Pictures\Pictures\S Series\1s Series\1s000335.png",
             //    1280, 720);
             //var timeProgressSlide = new DelphinusSlide(1280, 720);
-            var timeProgressSlide = _factories[3](layoutEngine.Runtime!);
+            var timeProgressSlide = _factories[0](layoutEngine.Runtime!);
             layoutEngine.AddSlide(timeProgressSlide, "timeProgress");
             layoutEngine.SetCurrentSlide("timeProgress");
             layoutEngine.Start();

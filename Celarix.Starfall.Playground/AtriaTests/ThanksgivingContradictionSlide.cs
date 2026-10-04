@@ -1,4 +1,5 @@
 using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Models;
@@ -123,7 +124,7 @@ internal sealed class ThanksgivingContradictionSlide : AtriaSlide
     private Diagram? diagram;
     private int currentStep;
 
-    public ThanksgivingContradictionSlide(int width, int height) : base(width, height) { }
+    public ThanksgivingContradictionSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size) { }
 
     public override void Initialize()
     {
@@ -132,11 +133,23 @@ internal sealed class ThanksgivingContradictionSlide : AtriaSlide
         Add([diagram]);
     }
 
+    public override void KeyUp(SKeyboardEvent keyboardEvent)
+    {
+        if (keyboardEvent.Key == SKey.Right)
+        {
+            Advance();
+        }
+        else if (keyboardEvent.Key == SKey.Left)
+        {
+            Rewind();
+        }
+    }
+
     public override SlideAdvanceResult Advance()
     {
         if (currentStep >= LastStep) { return SlideAdvanceResult.CanAdvance; }
         currentStep += 1;
-        diagram!.AnimateTo(element => ((Diagram)element).Step, Easings.Smoothstep, 0.7d, currentStep);
+        AnimateToStep(currentStep, 0.7d);
         return SlideAdvanceResult.InternalStateChanged;
     }
 
@@ -144,7 +157,20 @@ internal sealed class ThanksgivingContradictionSlide : AtriaSlide
     {
         if (currentStep <= 0) { return SlideAdvanceResult.CanRewind; }
         currentStep -= 1;
-        diagram!.AnimateTo(element => ((Diagram)element).Step, Easings.Smoothstep, 0.45d, currentStep);
+        AnimateToStep(currentStep, 0.45d);
         return SlideAdvanceResult.InternalStateChanged;
+    }
+
+    private void AnimateToStep(double targetStep, double durationSeconds)
+    {
+        Animations.ForceFinishAll();
+        var startingStep = diagram!.Step;
+        var durationFrames = AnimationContext.SecondsToFrames(durationSeconds);
+        var animation = Animations.StartNow(durationFrames, progress =>
+        {
+            var easedProgress = Easings.Smoothstep(progress);
+            diagram.Step = startingStep + ((targetStep - startingStep) * easedProgress);
+        });
+        Animations.ScheduleAnimation(animation);
     }
 }
