@@ -1,0 +1,58 @@
+using Celarix.Starfall.Atria;
+using Celarix.Starfall.Atria.Elements;
+using Celarix.Starfall.Mathematics;
+using Celarix.Starfall.Rendering.Models;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Celarix.Starfall.Decks.FloatingPoint
+{
+    internal sealed class SlideSF_01_ThisShouldBeProgrammable : AtriaSlide
+    {
+        public override string Notes => "TODO: notes for SlideSF_01_ThisShouldBeProgrammable.";
+
+        public SlideSF_01_ThisShouldBeProgrammable(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
+        {
+        }
+
+        public override void Update(FrameTime frameTime)
+        {
+            base.Update(frameTime);
+        }
+
+        public override void Initialize()
+        {
+            BackgroundColor = Constants.FloatingPointBackground;
+            Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(1d), p =>
+            {
+                BackgroundColor = MathHelpers.InterpolateColor(Constants.FloatingPointBackground, Constants.StarfallBackground, p);
+            }));
+        }
+
+        public override SlideAdvanceResult Advance()
+        {
+            var queryResult = Query("#slideText").Any();
+            if (!queryResult)
+            {
+                Console.WriteLine("SF01: Adding text");
+                var slideText = new TextBlock("#slideText")
+                {
+                    Text = "...this should be programmable.",
+                    FontFamily = "Calibri",
+                    FontSize = 60d,
+                    Color = SColor.White
+                };
+                var vBasisLine = new BasisLine(TopCenter, BottomCenter);
+                var vBasisLineSplit = vBasisLine.SplitAndTakeRight(2f / 3f);
+                var slideAnchor = new BasisPoint(vBasisLineSplit.Center, "#slideAnchor");
+                slideText.AnchorCenterTo(slideAnchor);
+
+                Add([slideText, slideAnchor])
+                    .AnimateBasic(1f, AnimationTypes.FadeIn, Easings.Linear);
+                return SlideAdvanceResult.InternalStateChanged;
+            }
+            return SlideAdvanceResult.CanAdvance;
+        }
+    }
+}

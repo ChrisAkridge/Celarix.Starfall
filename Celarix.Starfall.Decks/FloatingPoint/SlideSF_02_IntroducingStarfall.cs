@@ -1,0 +1,74 @@
+using Celarix.Starfall.Atria;
+using Celarix.Starfall.Atria.Elements;
+using Celarix.Starfall.Mathematics;
+using Celarix.Starfall.Rendering.Models;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Celarix.Starfall.Decks.FloatingPoint
+{
+    internal sealed class SlideSF_02_IntroducingStarfall : AtriaSlide
+    {
+        public override string Notes => "TODO: notes for SlideSF_02_IntroducingStarfall.";
+
+        private int _state = 0;
+
+        public SlideSF_02_IntroducingStarfall(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
+        {
+        }
+
+        public override void Update(FrameTime frameTime)
+        {
+            base.Update(frameTime);
+        }
+
+        public override void Initialize()
+        {
+            BackgroundColor = Constants.StarfallBackground;
+        }
+
+        public override SlideAdvanceResult Advance()
+        {
+            if (_state == 0)
+            {
+                Console.WriteLine("SF02: Adding title");
+                var title = new TextBlock("#title")
+                {
+                    Text = "Starfall",
+                    FontFamily = "Calibri",
+                    FontSize = 72f,
+                    Color = SColor.White
+                };
+                var titleAnchor = new BasisPoint(Center, "#titleAnchor");
+                title.AnchorCenterTo(titleAnchor);
+                Add([titleAnchor, title])
+                    .AnimateBasic(1f, AnimationTypes.FadeIn, Easings.Linear);
+                _state = 1;
+                return SlideAdvanceResult.InternalStateChanged;
+            }
+            else if (_state == 1)
+            {
+                Console.WriteLine("SF02: Adding subtitle");
+                var subtitle = new TextBlock("#subtitle")
+                {
+                    Text = "Code-first presentations",
+                    FontFamily = "Calibri",
+                    FontSize = 36f,
+                    Color = SColor.White
+                };
+                var subtitleAnchor = new BasisPoint(new SPointF(Center.X, Center.Y + 90), "#subtitleAnchor");
+                subtitle.AnchorCenterTo(subtitleAnchor);
+                Add([subtitleAnchor, subtitle])
+                    .AnimateBasic(1f, AnimationTypes.FadeIn, Easings.Linear);
+                _state = 2;
+                return SlideAdvanceResult.InternalStateChanged;
+
+            }
+            else
+            {
+                return SlideAdvanceResult.CanAdvance;
+            }
+        }
+    }
+}

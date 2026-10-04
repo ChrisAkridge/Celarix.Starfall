@@ -1,0 +1,139 @@
+using Celarix.Starfall.Atria;
+using Celarix.Starfall.Mathematics;
+using Celarix.Starfall.Decks.FloatingPoint.Elements;
+using Celarix.Starfall.Rendering.Models;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Celarix.Starfall.Decks.FloatingPoint
+{
+    internal sealed class SlideFP_05_ButWellJustPickBinary : AtriaSlide
+    {
+        public override string Notes => "TODO: notes for SlideFP_05_ButWellJustPickBinary.";
+
+        private enum State
+        {
+            Initial,
+            ShowBinaryPlaceValues,
+            ShowBinaryExponents,
+            ShowDecimalElement,
+            ShowDecimalPlaceValuesAndExponents
+        }
+
+        private StateMachine<State> _stateMachine;
+
+        public SlideFP_05_ButWellJustPickBinary(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
+        {
+        }
+
+        public override void Initialize()
+        {
+            BackgroundColor = Constants.FloatingPointBackground;
+            _stateMachine = new StateMachine<State>(this, State.Initial);
+
+            var binaryElement = new FloatingPointWindowElement("#binaryElement", MeasurementService)
+            {
+                Size = new SSizeF(Size.Width, Size.Height / 3f),
+                ArrowOpacity = 0d,
+                WindowOpacity = 0d
+            };
+            var binaryAnchor = new BasisPoint(Center, "#binaryAnchor");
+            binaryElement.AnchorCenterTo(binaryAnchor);
+
+            Add([binaryElement, binaryAnchor])
+                .AnimateBasic(0.35d, AnimationTypes.FadeIn, Easings.Linear);
+        }
+
+        public override SlideAdvanceResult Advance()
+        {
+            if (_stateMachine.CurrentState == State.ShowDecimalPlaceValuesAndExponents)
+            {
+                return SlideAdvanceResult.CanAdvance;
+            }
+
+            var nextState = _stateMachine.CurrentState + 1;
+            _stateMachine.GoToState(nextState);
+            return SlideAdvanceResult.InternalStateChanged;
+        }
+
+        public override SlideAdvanceResult Rewind()
+        {
+            if (_stateMachine.CurrentState == State.Initial)
+            {
+                return SlideAdvanceResult.CanRewind;
+            }
+
+            var previousState = _stateMachine.CurrentState - 1;
+            _stateMachine.GoToState(previousState);
+            return SlideAdvanceResult.InternalStateChanged;
+        }
+
+        public override void Update(FrameTime frameTime)
+        {
+            base.Update(frameTime);
+        }
+
+        // Forward transitions
+        [StateTransition<State>(State.Initial, State.ShowBinaryPlaceValues)]
+        private void ToBinaryPlaceValues()
+        {
+            Console.WriteLine("FP5: Showing binary place values");
+            var binaryElement = (FloatingPointWindowElement)Query("#binaryElement").Single();
+            binaryElement.SetShowPlaceValues(true);
+        }
+
+        [StateTransition<State>(State.ShowBinaryPlaceValues, State.ShowBinaryExponents)]
+        private void ToBinaryExponents()
+        {
+            Console.WriteLine("FP5: Showing binary exponents");
+            var binaryElement = (FloatingPointWindowElement)Query("#binaryElement").Single();
+            binaryElement.SetShowExponents(true);
+        }
+
+        [StateTransition<State>(State.ShowBinaryExponents, State.ShowDecimalElement)]
+        private void ToDecimalElement()
+        {
+            Console.WriteLine("FP5: Showing decimal element");
+            var binaryAnchor = (BasisPoint)QueryBasis("#binaryAnchor").Single();
+            var oldBinaryAnchorPosition = binaryAnchor.Point;
+            var newBinaryAnchorPosition = new BasisLine(TopCenter, BottomCenter).SplitAndTakeRight(2f / 3f).Center;
+            var moveBinaryAnchorAnimation = Animations.StartNow(30, p =>
+            {
+                binaryAnchor.Point = MathHelpers.Ease(oldBinaryAnchorPosition, newBinaryAnchorPosition, p, Easings.Land);
+            });
+
+            var decimalElement = new FloatingPointWindowElement("#decimalElement", MeasurementService)
+            {
+                Size = new SSizeF(Size.Width, Size.Height / 3f)
+            };
+            decimalElement.SetDisplayedExponentBase(10);
+            decimalElement.ArrowOpacity = 0d;
+            decimalElement.WindowOpacity = 0d;
+            var decimalAnchor = new BasisPoint(Center, "#decimalAnchor");
+            decimalElement.AnchorCenterTo(decimalAnchor);
+            Add([decimalElement, decimalAnchor])
+                .AnimateBasic(0.35d, AnimationTypes.FadeIn, Easings.Linear);
+
+            // I know we're adding an anchor just to move it immediately but I think it'll look cool
+            var oldDecimalAnchorPosition = decimalAnchor.Point;
+            var newDecimalAnchorPosition = new BasisLine(TopCenter, BottomCenter).SplitAndTakeLeft(1f / 3f).Center;
+            var moveDecimalAnchorAnimation = Animations.StartNow(30, p =>
+            {
+                decimalAnchor.Point = MathHelpers.Ease(oldDecimalAnchorPosition, newDecimalAnchorPosition, p, Easings.Land);
+            });
+
+            Animations.ScheduleAnimation(moveBinaryAnchorAnimation);
+            Animations.ScheduleAnimation(moveDecimalAnchorAnimation);
+        }
+
+        [StateTransition<State>(State.ShowDecimalElement, State.ShowDecimalPlaceValuesAndExponents)]
+        private void ToDecimalPlaceValuesAndExponents()
+        {
+            Console.WriteLine("FP5: Showing decimal place values and exponents");
+            var decimalElement = (FloatingPointWindowElement)Query("#decimalElement").Single();
+            decimalElement.SetShowPlaceValues(true);
+            decimalElement.SetShowExponents(true);
+        }
+    }
+}

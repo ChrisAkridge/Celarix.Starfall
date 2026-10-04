@@ -1,0 +1,69 @@
+using Celarix.Starfall.Atria;
+using Celarix.Starfall.Atria.Elements;
+using Celarix.Starfall.Mathematics;
+using Celarix.Starfall.Decks.FloatingPoint.Elements;
+using Celarix.Starfall.Rendering.Models;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Celarix.Starfall.Decks.FloatingPoint
+{
+    internal sealed class SlideSF_06_ThankYou : AtriaSlide
+    {
+        public override string Notes => "TODO: notes for SlideSF_06_ThankYou.";
+
+        private bool _elementAdded;
+
+        public SlideSF_06_ThankYou(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
+        {
+        }
+
+        public override void Initialize()
+        {
+            BackgroundColor = Constants.StarfallBackground;
+        }
+
+        public override void Update(FrameTime frameTime)
+        {
+            base.Update(frameTime);
+        }
+
+        public override SlideAdvanceResult Advance()
+        {
+            if (!_elementAdded)
+            {
+                Console.WriteLine("SF06: Making the stars fall!");
+                Animations.ScheduleAnimation(Animations.StartNow(AnimationContext.SecondsToFrames(1d), p =>
+                {
+                    BackgroundColor = MathHelpers.InterpolateColor(Constants.StarfallBackground, Constants.FloatingPointBackground, p);
+                }, AddElementAndText));
+                _elementAdded = true;
+            }
+
+            return SlideAdvanceResult.InternalStateChanged;
+        }
+
+        private void AddElementAndText()
+        {
+            var starfallElement = new StarfallElement("#starfallElement")
+            {
+                Position = SPointF.Zero,
+                Size = Size
+            };
+
+            var thankYouText = new TextBlock("#thankYou")
+            {
+                Text = "Thank you!",
+                FontFamily = "Calibri",
+                FontSize = 96f,
+                Color = SColor.White
+            };
+            var thankYouAnchor = new BasisPoint(Center.Up(Size.Height / 4d), "#thankYouAnchor");
+            thankYouText.AnchorCenterTo(thankYouAnchor);
+
+            Add([starfallElement, thankYouAnchor, thankYouText])
+                .AnimateBasic(0.5d, AnimationTypes.FadeIn, Easings.Linear);
+        }
+    }
+}
