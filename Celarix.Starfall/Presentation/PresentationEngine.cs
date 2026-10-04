@@ -1,5 +1,4 @@
-﻿using Celarix.Starfall.Layout;
-using Celarix.Starfall.Presentation.Graph;
+﻿using Celarix.Starfall.Presentation.Graph;
 using Celarix.Starfall.Rendering;
 using System;
 using System.Collections.Generic;

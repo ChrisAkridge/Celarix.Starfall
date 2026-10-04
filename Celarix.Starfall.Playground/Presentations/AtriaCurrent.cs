@@ -1,5 +1,5 @@
 ﻿using Celarix.Starfall.Extensions;
-using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Atria;
 using Celarix.Starfall.Playground.AtriaTests;
 using Celarix.Starfall.Playground.AtriaTests.CanonicalDecomposition;
 using Celarix.Starfall.Playground.AtriaTests.Operations;

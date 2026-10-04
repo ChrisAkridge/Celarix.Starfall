@@ -1,10 +1,8 @@
 using Celarix.Starfall.Charts;
 using Celarix.Starfall.Charts.Displays;
 using Celarix.Starfall.Charts.Models;
-using Celarix.Starfall.Layout.Atria;
-using Celarix.Starfall.Layout.Atria.Animation;
-using Celarix.Starfall.Layout.Atria.Basis;
-using Celarix.Starfall.Layout.Atria.Elements;
+using Celarix.Starfall.Atria;
+using Celarix.Starfall.Atria.Elements;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Models;
 using System;

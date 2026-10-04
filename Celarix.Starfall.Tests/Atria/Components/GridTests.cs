@@ -1,4 +1,4 @@
-using Celarix.Starfall.Layout.Atria.Components;
+using Celarix.Starfall.Atria;
 using Celarix.Starfall.Rendering.Models;
 
 namespace Celarix.Starfall.Tests.Atria.Components;
