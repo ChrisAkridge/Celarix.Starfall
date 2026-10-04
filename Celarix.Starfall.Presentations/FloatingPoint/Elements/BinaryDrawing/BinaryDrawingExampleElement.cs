@@ -2,7 +2,6 @@ using AngleSharp.Attributes;
 using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Elements;
-using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;

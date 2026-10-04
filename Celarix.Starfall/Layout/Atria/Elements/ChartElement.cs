@@ -3,7 +3,6 @@ using Celarix.Starfall.Charts.Models;
 using Celarix.Starfall.Extensions;
 using Celarix.Starfall.Layout.Atria.Components;
 using Celarix.Starfall.Layout.Atria.Animation;
-using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Libra;
 using Celarix.Starfall.Libra.Metrics;
 using Celarix.Starfall.Libra.Renderables;

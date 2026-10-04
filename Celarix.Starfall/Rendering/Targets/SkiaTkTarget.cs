@@ -1,4 +1,3 @@
-﻿using Celarix.Starfall.Layout.Helium;
 using Celarix.Starfall.Rendering.Initialization;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Models.Path;

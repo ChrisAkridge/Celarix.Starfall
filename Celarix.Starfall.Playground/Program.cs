@@ -20,11 +20,7 @@ namespace Celarix.Starfall.Playground
 
             var presentationName = args[0].ToLowerInvariant();
 
-            if (presentationName == "skiatk")
-            {
-                SkiaTkCurrent.Run();
-            }
-            else if (presentationName == "atria")
+            if (presentationName == "atria")
             {
                 AtriaCurrent.Run();
             }

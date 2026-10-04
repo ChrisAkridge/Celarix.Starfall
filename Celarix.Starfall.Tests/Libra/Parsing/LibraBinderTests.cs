@@ -122,7 +122,7 @@ public sealed class LibraBinderTests
     }
 
     [Fact]
-    public void Build_DelphinusSlideBezierExpression_BindsExpectedExpressionTree()
+    public void Build_QuadraticBezierExpression_BindsExpectedExpressionTree()
     {
         const string source = ";catEm(2, mt = 1 - t, (mt^2 * X_0) + (2 * mt * t * X_1) + (t^2 * X_2))";
 
