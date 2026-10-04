@@ -39,6 +39,14 @@ namespace Celarix.Starfall.Rendering.Targets
                 throw new ArgumentException($"H.264 output needs an even width and height, but got {options.Width}x{options.Height}.", nameof(options));
             }
 
+            var extension = Path.GetExtension(options.OutputPath);
+            if (options.Format == FfmpegOutputFormat.ProRes4444
+                && !extension.Equals(".mov", StringComparison.OrdinalIgnoreCase)
+                && !extension.Equals(".mkv", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException($"ProRes output needs a .mov (or .mkv) file, but the output path is \"{options.OutputPath}\". MP4 can't hold ProRes.", nameof(options));
+            }
+
             _options = options;
 
             // Skia draws into premultiplied BGRA. ffmpeg's bgra input expects straight alpha,

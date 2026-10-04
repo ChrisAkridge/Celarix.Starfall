@@ -26,6 +26,11 @@ namespace Celarix.Starfall.Playground.Presentations
                 : FfmpegOutputFormat.H264;
             var defaultExtension = format == FfmpegOutputFormat.ProRes4444 ? ".mov" : ".mp4";
             var outputPath = args.Length > 0 ? args[0] : Path.Combine(Environment.CurrentDirectory, "starfall" + defaultExtension);
+            if (format == FfmpegOutputFormat.ProRes4444 && Path.GetExtension(outputPath).Equals(".mp4", StringComparison.OrdinalIgnoreCase))
+            {
+                outputPath = Path.ChangeExtension(outputPath, ".mov");
+                Console.WriteLine($"MP4 can't hold ProRes, so writing to {outputPath} instead.");
+            }
             var seconds = args.Length > 1 ? double.Parse(args[1]) : 10d;
 
             var layoutEngine = new AtriaLayoutEngine(Width, Height);
