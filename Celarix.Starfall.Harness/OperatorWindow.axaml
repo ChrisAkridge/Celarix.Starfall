@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Celarix.Starfall.Harness.OperatorWindow"
+        Title="Starfall Harness"
+        Width="1000" Height="700">
+  <DockPanel Margin="12">
+    <!-- Setup -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+      <TextBlock Text="Presentation" VerticalAlignment="Center" />
+      <ComboBox x:Name="DeckPicker" MinWidth="260" />
+      <TextBlock Text="Display" VerticalAlignment="Center" Margin="12,0,0,0" />
+      <ComboBox x:Name="ScreenPicker" MinWidth="200" />
+      <TextBlock Text="Size" VerticalAlignment="Center" Margin="12,0,0,0" />
+      <NumericUpDown x:Name="ViewportWidth" Value="1920" Minimum="64" Maximum="7680" Increment="2" FormatString="0" Width="130" />
+      <TextBlock Text="×" VerticalAlignment="Center" />
+      <NumericUpDown x:Name="ViewportHeight" Value="1080" Minimum="64" Maximum="4320" Increment="2" FormatString="0" Width="130" />
+      <Button x:Name="StartButton" Content="Start" Margin="12,0,0,0" Click="StartButton_Click" />
+      <Button x:Name="StopButton" Content="Stop" IsEnabled="False" Click="StopButton_Click" />
+    </StackPanel>
+
+    <!-- Log -->
+    <TextBox x:Name="LogBox" DockPanel.Dock="Bottom" Height="140" IsReadOnly="True"
+             AcceptsReturn="True" TextWrapping="Wrap" FontFamily="monospace" Margin="0,12,0,0" />
+
+    <Grid ColumnDefinitions="320,*" ColumnSpacing="12">
+      <!-- Slides -->
+      <DockPanel Grid.Column="0">
+        <TextBlock DockPanel.Dock="Top" Text="Slides" FontWeight="SemiBold" Margin="0,0,0,4" />
+        <ListBox x:Name="SlideList" DoubleTapped="SlideList_DoubleTapped" />
+      </DockPanel>
+
+      <!-- Current slide -->
+      <DockPanel Grid.Column="1">
+        <StackPanel DockPanel.Dock="Top" Spacing="4">
+          <TextBlock x:Name="SlideTitle" Text="Not running" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock x:Name="SlideDescription" TextWrapping="Wrap" Opacity="0.75" />
+          <TextBlock x:Name="BeatText" />
+          <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,8">
+            <Button x:Name="RewindButton" Content="◀ Rewind" IsEnabled="False" Click="RewindButton_Click" />
+            <Button x:Name="ReinitializeButton" Content="Reinitialize" IsEnabled="False" Click="ReinitializeButton_Click" />
+            <Button x:Name="AdvanceButton" Content="Advance ▶" IsEnabled="False" Click="AdvanceButton_Click" />
+          </StackPanel>
+          <TextBlock Text="Notes" FontWeight="SemiBold" />
+        </StackPanel>
+        <ScrollViewer>
+          <TextBlock x:Name="NotesText" TextWrapping="Wrap" FontSize="16" />
+        </ScrollViewer>
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</Window>
