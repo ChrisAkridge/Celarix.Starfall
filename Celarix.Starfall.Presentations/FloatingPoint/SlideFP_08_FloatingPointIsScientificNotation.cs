@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_08_FloatingPointIsScientificNotation : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_08_FloatingPointIsScientificNotation.";
+
         private enum State
         {
             Initial,

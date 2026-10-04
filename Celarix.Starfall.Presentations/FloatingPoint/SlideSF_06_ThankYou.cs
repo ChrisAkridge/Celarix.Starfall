@@ -11,6 +11,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideSF_06_ThankYou : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideSF_06_ThankYou.";
+
         private bool _elementAdded;
 
         public SlideSF_06_ThankYou(AtriaRuntime runtime, SSizeF size) : base(runtime, size)

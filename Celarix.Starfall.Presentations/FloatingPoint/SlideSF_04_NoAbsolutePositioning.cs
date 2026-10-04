@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideSF_04_NoAbsolutePositioning : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideSF_04_NoAbsolutePositioning.";
+
         internal static readonly string[] imagePaths =
         [
             "Assets/Images/powerPointPositioning.png",

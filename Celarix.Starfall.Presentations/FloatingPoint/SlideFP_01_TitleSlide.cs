@@ -11,6 +11,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_01_TitleSlide : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_01_TitleSlide.";
+
         private const double TitleFontSize = 64d;
         private const double SubtitleFontSize = TitleFontSize / 2d;
         private const double MeetingFontSize = SubtitleFontSize / 2d;

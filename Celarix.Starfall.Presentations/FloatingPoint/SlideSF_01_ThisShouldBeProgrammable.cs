@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideSF_01_ThisShouldBeProgrammable : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideSF_01_ThisShouldBeProgrammable.";
+
         public SlideSF_01_ThisShouldBeProgrammable(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }

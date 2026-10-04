@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_16_LossOfPrecision : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_16_LossOfPrecision.";
+
         private PrecisionGridElement? _precisionGridElement;
 
         public SlideFP_16_LossOfPrecision(AtriaRuntime runtime, SSizeF size) : base(runtime, size)

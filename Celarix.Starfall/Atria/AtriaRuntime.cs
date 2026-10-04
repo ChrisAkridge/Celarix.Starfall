@@ -13,6 +13,12 @@ public sealed class AtriaRuntime
     public AnimationContextRegistry AnimationContexts { get; }
     public SSizeF ViewportSize { get; }
 
+    /// <summary>
+    /// Gets or sets where slides get presenter input from. Defaults to the console; hosts can
+    /// replace it with dialogs or recorded answers.
+    /// </summary>
+    public IPresenterInput Input { get; set; } = new ConsolePresenterInput();
+
     public AtriaRuntime(MeasurementService measurementService,
         DebugMode debugMode,
         AnimationContextRegistry animationContexts,

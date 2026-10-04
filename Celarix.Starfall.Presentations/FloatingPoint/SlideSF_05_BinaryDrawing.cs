@@ -11,6 +11,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideSF_05_BinaryDrawing : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideSF_05_BinaryDrawing.";
+
         // States:
         // 0. Nothing shown on screen
         // 1. Bytes slide in from below (ShowBytes)
@@ -175,15 +177,13 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private SlideAdvanceResult CheckForNextImage()
         {
             Console.WriteLine("SF05: Asking user if they want to load another file");
-            Console.Write("Would you like to load another file? (y/n): ");
-            var response = Console.ReadLine();
-            if (response?.Trim().ToLower() == "y")
+            if (Input.AskYesNo("Would you like to load another file?"))
             {
-                var openFileDialog = new OpenFileDialog();
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                var filePath = Input.AskForFile("Choose a file to draw");
+                if (filePath != null)
                 {
                     var binaryDrawingElement = (BinaryDrawingExampleElement)Query("#binaryDrawingExample").Single();
-                    _currentFilePath = openFileDialog.FileName;
+                    _currentFilePath = filePath;
                     _currentFileSize = new FileInfo(_currentFilePath).Length;
                     _currentBinaryDrawnImageSize = null;
                     binaryDrawingElement.Reset();

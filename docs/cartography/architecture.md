@@ -16,15 +16,15 @@ Important external boundaries are:
 
 ### Presentation hosts own composition
 
-The production `PresentationRunner` owns viewport configuration, monitor selection, the ordered list of slide factories, keyboard navigation, and last-chance recovery. It constructs the layout engine, render target, and measurement service explicitly; there is no dependency-injection container.
+A `PresentationDefinition` describes a deck: its name, folder-like group, description, and ordered `SlideDefinition`s (display name, description, and factory). The Floating Point talk is defined in `FloatingPointPresentation`. The production `PresentationRunner` owns viewport configuration, monitor selection, keyboard navigation, and last-chance recovery, and walks the definition's slides. It constructs the layout engine, render target, and measurement service explicitly; there is no dependency-injection container.
 
-This host-level slide list is currently the effective presentation graph. Right-arrow input first advances the current slide's internal state and only creates the next slide when the current slide reports that it can advance. Left-arrow behavior reconstructs the current or previous slide rather than relying on every slide to implement full reversal.
+This slide list is currently the effective presentation graph. Right-arrow input first advances the current slide's internal state and only creates the next slide when the current slide reports that it can advance. Left-arrow behavior reconstructs the current or previous slide rather than relying on every slide to implement full reversal.
 
 ### Atria owns slide-local behavior
 
 `AtriaLayoutEngine` owns the named slide collection, current-slide selection, the render target, and the global animation registry. Adding a slide injects its measurement/debug/animation services and calls `Initialize`; removing it disposes the slide.
 
-`AtriaSlide` owns its elements and basis elements. Its default update and render methods walk the element list, while subclasses define initialization and may override navigation or rendering. `LayeredAtriaSlide` adds explicit ordered layers for cases where drawing order needs to be separated from the base element collection.
+`AtriaSlide` owns its elements and basis elements. It also carries presenter metadata: `Name` (set when added to the engine), `BeatIndex` (counted by the engine from `InternalStateChanged` advances and rewinds), `CurrentBeat` (the `StateMachine` state name when the slide uses one, otherwise "Step N"), and `Notes`. Slides ask the presenter for input through `Runtime.Input` (`IPresenterInput`), which defaults to the console and which hosts can replace. Its default update and render methods walk the element list, while subclasses define initialization and may override navigation or rendering. `LayeredAtriaSlide` adds explicit ordered layers for cases where drawing order needs to be separated from the base element collection.
 
 `AtriaElement` is the normal extension point for reusable visual behavior. Elements own their visual state and an owner-scoped animation context after attachment to a slide. Containers such as grids and layout stackers compute bounds; `LayoutNode` provides a lightweight tree of normalized horizontal/vertical splits and insets.
 

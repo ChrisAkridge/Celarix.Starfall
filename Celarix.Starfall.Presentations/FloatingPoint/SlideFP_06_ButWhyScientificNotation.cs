@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_06_ButWhyScientificNotation : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_06_ButWhyScientificNotation.";
+
         private const string InitialPlanckLengthText = "0.00000000000000000000000000000000001616255";
 
         private int _state;

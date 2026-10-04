@@ -30,6 +30,7 @@ namespace Celarix.Starfall.Atria
         {
             _slide = slide;
             _currentState = currentState;
+            _slide.BeatNameProvider = () => _currentState.ToString();
 
             // Use reflection to find methods with the StateTransitionAttribute in the slide
             var methods = slide.GetType().GetMethods(System.Reflection.BindingFlags.Public

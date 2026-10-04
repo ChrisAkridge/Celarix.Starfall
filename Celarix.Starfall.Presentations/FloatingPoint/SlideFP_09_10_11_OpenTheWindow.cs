@@ -12,6 +12,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_09_10_11_OpenTheWindow : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_09_10_11_OpenTheWindow.";
+
         private const float WindowElementBaseFontSize = 52f;
 
         private int _state;
@@ -275,14 +277,14 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             float? newTarget = null;
             do
             {
-                Console.Write("Enter a new target value (or 'exit' to finish): ");
-                var input = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(input))
+                var input = Input.AskForText("Enter a new target value (or 'exit' to finish):");
+                if (input != null && string.IsNullOrWhiteSpace(input))
                 {
                     continue;
                 }
 
-                if (input.ToLowerInvariant().Trim() == "exit")
+                // A cancelled prompt finishes the same way 'exit' does.
+                if (input == null || input.ToLowerInvariant().Trim() == "exit")
                 {
                     _state = 8;
                     return SlideAdvanceResult.InternalStateChanged;

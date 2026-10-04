@@ -14,21 +14,9 @@ namespace Celarix.Starfall.Presentations
 {
     internal sealed class PresentationRunner
     {
-        private class SlideFactory
-        {
-            public string Name { get; set; }
-            public Func<AtriaRuntime, AtriaSlide> Factory { get; set; }
-
-            public SlideFactory(string name, Func<AtriaRuntime, AtriaSlide> factory)
-            {
-                Name = name;
-                Factory = factory;
-            }
-        }
-
         private readonly PresentationInitializationArguments args;
 
-        private readonly List<SlideFactory> _slideFactories = new();
+        private readonly PresentationDefinition _presentation = FloatingPointPresentation.Create();
         private AtriaLayoutEngine _layoutEngine;
         private bool _rewindOccurred;
 
@@ -42,9 +30,9 @@ namespace Celarix.Starfall.Presentations
                 {
                     return null;
                 }
-                for (int i = 0; i < _slideFactories.Count; i++)
+                for (int i = 0; i < _presentation.Slides.Count; i++)
                 {
-                    if (_slideFactories[i].Name == currentSlideName)
+                    if (_presentation.Slides[i].DisplayName == currentSlideName)
                     {
                         return i;
                     }
@@ -75,36 +63,14 @@ namespace Celarix.Starfall.Presentations
             var tkTarget = new SkiaTkTarget(args.ViewportWidth,
                 args.ViewportHeight,
                 60,
-                "Floating Point Numbers, Visualized",
+                _presentation.Name,
                 _layoutEngine,
                 monitorIndex);
             tkTarget.KeyUp += TkTarget_KeyUp;
 
             _layoutEngine.Attach(tkTarget);
+            _layoutEngine.Runtime!.Input = new WindowsPresenterInput();
             _layoutEngine.OnException += LayoutEngine_OnException;
-
-            // Register slide factories here
-            var size = new SSizeF(args.ViewportWidth, args.ViewportHeight);
-            _slideFactories.Add(new SlideFactory("FP Title", runtime => new SlideFP_01_TitleSlide(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP Integers are Good at Math", runtime => new SlideFP_02_IntegersAreGoodAtMath(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP Floats are Good at Math", runtime => new SlideFP_03_FloatsAreGoodAtMath(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP No Escape from Infinite Expansions", runtime => new SlideFP_04_NoEscapeFromInfiniteExpansions(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP But We'll Just Pick Binary", runtime => new SlideFP_05_ButWellJustPickBinary(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP But Why Scientific Notation?", runtime => new SlideFP_06_ButWhyScientificNotation(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP Rules for Mantissas", runtime => new SlideFP_07_RulesForMantissas(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP Choosing Bit Allocation", runtime => new SlideFP_07_5_ChoosingBitAllocation(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP Exponent as an Unsigned Integer", runtime => new SlideFP_07_6_ExponentAsUnsignedInteger(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP Floating Point is Scientific Notation", runtime => new SlideFP_08_FloatingPointIsScientificNotation(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP Open the Window", runtime => new SlideFP_09_10_11_OpenTheWindow(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP Implied Leading Bits", runtime => new SlideFP_13_ImpliedLeadingBits(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP Special Exponents", runtime => new SlideFP_14_15_SpecialExponents(runtime, size)));
-            _slideFactories.Add(new SlideFactory("FP Loss of Precision", runtime => new SlideFP_16_LossOfPrecision(runtime, size)));
-            _slideFactories.Add(new SlideFactory("SF This Should Be Programmable", runtime => new SlideSF_01_ThisShouldBeProgrammable(runtime, size)));
-            _slideFactories.Add(new SlideFactory("SF Introducing Starfall", runtime => new SlideSF_02_IntroducingStarfall(runtime, size)));
-            _slideFactories.Add(new SlideFactory("SF No DSLs", runtime => new SlideSF_03_NoDSLs(runtime, size)));
-            _slideFactories.Add(new SlideFactory("SF No Absolute Positioning", runtime => new SlideSF_04_NoAbsolutePositioning(runtime, size)));
-            _slideFactories.Add(new SlideFactory("SF Binary Drawing Example", runtime => new SlideSF_05_BinaryDrawing(runtime, size)));
-            _slideFactories.Add(new SlideFactory("SF Thank You", runtime => new SlideSF_06_ThankYou(runtime, size)));
 
             // Initialize and switch to the first slide
             InitializeAndSwitchToSlide(0);
@@ -145,9 +111,13 @@ namespace Celarix.Starfall.Presentations
                 // Right: Advance the current slide
                 var result = _layoutEngine.AdvanceCurrentSlide();
 
-                if (result == SlideAdvanceResult.CanAdvance)
+                if (result == SlideAdvanceResult.InternalStateChanged)
                 {
-                    var nextSlideIndex = Math.Min((CurrentSlideIndex ?? 0) + 1, _slideFactories.Count - 1);
+                    WriteCurrentBeat();
+                }
+                else if (result == SlideAdvanceResult.CanAdvance)
+                {
+                    var nextSlideIndex = Math.Min((CurrentSlideIndex ?? 0) + 1, _presentation.Slides.Count - 1);
                     InitializeAndSwitchToSlide(nextSlideIndex);
                 }
             }
@@ -191,7 +161,7 @@ namespace Celarix.Starfall.Presentations
         // Orchestration methods
         private void InitializeAndSwitchToSlide(int slideIndex)
         {
-            if (slideIndex < 0 || slideIndex >= _slideFactories.Count)
+            if (slideIndex < 0 || slideIndex >= _presentation.Slides.Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(slideIndex), "Slide index is out of range.");
             }
@@ -202,10 +172,10 @@ namespace Celarix.Starfall.Presentations
                 _rewindOccurred = false;
             }
 
-            Console.WriteLine($"INFO: Switching to slide {slideIndex}: {_slideFactories[slideIndex].Name}");
+            var slideDefinition = _presentation.Slides[slideIndex];
+            Console.WriteLine($"INFO: Switching to slide {slideIndex}: {slideDefinition.DisplayName}");
 
-            var slideFactory = _slideFactories[slideIndex];
-            var slide = slideFactory.Factory(_layoutEngine.Runtime!);
+            var slide = slideDefinition.Factory(_layoutEngine.Runtime!);
 
             // Remove and replace the current slide in the layout engine
             var currentSlideName = _layoutEngine.CurrentSlideName;
@@ -214,16 +184,32 @@ namespace Celarix.Starfall.Presentations
                 _layoutEngine.RemoveSlide(currentSlideName);
             }
 
-            _layoutEngine.AddSlide(slide, slideFactory.Name);
-            _layoutEngine.SetCurrentSlide(slideFactory.Name);
+            _layoutEngine.AddSlide(slide, slideDefinition.DisplayName);
+            _layoutEngine.SetCurrentSlide(slideDefinition.DisplayName);
+            WriteCurrentBeat();
+        }
+
+        private void WriteCurrentBeat()
+        {
+            var slide = _layoutEngine.CurrentSlide;
+            if (slide == null)
+            {
+                return;
+            }
+
+            Console.WriteLine($"INFO: {slide.Name} | beat {slide.BeatIndex}: {slide.CurrentBeat}");
+            if (!string.IsNullOrWhiteSpace(slide.Notes))
+            {
+                Console.WriteLine($"NOTES: {slide.Notes}");
+            }
         }
 
         private int AskUserToSwitchToSlide()
         {
             Console.WriteLine("Please select a slide to switch to by entering its number:");
-            for (int i = 0; i < _slideFactories.Count; i++)
+            for (int i = 0; i < _presentation.Slides.Count; i++)
             {
-                Console.WriteLine($"\t{i}: {_slideFactories[i].Name}");
+                Console.WriteLine($"\t{i}: {_presentation.Slides[i].DisplayName}");
             }
 
             int? chosenSlideIndex = null;
@@ -231,7 +217,7 @@ namespace Celarix.Starfall.Presentations
             {
                 Console.Write("Input: ");
                 var input = Console.ReadLine();
-                if (int.TryParse(input, out int index) && index >= 0 && index < _slideFactories.Count)
+                if (int.TryParse(input, out int index) && index >= 0 && index < _presentation.Slides.Count)
                 {
                     chosenSlideIndex = index;
                 }

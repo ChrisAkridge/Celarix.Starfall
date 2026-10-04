@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_05_ButWellJustPickBinary : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_05_ButWellJustPickBinary.";
+
         private enum State
         {
             Initial,

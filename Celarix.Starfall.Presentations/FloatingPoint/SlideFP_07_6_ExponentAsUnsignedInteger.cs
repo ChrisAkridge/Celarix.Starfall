@@ -7,6 +7,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_07_6_ExponentAsUnsignedInteger : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_07_6_ExponentAsUnsignedInteger.";
+
         private readonly BinaryIntegerElement _binaryInteger;
         private readonly BinaryIntegerSummandStackElement _summandStack;
         private readonly BinaryIntegerValueHistoryElement _valueHistory;

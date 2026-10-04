@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideSF_03_NoDSLs : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideSF_03_NoDSLs.";
+
         private int _state;
 
         public SlideSF_03_NoDSLs(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
