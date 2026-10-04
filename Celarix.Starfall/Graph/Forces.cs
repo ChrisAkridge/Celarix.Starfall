@@ -1,6 +1,7 @@
 ﻿using AngleSharp.Dom;
 using Celarix.Starfall.Graph;
 using Celarix.Starfall.Mathematics;
+using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,7 +12,7 @@ public abstract class RepulsionForce
 {
     public abstract void Apply(Vertex v1, Vertex v2);
     public abstract void Apply(Vertex vertex, Region region);
-    public abstract void Apply(Vertex vertex, double g);
+    public abstract void Apply(Vertex vertex, double g, SPointF center);
 }
 
 public sealed class LinearRepulsion : RepulsionForce
@@ -59,12 +60,12 @@ public sealed class LinearRepulsion : RepulsionForce
         }
     }
 
-    public override void Apply(Vertex vertex, double g)
+    public override void Apply(Vertex vertex, double g, SPointF center)
     {
         var vertexLayout = vertex.LayoutData ?? throw new InvalidOperationException("Vertex layout data is not initialized.");
 
-        var xDistance = vertex.Position.X;
-        var yDistance = vertex.Position.Y;
+        var xDistance = vertex.Position.X - center.X;
+        var yDistance = vertex.Position.Y - center.Y;
         var distance = Math.Sqrt((xDistance * xDistance) + (yDistance * yDistance));
 
         if (distance > 0)
@@ -95,7 +96,17 @@ public class LinearRepulsionAntiCollision : RepulsionForce
         // Get the distance
         double xDist = v1.Position.X - v2.Position.X;
         double yDist = v1.Position.Y - v2.Position.Y;
-        double distance = Math.Sqrt(xDist * xDist + yDist * yDist) - v1.Size - v2.Size;
+        var centerDistance = Math.Sqrt(xDist * xDist + yDist * yDist);
+
+        // An exact overlap has no geometric direction for the force to follow. Give it a stable
+        // direction based on the vertex IDs so coincident vertices can separate reproducibly.
+        if (centerDistance == 0d)
+        {
+            xDist = v1.Id < v2.Id ? 1d : -1d;
+            centerDistance = 1d;
+        }
+
+        double distance = centerDistance - v1.Size - v2.Size;
 
         if (distance > 0)
         {
@@ -148,13 +159,13 @@ public class LinearRepulsionAntiCollision : RepulsionForce
         }
     }
 
-    public override void Apply(Vertex vertex, double g)
+    public override void Apply(Vertex vertex, double g, SPointF center)
     {
         VertexLayoutData vLayout = vertex.LayoutData ?? throw new InvalidOperationException("Vertex layout data is not initialized.");
 
         // Get the distance
-        double xDist = vertex.Position.X;
-        double yDist = vertex.Position.Y;
+        double xDist = vertex.Position.X - center.X;
+        double yDist = vertex.Position.Y - center.Y;
         double distance = Math.Sqrt(xDist * xDist + yDist * yDist);
 
         if (distance > 0)
@@ -188,13 +199,13 @@ public class StrongGravity : RepulsionForce
         // Not Relevant
     }
 
-    public override void Apply(Vertex vertex, double g)
+    public override void Apply(Vertex vertex, double g, SPointF center)
     {
         VertexLayoutData vLayout = vertex.LayoutData ?? throw new InvalidOperationException("Vertex layout data is not initialized.");
 
         // Get the distance
-        double xDist = vertex.Position.X;
-        double yDist = vertex.Position.Y;
+        double xDist = vertex.Position.X - center.X;
+        double yDist = vertex.Position.Y - center.Y;
         double distance = Math.Sqrt(xDist * xDist + yDist * yDist);
 
         if (distance > 0)

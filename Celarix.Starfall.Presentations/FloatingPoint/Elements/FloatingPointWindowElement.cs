@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Layout.Helium;
@@ -472,10 +472,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             }
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            Animations.Update(AtriaLayoutEngine.GlobalFrameNumber);
-
             if (ShowFallingWindowRect)
             {
                 // Update the falling window's position and angle based on its velocity and angular velocity
@@ -548,7 +546,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             ScrollSlot.Replace(() =>
             {
                 var originalCenteredX = CenteredX;
-                return FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+                return Animations.StartNow(AnimationContext.SecondsToFrames(0.5d),
                     p =>
                     {
                         var newCenteredX = originalCenteredX + ((wantedBitCenter - originalCenteredX) * Easings.Smoothstep(p));
@@ -564,7 +562,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             _bits[bitIndex].BitSet = value;
             if (bounce)
             {
-                var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.125d),
+                var animation = Animations.StartNow(AnimationContext.SecondsToFrames(0.125d),
                     p =>
                     {
                         // Bounce height follows a sine wave pattern, peaking at 10 pixels
@@ -582,7 +580,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             var nextBitExponent = bitExponent - 1;
             var nextBitIndex = 127 - nextBitExponent;
             var nextBitPosition = _bits[nextBitIndex].Position;
-            //var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+            //var animation = Animations.StartNow(AnimationContext.SecondsToFrames(0.5d),
             //    p =>
             //    {
             //        // Move the arrow center X from its current position to the center of the next bit
@@ -625,7 +623,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 .Select(i =>
                 {
                     var iCopy = i; // To capture the correct index in the lambda
-                    Func<FixedDurationAnimation> factory = () => FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+                    Func<FixedDurationAnimation> factory = () => Animations.StartNow(AnimationContext.SecondsToFrames(0.5d),
                         p =>
                         {
                             _bits[iCopy].ExponentAscentProgress = Easings.Land(show ? p : 1 - p);
@@ -669,7 +667,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 .Select(i =>
                 {
                     var iCopy = i; // To capture the correct index in the lambda
-                    Func<FixedDurationAnimation> factory = () => FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+                    Func<FixedDurationAnimation> factory = () => Animations.StartNow(AnimationContext.SecondsToFrames(0.5d),
                         p =>
                         {
                             _bits[iCopy].PlaceValueDescentProgress = Easings.Land(show ? p : 1 - p);
@@ -711,7 +709,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 var startLeftX = WindowLeftX;
                 var startWidth = WindowWidthInBits;
                 var startBinaryPointFactor = BinaryPointWidthFactor;
-                return FixedDurationAnimation.StartNow(
+                return Animations.StartNow(
                     AnimationContext.SecondsToFrames(durationSeconds),
                     p =>
                     {
@@ -730,7 +728,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
                 return; // Already in the desired state, do nothing
             }
             ShowNegativeFlag = show;
-            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+            var animation = Animations.StartNow(AnimationContext.SecondsToFrames(0.5d),
                 p =>
                 {
                     NegativeFlagOpacity = Easings.Land(show ? p : 1 - p);
@@ -740,7 +738,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
 
         public void SetShowArrow(bool show)
         {
-            var animation = FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.5d),
+            var animation = Animations.StartNow(AnimationContext.SecondsToFrames(0.5d),
                 p =>
                 {
                     ArrowOpacity = Easings.Land(show ? p : 1 - p);
@@ -764,7 +762,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             ArrowMoveSlot.Replace(() =>
             {
                 var originalArrowCenterX = ArrowCenterX;
-                return FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.8d),
+                return Animations.StartNow(AnimationContext.SecondsToFrames(0.8d),
                     p =>
                     {
                         var newArrowCenterX = originalArrowCenterX + ((wantedArrowCenterX - originalArrowCenterX) * Easings.Smoothstep(p));
@@ -780,7 +778,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
             ScrollSlot.Replace(() =>
             {
                 var originalCenteredX = CenteredX;
-                return FixedDurationAnimation.StartNow(AnimationContext.SecondsToFrames(0.8d),
+                return Animations.StartNow(AnimationContext.SecondsToFrames(0.8d),
                     p =>
                     {
                         var newCenteredX = originalCenteredX + ((wantedCenteredX - originalCenteredX) * Easings.Smoothstep(p));
@@ -897,11 +895,11 @@ namespace Celarix.Starfall.Presentations.FloatingPoint.Elements
 
         private void StaggerAnimations(Queue<Func<FixedDurationAnimation>> animationFactories, int frameDelay)
         {
-            var globalFrameRemainder = AtriaLayoutEngine.GlobalFrameNumber % frameDelay;
+            var globalFrameRemainder = Animations.CurrentFrameNumber % frameDelay;
             var animationCount = animationFactories.Count;
-            var staggeredAnimation = ContinuingAnimation.StartNow(() =>
+            var staggeredAnimation = Animations.StartNow(() =>
             {
-                var currentGlobalFrame = AtriaLayoutEngine.GlobalFrameNumber;
+                var currentGlobalFrame = Animations.CurrentFrameNumber;
                 if ((currentGlobalFrame % frameDelay) == globalFrameRemainder)
                 {
                     if (animationFactories.Count != 0)

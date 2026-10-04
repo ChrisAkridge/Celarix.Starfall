@@ -20,13 +20,14 @@ namespace Celarix.Starfall.Layout.Atria
 
         public event EventHandler<Exception>? OnException;
 
-        public static int GlobalFrameNumber { get; internal set; }
+        private FrameTime _currentFrame;
 
         private AtriaSlide? CurrentSlide => _currentSlideName != null && _slides.TryGetValue(_currentSlideName, out var slide) ? slide : null;
 
-        public MeasurementService? MeasurementService { get; set; }
+        public AtriaRuntime? Runtime { get; private set; }
         public AnimationContextRegistry AnimationContexts => _animationContextRegistry;
         public string? CurrentSlideName => _currentSlideName;
+        public FrameTime CurrentFrame => _currentFrame;
 
         public AtriaLayoutEngine(int viewportWidth, int viewportHeight)
         {
@@ -43,9 +44,14 @@ namespace Celarix.Starfall.Layout.Atria
 
         public void AddSlide(AtriaSlide slide, string name)
         {
-            slide.SetProtectedProperties(MeasurementService ?? throw new InvalidOperationException("MeasurementService must be set on the layout engine before adding slides."),
-                _debugMode,
-                _animationContextRegistry);
+            if (Runtime == null)
+            {
+                throw new InvalidOperationException("A render target must be attached before adding slides.");
+            }
+            if (!ReferenceEquals(slide.Runtime, Runtime))
+            {
+                throw new InvalidOperationException("The slide was constructed for a different Atria runtime.");
+            }
             try
             {
                 slide.Initialize();
@@ -102,11 +108,11 @@ namespace Celarix.Starfall.Layout.Atria
             CurrentSlide?.KeyUp(keyboardEvent);
         }
 
-        public void Update(AtriaSlide slide, double deltaTime)
+        public void Update(AtriaSlide slide, FrameTime frameTime)
         {
-            GlobalFrameNumber += 1;
-            _animationContextRegistry.UpdateAll(GlobalFrameNumber);
-            slide.Update(deltaTime);
+            _currentFrame = frameTime;
+            _animationContextRegistry.UpdateAll(frameTime);
+            slide.Update(frameTime);
         }
 
         public void Render(AtriaSlide slide)
@@ -116,7 +122,7 @@ namespace Celarix.Starfall.Layout.Atria
             _renderTarget!.Complete();
         }
 
-        public void SetRenderTarget(IRenderTarget renderTarget)
+        public void Attach(IRenderTarget renderTarget)
         {
             if (_renderTarget != null)
             {
@@ -124,6 +130,8 @@ namespace Celarix.Starfall.Layout.Atria
             }
 
             _renderTarget = renderTarget;
+            Runtime = new AtriaRuntime(new MeasurementService(renderTarget), _debugMode,
+                _animationContextRegistry, new SSizeF(viewportWidth, viewportHeight));
         }
 
         public SlideAdvanceResult RewindCurrentSlide()
@@ -158,7 +166,11 @@ namespace Celarix.Starfall.Layout.Atria
 
             try
             {
-                Update(CurrentSlide, deltaTime);
+                var delta = TimeSpan.FromSeconds(deltaTime);
+                var frameTime = new FrameTime(_currentFrame.Number + 1,
+                    _currentFrame.Elapsed + delta,
+                    delta);
+                Update(CurrentSlide, frameTime);
                 Render(CurrentSlide);
             }
             catch (Exception ex)

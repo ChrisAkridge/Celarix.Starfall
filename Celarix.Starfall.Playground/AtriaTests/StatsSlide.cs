@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Charts;
+using Celarix.Starfall.Charts;
 using Celarix.Starfall.Charts.Displays;
 using Celarix.Starfall.Charts.Models;
 using Celarix.Starfall.Layout.Atria;
@@ -20,7 +20,7 @@ internal sealed class StatsSlide : AtriaSlide
     private ChartProperties? _chartProperties;
     private ChartElement? _chartElement;
 
-    public StatsSlide(int width, int height) : base(width, height)
+    public StatsSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
     {
     }
 
@@ -194,9 +194,9 @@ internal sealed class StatsSlide : AtriaSlide
         _chartElement = chartElement;
     }
 
-    public override void Update(double deltaTime)
+    public override void Update(FrameTime frameTime)
     {
-        base.Update(deltaTime);
+        base.Update(frameTime);
     }
 
     public override void KeyUp(SKeyboardEvent keyboardEvent)

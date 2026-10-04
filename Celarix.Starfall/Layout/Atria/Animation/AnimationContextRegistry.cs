@@ -12,6 +12,7 @@ namespace Celarix.Starfall.Layout.Atria.Animation
         public bool IsAnythingAnimating => _contexts.Any(c => c.IsAnimating);
         public int RunningAnimationCount => _contexts.Sum(c => c.RunningAnimationCount);
         public IReadOnlyList<AnimationContext> Contexts => _contexts;
+        public FrameTime CurrentFrame { get; private set; }
 
         public AnimationContext CreateFor(object owner)
         {
@@ -28,11 +29,18 @@ namespace Celarix.Starfall.Layout.Atria.Animation
             }
         }
 
-        public void UpdateAll(int currentFrame)
+        public void UpdateAll(FrameTime frameTime)
         {
+            CurrentFrame = frameTime;
             foreach (var context in _contexts.ToArray())
             {
-                context.Update(currentFrame);
+                // An earlier context may dispose an element during a completion callback.
+                // The context remains in this frame's snapshot but must not be updated again.
+                if (context.IsDisposed)
+                {
+                    continue;
+                }
+                context.Update(frameTime);
             }
         }
 

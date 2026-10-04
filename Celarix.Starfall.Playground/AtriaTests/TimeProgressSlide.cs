@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Rendering.Models;
 using System;
@@ -10,7 +10,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
 {
     public sealed class TimeProgressSlide : AtriaSlide
     {
-        public TimeProgressSlide(int width, int height) : base(width, height)
+        public TimeProgressSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             BackgroundColor = new SColor(8, 0, 130, 255);
             var countElement = new CountPanelElement

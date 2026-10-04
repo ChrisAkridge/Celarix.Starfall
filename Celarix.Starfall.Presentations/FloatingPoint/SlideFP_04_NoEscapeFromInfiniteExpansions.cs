@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -33,7 +33,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private double? _charWidth;
         private double? _lineHeight;
 
-        public SlideFP_04_NoEscapeFromInfiniteExpansions(int width, int height) : base(width, height)
+        public SlideFP_04_NoEscapeFromInfiniteExpansions(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

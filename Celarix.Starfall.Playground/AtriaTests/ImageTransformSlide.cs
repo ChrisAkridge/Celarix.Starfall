@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using ShimSkiaSharp;
@@ -55,7 +55,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
             int width,
             int height,
             Func<SPointF, SPointF> positionTransform,
-            Func<SColor, SColor> colorTransform) : base(width, height)
+            Func<SColor, SColor> colorTransform, AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             BackgroundColor = new SColor(8, 0, 130, 255);
             var image = Image.Load<Rgba32>(imagePath);
@@ -91,9 +91,9 @@ namespace Celarix.Starfall.Playground.AtriaTests
             }
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            _elapsedTime += deltaTime;
+            _elapsedTime += frameTime.Delta.TotalSeconds;
         }
 
         public override void Initialize() { }

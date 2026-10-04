@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -64,7 +64,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
 
         private StateMachine<State> _stateMachine;
 
-        public MeijerEmploymentIntro(int width, int height) : base(width, height) { }
+        public MeijerEmploymentIntro(AtriaRuntime runtime, SSizeF size) : base(runtime, size) { }
 
         public override void Initialize()
         {

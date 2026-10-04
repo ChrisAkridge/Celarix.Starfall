@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -22,7 +22,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private StateMachine<State> _stateMachine;
 
-        public SlideFP_02_IntegersAreGoodAtMath(int width, int height) : base(width, height) { }
+        public SlideFP_02_IntegersAreGoodAtMath(AtriaRuntime runtime, SSizeF size) : base(runtime, size) { }
 
         public override void Initialize()
         {

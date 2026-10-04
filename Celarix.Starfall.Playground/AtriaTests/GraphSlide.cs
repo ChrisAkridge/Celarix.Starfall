@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Graph;
+using Celarix.Starfall.Graph;
 using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -20,7 +20,7 @@ public sealed class GraphSlide : AtriaSlide
     private readonly HashSet<long> _seen = [];
     private readonly Random _random = new();
 
-    public GraphSlide(int width, int height) : base(width, height)
+    public GraphSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
     {
     }
 
@@ -43,9 +43,9 @@ public sealed class GraphSlide : AtriaSlide
         base.Render(target);
     }
 
-    public override void Update(double deltaTime)
+    public override void Update(FrameTime frameTime)
     {
-        var frameNumber = AtriaLayoutEngine.GlobalFrameNumber;
+        var frameNumber = frameTime.Number;
 
         if (frameNumber % 10 == 0 && _enableSpawning)
         {
@@ -83,7 +83,7 @@ public sealed class GraphSlide : AtriaSlide
             }
         }
 
-        base.Update(deltaTime);
+        base.Update(frameTime);
     }
 
     public override void KeyUp(SKeyboardEvent keyboardEvent)

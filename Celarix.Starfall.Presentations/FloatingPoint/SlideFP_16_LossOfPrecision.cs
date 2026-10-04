@@ -1,8 +1,9 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Presentations.FloatingPoint.Elements;
+using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,7 +14,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
     {
         private PrecisionGridElement? _precisionGridElement;
 
-        public SlideFP_16_LossOfPrecision(int width, int height) : base(width, height)
+        public SlideFP_16_LossOfPrecision(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

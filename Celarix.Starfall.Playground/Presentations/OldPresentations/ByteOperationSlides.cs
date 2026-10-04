@@ -2,6 +2,7 @@
 using Celarix.Starfall.Playground.AtriaTests.Operations;
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Rendering.Targets;
+using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -108,11 +109,10 @@ namespace Celarix.Starfall.Playground.Presentations.OldPresentations
                 FramesPerSecond = 60,
                 OutputPath = Path.Combine(@"E:\Documents\Files\Pictures\Miscellaneous\Starfall\ByteOperations", path)
             });
-            layoutEngine.SetRenderTarget(pngTarget);
-            var measurementService = new Rendering.MeasurementService(pngTarget);
-            layoutEngine.MeasurementService = measurementService;
+            layoutEngine.Attach(pngTarget);
 
-            var byteOperationsSlide = new ByteOperationSlide(transform, transformText, 1920, 1080, sizeMultiplier: 1.5d);
+            var byteOperationsSlide = new ByteOperationSlide(transform, transformText, 1920, 1080,
+                sizeMultiplier: 1.5d, layoutEngine.Runtime!, new SSizeF(1920, 1080));
             layoutEngine.AddSlide(byteOperationsSlide, "Byte Operations");
             layoutEngine.SetCurrentSlide("Byte Operations");
 

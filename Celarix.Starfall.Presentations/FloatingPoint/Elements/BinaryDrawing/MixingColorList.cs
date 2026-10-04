@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Rendering.Models;
+using Celarix.Starfall.Rendering.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;

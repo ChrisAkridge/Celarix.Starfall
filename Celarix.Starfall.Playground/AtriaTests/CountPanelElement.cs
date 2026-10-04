@@ -1,4 +1,5 @@
-﻿using Celarix.Starfall.Layout.Atria.Elements;
+using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 using System;
@@ -184,9 +185,9 @@ namespace Celarix.Starfall.Playground.AtriaTests
 
         private static readonly BigInteger PlanckTimesPerSecond = BigInteger.Parse("1854858439986147917170183447354600000000000");
         private double _elapsedSeconds;
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            _elapsedSeconds += deltaTime;
+            _elapsedSeconds += frameTime.Delta.TotalSeconds;
             var elapsed60HzFrames = _elapsedSeconds * 60d;
             var elapsedNtscFields = _elapsedSeconds * 59.94d;
             var difference = elapsed60HzFrames - elapsedNtscFields;

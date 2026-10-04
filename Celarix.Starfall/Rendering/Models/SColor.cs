@@ -61,6 +61,17 @@ namespace Celarix.Starfall.Rendering.Models
             return new HSV(h, s, v);
         }
 
+        /// <summary>
+        /// Returns a color with the specified HSV hue while preserving this color's saturation,
+        /// value, and alpha channel.
+        /// </summary>
+        public readonly SColor WithHue(double newHue)
+        {
+            var hsv = ToHSV();
+            var color = FromHSV(newHue, hsv.S, hsv.V);
+            return new SColor(color.R, color.G, color.B, A);
+        }
+
         public readonly SColor WithOpacity(double opacity)
         {
             var clampedOpacity = Math.Clamp(opacity, 0, 1);
@@ -239,6 +250,7 @@ namespace Celarix.Starfall.Rendering.Models
         public static readonly SColor LightGreen = new(144, 238, 144, 255);
         public static readonly SColor DarkBlue = new(27, 29, 97, 255);
         public static readonly SColor RebeccaPurple = new(0x33, 0x66, 0x99, 255);
+        public static readonly SColor StarfallDefault = new(8, 0, 130, 255);
         #endregion
     }
 }

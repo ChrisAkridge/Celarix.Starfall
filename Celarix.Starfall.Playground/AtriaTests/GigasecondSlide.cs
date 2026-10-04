@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Rendering.Models;
@@ -18,7 +18,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
         private readonly NumberFormatInfo _thousandsSpacedFormatInfo;
         private readonly TextBlock secondsBlock;
 
-        public GigasecondSlide(int width, int height) : base(width, height)
+        public GigasecondSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             BackgroundColor = new(255, 255, 255, 255);
             var textElement = new TextBlock("#seconds")
@@ -44,7 +44,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
             
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
             var now = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(-4d));
             var secondsElapsed = (long)(now - BirthTimestamp).TotalSeconds;

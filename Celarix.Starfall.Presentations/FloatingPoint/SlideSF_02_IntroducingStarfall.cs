@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -14,13 +14,13 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
     {
         private int _state = 0;
 
-        public SlideSF_02_IntroducingStarfall(int width, int height) : base(width, height)
+        public SlideSF_02_IntroducingStarfall(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
-            base.Update(deltaTime);
+            base.Update(frameTime);
         }
 
         public override void Initialize()

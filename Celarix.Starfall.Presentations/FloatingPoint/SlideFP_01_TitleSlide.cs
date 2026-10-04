@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Animation;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
@@ -20,7 +20,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 
         private bool _titlesShown;
 
-        public SlideFP_01_TitleSlide(int width, int height, MeasurementService measurementService) : base(width, height)
+        public SlideFP_01_TitleSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             BackgroundColor = Constants.FloatingPointBackground;
 
@@ -42,7 +42,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
             };
 
             var hCenterBasis = new BasisLine(LeftCenter, RightCenter);
-            var titleHeight = title.MeasureText(measurementService).Height;
+            var titleHeight = title.MeasureText(MeasurementService).Height;
             var margin = titleHeight / 2d;
 
             var titleAnchor = new BasisPoint(hCenterBasis.Center

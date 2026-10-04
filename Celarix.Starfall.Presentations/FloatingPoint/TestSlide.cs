@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Presentations.FloatingPoint.Elements;
 using Celarix.Starfall.Presentations.FloatingPoint.Elements.BinaryDrawing;
 using Celarix.Starfall.Rendering.Models;
@@ -13,7 +13,7 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
         private int _state;
         private BinaryDrawingExampleElement _element;
 
-        public TestSlide(int width, int height) : base(width, height)
+        public TestSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

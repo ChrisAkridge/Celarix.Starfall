@@ -22,7 +22,7 @@ namespace Celarix.Starfall.Playground.DelphinusTests
         private static readonly SFont _baseFont = new SFontFamily("Cambria Math", 30f);
         private int _state = 0;
 
-        public DelphinusSlide(int width, int height) : base(width, height)
+        public DelphinusSlide(AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
         }
 

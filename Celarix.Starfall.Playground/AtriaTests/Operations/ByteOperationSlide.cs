@@ -1,4 +1,4 @@
-﻿using Celarix.Starfall.Layout.Atria;
+using Celarix.Starfall.Layout.Atria;
 using Celarix.Starfall.Layout.Atria.Basis;
 using Celarix.Starfall.Layout.Atria.Elements;
 using Celarix.Starfall.Layout.Helium.Elements;
@@ -37,7 +37,7 @@ namespace Celarix.Starfall.Playground.AtriaTests.Operations
             string operationText,
             int width,
             int height,
-            double sizeMultiplier = 1d) : base(width, height)
+            double sizeMultiplier, AtriaRuntime runtime, SSizeF size) : base(runtime, size)
         {
             _transform = transform;
             _operationText = operationText;
@@ -84,7 +84,7 @@ namespace Celarix.Starfall.Playground.AtriaTests.Operations
             Add([operationTextElement, yTextElement, operationTextAnchor, yTextAnchor]);
         }
 
-        public override void Update(double deltaTime)
+        public override void Update(FrameTime frameTime)
         {
             _frameNumber += 1;
             
