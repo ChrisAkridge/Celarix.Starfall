@@ -1,6 +1,6 @@
 # Celarix.Starfall codebase map
 
-Celarix.Starfall is a .NET 10, code-first presentation system. Presentations are ordinary C# programs whose slides own layout, animation, and drawing behavior. The active production host builds Atria slides, sends them through a frame-driven layout engine, and renders them with Skia either to an OpenTK window or to PNG frames.
+Celarix.Starfall is a .NET 10, code-first presentation system. Presentations are ordinary C# programs whose slides own layout, animation, and drawing behavior. The active production host builds Atria slides, sends them through a frame-driven layout engine, and renders them with Skia either to an OpenTK window, to PNG frames, or to a video file through ffmpeg.
 
 The deprecated Helium and Delphinus engines have been removed from the codebase. Claims here describe the remaining active code only.
 
@@ -24,7 +24,7 @@ Presentation hosts
     -> Atria slides/elements
         -> Charts and Libra
         -> Rendering contracts and models
-            -> Skia/OpenTK or PNG output
+            -> Skia/OpenTK, PNG, or ffmpeg output
 ```
 
 The generic `PresentationEngine<TScene,TTransition>` also depends on a generic layout-engine contract, but repository searches show no active caller. The production presentation instead switches named Atria slides directly through `AtriaLayoutEngine`.
