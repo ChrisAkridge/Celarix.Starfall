@@ -7,6 +7,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_07_5_ChoosingBitAllocation : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_07_5_ChoosingBitAllocation.";
+
         private readonly FloatingPointFormatDesignElement _formatDesign;
         private int _state;
 

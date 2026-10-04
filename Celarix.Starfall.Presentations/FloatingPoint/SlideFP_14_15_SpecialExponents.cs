@@ -15,6 +15,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_14_15_SpecialExponents : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_14_15_SpecialExponents.";
+
         private const double CursedNaNStaticOpacity = 0.03d;
         private static readonly SoundPlayer _soundPlayer = new();
 

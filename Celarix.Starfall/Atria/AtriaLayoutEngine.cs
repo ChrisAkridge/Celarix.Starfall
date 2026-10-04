@@ -21,7 +21,7 @@ namespace Celarix.Starfall.Atria
 
         private FrameTime _currentFrame;
 
-        private AtriaSlide? CurrentSlide => _currentSlideName != null && _slides.TryGetValue(_currentSlideName, out var slide) ? slide : null;
+        public AtriaSlide? CurrentSlide => _currentSlideName != null && _slides.TryGetValue(_currentSlideName, out var slide) ? slide : null;
 
         public AtriaRuntime? Runtime { get; private set; }
         public AnimationContextRegistry AnimationContexts => _animationContextRegistry;
@@ -61,6 +61,7 @@ namespace Celarix.Starfall.Atria
                 throw;
             }
             // TODO: check for duplicate names and throw if one is found
+            slide.Name = name;
             _slides.Add(name, slide);
         }
 
@@ -136,13 +137,23 @@ namespace Celarix.Starfall.Atria
         public SlideAdvanceResult RewindCurrentSlide()
         {
             if (CurrentSlide == null) { return SlideAdvanceResult.InternalStateChanged; }
-            return CurrentSlide.Rewind();
+            var result = CurrentSlide.Rewind();
+            if (result == SlideAdvanceResult.InternalStateChanged && CurrentSlide.BeatIndex > 0)
+            {
+                CurrentSlide.BeatIndex -= 1;
+            }
+            return result;
         }
 
         public SlideAdvanceResult AdvanceCurrentSlide()
         {
             if (CurrentSlide == null) { return SlideAdvanceResult.InternalStateChanged; }
-            return CurrentSlide.Advance();
+            var result = CurrentSlide.Advance();
+            if (result == SlideAdvanceResult.InternalStateChanged)
+            {
+                CurrentSlide.BeatIndex += 1;
+            }
+            return result;
         }
 
         private void ThrowIfNoRenderTarget()

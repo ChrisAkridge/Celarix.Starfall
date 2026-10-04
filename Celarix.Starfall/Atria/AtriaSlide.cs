@@ -22,6 +22,38 @@ namespace Celarix.Starfall.Atria
         public SColor BackgroundColor { get; set; }
         public SSizeF Size { get; }
 
+        /// <summary>
+        /// Gets the name this slide was added to its layout engine under.
+        /// </summary>
+        public string Name { get; internal set; } = string.Empty;
+
+        /// <summary>
+        /// Gets how many beats the slide has advanced through. The layout engine increments this
+        /// whenever <see cref="Advance"/> reports <see cref="SlideAdvanceResult.InternalStateChanged"/>
+        /// and decrements it when <see cref="Rewind"/> does.
+        /// </summary>
+        public int BeatIndex { get; internal set; }
+
+        /// <summary>
+        /// Gets a human-readable name for the slide's current beat. Slides using a
+        /// <see cref="StateMachine{TState}"/> report the current state's name; other slides report
+        /// "Step N". Override to give beats custom names.
+        /// </summary>
+        public virtual string CurrentBeat => BeatNameProvider?.Invoke() ?? $"Step {BeatIndex}";
+
+        /// <summary>
+        /// Gets the presenter notes for this slide. Override with a constant, or compute them from
+        /// <see cref="CurrentBeat"/> to give each beat its own notes.
+        /// </summary>
+        public virtual string Notes => string.Empty;
+
+        internal Func<string>? BeatNameProvider { get; set; }
+
+        /// <summary>
+        /// Gets the source of presenter input (typed values, yes/no questions, file choices).
+        /// </summary>
+        protected IPresenterInput Input => Runtime.Input;
+
         protected IReadOnlyList<AtriaElement> Elements => _elements;
         protected IReadOnlyList<BasisElement> BasisElements => _basisElements;
 

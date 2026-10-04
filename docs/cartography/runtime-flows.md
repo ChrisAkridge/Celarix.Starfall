@@ -5,7 +5,7 @@
 1. `Program` parses viewport dimensions and the optional recovery flag.
 2. `PresentationRunner` asks the user for a monitor and constructs `AtriaLayoutEngine`.
 3. It constructs `SkiaTkTarget`, passing the layout engine as `INotifyFrameRequested`.
-4. The runner attaches keyboard and exception handlers, assigns the target, creates a target-backed `MeasurementService`, and registers slide factories.
+4. The runner attaches keyboard and exception handlers, assigns the target, creates a target-backed `MeasurementService`, and loads the presentation definition.
 5. The first factory creates a slide. `AddSlide` injects shared services and calls the slide's `Initialize` method.
 6. `SkiaTkTarget.Start` enters the OpenTK loop. Each render callback forwards elapsed time to `AtriaLayoutEngine.OnFrameRequested`.
 7. The engine increments the global frame, updates all registered animation contexts, and updates the current slide and elements.

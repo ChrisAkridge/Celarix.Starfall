@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_04_NoEscapeFromInfiniteExpansions : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_04_NoEscapeFromInfiniteExpansions.";
+
         internal enum State
         {
             Initial,

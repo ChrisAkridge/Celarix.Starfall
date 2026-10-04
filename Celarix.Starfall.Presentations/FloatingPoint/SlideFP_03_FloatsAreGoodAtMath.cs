@@ -10,6 +10,8 @@ namespace Celarix.Starfall.Presentations.FloatingPoint
 {
     internal sealed class SlideFP_03_FloatsAreGoodAtMath : AtriaSlide
     {
+        public override string Notes => "TODO: notes for SlideFP_03_FloatsAreGoodAtMath.";
+
         internal enum State
         {
             Initial,
