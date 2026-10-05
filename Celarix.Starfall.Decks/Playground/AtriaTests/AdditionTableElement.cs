@@ -6,9 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests
+namespace Celarix.Starfall.Decks.Playground.AtriaTests
 {
-    internal sealed class AdditionTableElement : AtriaElement
+    public sealed class AdditionTableElement : AtriaElement
     {
         private sealed class AdditionGridCellProvider : IGridCellProvider
         {

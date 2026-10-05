@@ -1,9 +1,9 @@
 ﻿using Celarix.Starfall.Extensions;
 using Celarix.Starfall.Atria;
-using Celarix.Starfall.Playground.AtriaTests;
-using Celarix.Starfall.Playground.AtriaTests.CanonicalDecomposition;
-using Celarix.Starfall.Playground.AtriaTests.Operations;
-using Celarix.Starfall.Playground.MathFun;
+using Celarix.Starfall.Decks.Playground.AtriaTests;
+using Celarix.Starfall.Decks.Playground.AtriaTests.CanonicalDecomposition;
+using Celarix.Starfall.Decks.Playground.AtriaTests.Operations;
+using Celarix.Starfall.Decks.Playground.MathFun;
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Rendering.Targets;
 using Celarix.Starfall.Rendering.Models;

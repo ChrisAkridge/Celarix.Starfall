@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests.Operations
+namespace Celarix.Starfall.Decks.Playground.AtriaTests.Operations
 {
-    internal sealed class ByteOperationSlide : AtriaSlide
+    public sealed class ByteOperationSlide : AtriaSlide
     {
         private const int _framesPerChange = 4;
         private const int _startAndEndHold = 60;

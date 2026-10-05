@@ -1,5 +1,6 @@
 using Celarix.Starfall.Atria;
 using Celarix.Starfall.Decks.FloatingPoint;
+using Celarix.Starfall.Decks.Playground;
 
 namespace Celarix.Starfall.Harness;
 
@@ -10,6 +11,7 @@ internal static class DeckCatalog
 {
     public static IReadOnlyList<PresentationDefinition> All { get; } =
     [
-        FloatingPointPresentation.Create()
+        FloatingPointPresentation.Create(),
+        PlaygroundPresentation.Create()
     ];
 }

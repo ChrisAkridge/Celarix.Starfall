@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests.Operations
+namespace Celarix.Starfall.Decks.Playground.AtriaTests.Operations
 {
-    internal sealed class ByteGrid : AtriaElement
+    public sealed class ByteGrid : AtriaElement
     {
         private SFont _font = new SFontFamily("Consolas", 12f);
         private SColor[,] _gridCellColors = new SColor[16, 16];

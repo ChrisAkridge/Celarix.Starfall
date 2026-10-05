@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Celarix.Starfall\Celarix.Starfall.csproj" />
+    <ProjectReference Include="..\Celarix.Starfall.Decks\Celarix.Starfall.Decks.csproj" />
   </ItemGroup>
 
 </Project>

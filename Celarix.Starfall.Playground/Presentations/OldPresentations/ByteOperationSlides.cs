@@ -1,5 +1,5 @@
 ﻿using Celarix.Starfall.Atria;
-using Celarix.Starfall.Playground.AtriaTests.Operations;
+using Celarix.Starfall.Decks.Playground.AtriaTests.Operations;
 using Celarix.Starfall.Presentation;
 using Celarix.Starfall.Rendering.Targets;
 using Celarix.Starfall.Rendering.Models;

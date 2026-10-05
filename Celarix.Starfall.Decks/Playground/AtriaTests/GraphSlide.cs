@@ -8,7 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests;
+namespace Celarix.Starfall.Decks.Playground.AtriaTests;
 
 public sealed class GraphSlide : AtriaSlide
 {
