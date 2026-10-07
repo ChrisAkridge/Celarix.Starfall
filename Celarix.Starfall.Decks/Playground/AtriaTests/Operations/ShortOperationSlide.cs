@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests.Operations
+namespace Celarix.Starfall.Decks.Playground.AtriaTests.Operations
 {
-    internal sealed class ShortOperationSlide : AtriaSlide
+    public sealed class ShortOperationSlide : AtriaSlide
     {
         private const int _startAndEndHold = 60;
         private const double _yStepMultiplier = 1.01d;

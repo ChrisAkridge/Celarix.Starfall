@@ -5,13 +5,13 @@ using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Models.Path;
 using Celarix.Starfall.Rendering.Targets;
 
-namespace Celarix.Starfall.Playground.AtriaTests;
+namespace Celarix.Starfall.Decks.Playground.AtriaTests;
 
 /// <summary>
 /// A white triangular pointer that enters along the bottom of the slide, then
 /// rises into place while turning to point at content to its right.
 /// </summary>
-internal sealed class SlidingListArrowElement : AtriaElement
+public sealed class SlidingListArrowElement : AtriaElement
 {
     private const double HorizontalDurationSeconds = 0.6d;
     private const double SettlingDelaySeconds = 0.01d;

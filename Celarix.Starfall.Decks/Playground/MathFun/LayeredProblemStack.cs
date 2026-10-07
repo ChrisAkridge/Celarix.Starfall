@@ -6,9 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.MathFun
+namespace Celarix.Starfall.Decks.Playground.MathFun
 {
-    internal sealed class LayeredProblemStack
+    public sealed class LayeredProblemStack
     {
         private readonly int _width;
         private readonly int _height;

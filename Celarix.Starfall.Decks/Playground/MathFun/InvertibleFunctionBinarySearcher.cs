@@ -8,9 +8,9 @@ using static Celarix.Starfall.Libra.LibraExpressions;
 using Replacement = (string QuerySelector, System.Func<Celarix.Starfall.Libra.Expressions.LibraExpression, Celarix.Starfall.Libra.Expressions.LibraExpression> ReplacementFactory);
 using ReplacementList = System.Collections.Generic.IReadOnlyList<(string QuerySelector, System.Func<Celarix.Starfall.Libra.Expressions.LibraExpression, Celarix.Starfall.Libra.Expressions.LibraExpression> ReplacementFactory)>;
 
-namespace Celarix.Starfall.Playground.MathFun
+namespace Celarix.Starfall.Decks.Playground.MathFun
 {
-    internal sealed class InvertibleFunctionBinarySearcher
+    public sealed class InvertibleFunctionBinarySearcher
     {
         private const string BinarySearch_01Expansion = "BinarySearch_01Expansion";
         private const string BinarySearch_02BinarySearch = "BinarySearch_02BinarySearch";
@@ -207,7 +207,7 @@ namespace Celarix.Starfall.Playground.MathFun
         private LibraExpression SquareRoot(double value) => Concat(Text("sqrt"), Paren(Text(value.ToString())));
     }
 
-    internal enum InvertibleFunctionSearchStrategy
+    public enum InvertibleFunctionSearchStrategy
     {
         BinarySearch,
         DecimalSearch,

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests
+namespace Celarix.Starfall.Decks.Playground.AtriaTests
 {
     public sealed class GigasecondSlide : AtriaSlide
     {

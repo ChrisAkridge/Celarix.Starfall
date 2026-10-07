@@ -4,9 +4,9 @@ using Celarix.Starfall.Mathematics;
 using Celarix.Starfall.Rendering.Models;
 using Celarix.Starfall.Rendering.Targets;
 
-namespace Celarix.Starfall.Playground.AtriaTests;
+namespace Celarix.Starfall.Decks.Playground.AtriaTests;
 
-internal sealed class ThanksgivingContradictionSlide : AtriaSlide
+public sealed class ThanksgivingContradictionSlide : AtriaSlide
 {
     private sealed class Diagram : AtriaElement
     {

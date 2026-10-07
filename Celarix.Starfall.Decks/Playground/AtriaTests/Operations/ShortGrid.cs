@@ -10,9 +10,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests.Operations
+namespace Celarix.Starfall.Decks.Playground.AtriaTests.Operations
 {
-    internal sealed class ShortGrid : AtriaElement
+    public sealed class ShortGrid : AtriaElement
     {
         private readonly SFont _font = new SFontFamily("Consolas", 12f);
         private SKImage _gridImage;

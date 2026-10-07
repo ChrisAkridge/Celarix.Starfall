@@ -8,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests.CanonicalDecomposition
+namespace Celarix.Starfall.Decks.Playground.AtriaTests.CanonicalDecomposition
 {
-    internal sealed class CanonicalDecompositionSlide : AtriaSlide
+    public sealed class CanonicalDecompositionSlide : AtriaSlide
     {
         // I know I'm supposed to be using AtriaElements here
         // but it's late and I want to write code and not be lost in the weeds of overthinking

@@ -10,9 +10,9 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests;
+namespace Celarix.Starfall.Decks.Playground.AtriaTests;
 
-internal sealed class StatsSlide : AtriaSlide
+public sealed class StatsSlide : AtriaSlide
 {
     private BarChartDisplay? _barChart;
     private ChartProperties? _chartProperties;

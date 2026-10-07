@@ -8,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests
+namespace Celarix.Starfall.Decks.Playground.AtriaTests
 {
-    internal sealed class ImageTransformSlide : AtriaSlide
+    public sealed class ImageTransformSlide : AtriaSlide
     {
         private readonly struct PointTransform
         {

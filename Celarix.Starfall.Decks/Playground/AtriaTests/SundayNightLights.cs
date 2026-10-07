@@ -6,9 +6,9 @@ using Celarix.Starfall.Rendering.Models.Path;
 using Celarix.Starfall.Rendering.Targets;
 using System.Globalization;
 
-namespace Celarix.Starfall.Playground.AtriaTests;
+namespace Celarix.Starfall.Decks.Playground.AtriaTests;
 
-internal sealed class SundayNightLights : AtriaSlide
+public sealed class SundayNightLights : AtriaSlide
 {
     private const int DateCount = 365;
     private const int ThanksgivingDateIndex = 332; // November 29 in a non-leap year.

@@ -9,14 +9,14 @@ using System.Collections.Generic;
 using System.Text;
 using static Celarix.Starfall.Libra.LibraExpressions;
 
-namespace Celarix.Starfall.Playground.MathFun
+namespace Celarix.Starfall.Decks.Playground.MathFun
 {
-    internal enum SquareRootSearchSlideLayers
+    public enum SquareRootSearchSlideLayers
     {
         MainLayer
     }
 
-    internal sealed class SquareRootSearchSlide : LayeredAtriaSlide<SquareRootSearchSlideLayers>
+    public sealed class SquareRootSearchSlide : LayeredAtriaSlide<SquareRootSearchSlideLayers>
     {
         private enum SearchPhase
         {

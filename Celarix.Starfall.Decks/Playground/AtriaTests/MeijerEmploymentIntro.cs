@@ -8,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Celarix.Starfall.Playground.AtriaTests
+namespace Celarix.Starfall.Decks.Playground.AtriaTests
 {
-    internal sealed class MeijerEmploymentIntro : AtriaSlide
+    public sealed class MeijerEmploymentIntro : AtriaSlide
     {
         private sealed class DayTypeDisplay : AtriaElement
         {
@@ -43,7 +43,7 @@ namespace Celarix.Starfall.Playground.AtriaTests
             }
         }
 
-        internal enum State
+        public enum State
         {
             Initial,
             ShowTitle,
