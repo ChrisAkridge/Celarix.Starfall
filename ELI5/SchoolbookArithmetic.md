@@ -1,4 +1,4 @@
-# Schoolbook arithmetic, explained like you've forgotten everything
+# Schoolbook arithmetic: a from-the-basics guide
 
 This guide covers the elements that show arithmetic the way it's taught in school:
 
@@ -6,7 +6,7 @@ This guide covers the elements that show arithmetic the way it's taught in schoo
 - the addition and times table beside them, lighting up each fact as it's used
 - the sine-wave "sorting video" tones that play as the work happens
 
-It assumes you haven't opened Starfall in months, so it starts with how to run anything at all.
+It starts from the basics, including how to run Starfall at all, so it works as a refresher after time away.
 
 ---
 
@@ -54,7 +54,7 @@ using System.Numerics;                           // BigInteger, for very long nu
 
 ---
 
-## 3. Running it (you'll have forgotten this part)
+## 3. Running it
 
 You need the **.NET 10 SDK**. Check by running `dotnet --version`.
 
@@ -75,7 +75,7 @@ You need the **.NET 10 SDK**. Check by running `dotnet --version`.
 3. **In the operator window** (the one with the buttons):
    - Pick a deck in **Presentation**. The demo is in **Testing / Playground**.
    - Pick a **Display** and **Size** if you care.
-   - **Press Start.** Until you do, the slide list ignores double-clicks and Rewind, Reinitialize and Advance stay grayed out. This is the step everyone forgets.
+   - **Press Start.** Until you do, the slide list ignores double-clicks and Rewind, Reinitialize and Advance stay grayed out. It is an easy step to miss.
    - **Double-click a slide** in the list to jump to it.
 
 4. **Moving through a slide:**
@@ -90,7 +90,7 @@ You need the **.NET 10 SDK**. Check by running `dotnet --version`.
 
 ## 4. A refresher on how Starfall slides work
 
-Skip this if you remember. You probably don't.
+A quick refresher; skip ahead if it's fresh in your mind.
 
 **A deck** is a `PresentationDefinition`: a name, a folder (just a label for grouping, like "Testing"), and a list of slides. The harness lists every deck in `Celarix.Starfall.Harness/DeckCatalog.cs`. To add a slide to the Playground deck, add a line to `PlaygroundPresentation.cs`:
 

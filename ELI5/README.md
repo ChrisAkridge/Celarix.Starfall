@@ -1,6 +1,6 @@
 # ELI5
 
-Plain-language guides for coming back to Starfall after a long break. Each one assumes you remember nothing.
+Plain-language guides for coming back to Starfall after a long break. Each one starts from the basics, so no earlier context is needed.
 
 | Guide | What it covers |
 | --- | --- |
