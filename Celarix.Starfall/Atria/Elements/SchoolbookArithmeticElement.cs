@@ -54,6 +54,9 @@ public sealed class SchoolbookArithmeticElement : AtriaElement
     /// <summary>Gets whether <see cref="Play"/> is stepping through the work.</summary>
     public bool IsPlaying => _secondsPerStep != null;
 
+    /// <summary>Gets the time between steps while <see cref="Play"/> runs, or null when not playing.</summary>
+    public double? SecondsPerStep => _secondsPerStep;
+
     /// <summary>
     /// Raised whenever <see cref="StepForward"/> or <see cref="Play"/> works a step, e.g. to play its tone.
     /// </summary>

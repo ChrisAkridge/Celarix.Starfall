@@ -30,9 +30,11 @@ public sealed class NAudioTonePlayer : ITonePlayer, IDisposable
         _output.Play();
     }
 
-    public void PlayTone(double frequencyHz, double durationSeconds, float volume = 0.3f)
+    public void PlayTone(double frequencyHz, double durationSeconds, float volume = 0.3f,
+        double delaySeconds = 0d, double? decaySeconds = null)
     {
-        var samples = ToneSynth.RenderSine(frequencyHz, durationSeconds, volume, _mixer.WaveFormat.SampleRate);
+        var samples = ToneSynth.RenderSine(frequencyHz, durationSeconds, volume, _mixer.WaveFormat.SampleRate,
+            decaySeconds: decaySeconds, delaySeconds: delaySeconds);
         _mixer.AddMixerInput(new BufferSampleProvider(samples, _mixer.WaveFormat));
     }
 

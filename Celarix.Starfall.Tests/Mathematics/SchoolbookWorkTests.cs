@@ -204,6 +204,84 @@ public sealed class SchoolbookWorkTests
         Assert.True(samples.Max() > 0.45f);
     }
 
+    [Fact]
+    public void Addition_LooksUpEachColumnWithCarry()
+    {
+        var work = SchoolbookWork.Addition(58, 64);
+
+        Assert.Equal([TableLookup.Add(8, 4)], work.Steps[0].Lookups);
+        Assert.Equal([TableLookup.Add(5, 6, carryIn: true)], work.Steps[1].Lookups);
+        Assert.Equal(12, work.Steps[1].Lookups[0].Value);
+    }
+
+    [Fact]
+    public void Subtraction_LooksUpTheAdditionTableBackwards()
+    {
+        var work = SchoolbookWork.Subtraction(52, 18);
+        var lookups = work.Steps.SelectMany(s => s.Lookups).ToList();
+
+        // 12 − 8 = 4 is 8 + 4 = 12; then 4 − 1 = 3 is 1 + 3 = 4.
+        Assert.Equal([TableLookup.Add(8, 4), TableLookup.Add(1, 3)], lookups);
+    }
+
+    [Fact]
+    public void Multiplication_LooksUpEachDigitPair()
+    {
+        var pairs = SchoolbookWork.Multiplication(487, 36);
+        Assert.Equal(TableLookup.Multiply(7, 6), pairs.Steps[0].Lookups.Single());
+
+        var folded = SchoolbookWork.Multiplication(487, 36, layout: MultiplicationLayout.Folded);
+        Assert.Equal([TableLookup.Multiply(7, 3), TableLookup.Multiply(8, 6)], folded.Steps[1].Lookups);
+    }
+
+    [Theory]
+    [InlineData(9, 440d)]
+    [InlineData(0, 261.63d)]
+    [InlineData(12, 523.25d)]
+    [InlineData(-3, 220d)]
+    public void NotePitch_MiddleCIsZeroAndAIs440(int index, double expected)
+    {
+        Assert.Equal(expected, NotePitch.Frequency(index), 2);
+    }
+
+    [Fact]
+    public void SchoolbookSound_PlaysColumnAndRowTogether()
+    {
+        var player = new RecordingTonePlayer();
+        var step = SchoolbookWork.Addition(58, 64).Steps[1]; // 5 + 6 with a carried 1
+
+        new SchoolbookSound().PlayStep(player, step, secondsPerStep: null);
+
+        Assert.Equal(2, player.Tones.Count);
+        Assert.Equal(NotePitch.Frequency(6), player.Tones[0].Frequency, 6); // 5, shifted to 6 by the carry
+        Assert.Equal(NotePitch.Frequency(18), player.Tones[1].Frequency, 6); // 12 + 6
+        Assert.All(player.Tones, t => Assert.Equal(0d, t.Delay));
+        Assert.All(player.Tones, t => Assert.NotNull(t.Decay));
+    }
+
+    [Fact]
+    public void SchoolbookSound_FastStepsDoNotDecay()
+    {
+        var player = new RecordingTonePlayer();
+        var step = SchoolbookWork.Multiplication(487, 36, layout: MultiplicationLayout.Folded).Steps[1];
+
+        new SchoolbookSound().PlayStep(player, step, secondsPerStep: 0.04d);
+
+        Assert.Equal(4, player.Tones.Count);
+        Assert.All(player.Tones, t => Assert.Null(t.Decay));
+        Assert.Equal(0.02d, player.Tones[2].Delay, 6);
+        Assert.Equal(0.02d, player.Tones[2].Duration, 6);
+    }
+
+    private sealed class RecordingTonePlayer : ITonePlayer
+    {
+        public List<(double Frequency, double Duration, double Delay, double? Decay)> Tones { get; } = [];
+
+        public void PlayTone(double frequencyHz, double durationSeconds, float volume = 0.3f,
+            double delaySeconds = 0d, double? decaySeconds = null) =>
+            Tones.Add((frequencyHz, durationSeconds, delaySeconds, decaySeconds));
+    }
+
     private static string ResultText(SchoolbookWork work) => string.Concat(work.Cells
         .Where(c => c.Kind == SchoolbookCellKind.Result)
         .OrderBy(c => c.Column)
