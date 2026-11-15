@@ -199,7 +199,7 @@ public sealed class SchoolbookWorkTests
         var samples = ToneSynth.RenderSine(440d, 0.1d, volume: 0.5f);
         Assert.Equal(4410, samples.Length);
         Assert.Equal(0f, samples[0]);
-        Assert.Equal(0f, samples[^1]);
+        Assert.InRange(samples[^1], -0.01f, 0.01f);
         Assert.True(samples.Max() <= 0.5f);
         Assert.True(samples.Max() > 0.45f);
     }
@@ -210,7 +210,7 @@ public sealed class SchoolbookWorkTests
         var work = SchoolbookWork.Addition(58, 64);
 
         Assert.Equal([TableLookup.Add(8, 4)], work.Steps[0].Lookups);
-        Assert.Equal([TableLookup.Add(5, 6, carryIn: true)], work.Steps[1].Lookups);
+        Assert.Equal([TableLookup.Add(5, 6, carry: 1)], work.Steps[1].Lookups);
         Assert.Equal(12, work.Steps[1].Lookups[0].Value);
     }
 
@@ -231,7 +231,9 @@ public sealed class SchoolbookWorkTests
         Assert.Equal(TableLookup.Multiply(7, 6), pairs.Steps[0].Lookups.Single());
 
         var folded = SchoolbookWork.Multiplication(487, 36, layout: MultiplicationLayout.Folded);
-        Assert.Equal([TableLookup.Multiply(7, 3), TableLookup.Multiply(8, 6)], folded.Steps[1].Lookups);
+        // 7×3 = 21 and 8×6 = 48, then their last digits 1 + 8 with the 4 carried in (= 13, so write 3).
+        Assert.Equal([TableLookup.Multiply(7, 3), TableLookup.Multiply(8, 6), TableLookup.Add(1, 8, carry: 4)],
+            folded.Steps[1].Lookups);
     }
 
     [Theory]
@@ -256,7 +258,7 @@ public sealed class SchoolbookWorkTests
         Assert.Equal(NotePitch.Frequency(6), player.Tones[0].Frequency, 6); // 5, shifted to 6 by the carry
         Assert.Equal(NotePitch.Frequency(18), player.Tones[1].Frequency, 6); // 12 + 6
         Assert.All(player.Tones, t => Assert.Equal(0d, t.Delay));
-        Assert.All(player.Tones, t => Assert.NotNull(t.Decay));
+        Assert.All(player.Tones, t => Assert.NotNull(t.Shape?.DecaySeconds));
     }
 
     [Fact]
@@ -267,19 +269,74 @@ public sealed class SchoolbookWorkTests
 
         new SchoolbookSound().PlayStep(player, step, secondsPerStep: 0.04d);
 
-        Assert.Equal(4, player.Tones.Count);
-        Assert.All(player.Tones, t => Assert.Null(t.Decay));
-        Assert.Equal(0.02d, player.Tones[2].Delay, 6);
-        Assert.Equal(0.02d, player.Tones[2].Duration, 6);
+        // Two products, then the ones digits 1 + 8 with 4 carried: three chords, six notes.
+        Assert.Equal(6, player.Tones.Count);
+        var spacing = 0.04d / 3;
+        Assert.All(player.Tones, t => Assert.Null(t.Shape?.DecaySeconds));
+        Assert.All(player.Tones, t => Assert.True(t.Shape?.Smooth));
+        Assert.Equal(0.025d + spacing, player.Tones[2].Delay, 6);
+        Assert.Equal(2 * spacing, player.Tones[2].Duration, 6);
+    }
+
+    [Fact]
+    public void ColumnLookups_KeepARunningTotalAsXPlusCarry()
+    {
+        // 3 + 7 + 5 + 9 with 4 carried in: 3 + 7 (+4) = 14, then 4 (+10) + 5 = 19, then 9 (+10) + 9 = 28.
+        var lookups = SchoolbookWork.ColumnLookups([3, 7, 5, 9], carry: 4, numberBase: 10);
+
+        Assert.Equal([TableLookup.Add(3, 7, 4), TableLookup.Add(4, 5, 10), TableLookup.Add(9, 9, 10)], lookups);
+        Assert.Equal(28, lookups[^1].Value);
+    }
+
+    [Fact]
+    public void Lookups_AlwaysSumToTheDigitWritten()
+    {
+        var works = new[]
+        {
+            SchoolbookWork.Addition([987, 654, 321, 999]),
+            SchoolbookWork.Multiplication(98765, 4321),
+            SchoolbookWork.Multiplication(98765, 4321, layout: MultiplicationLayout.Folded),
+        };
+        foreach (var work in works)
+        {
+            foreach (var step in work.Steps.Where(s => s.Lookups.Any(l => l.Operation == TableOperation.Addition)))
+            {
+                Assert.Equal(step.Tone, step.Lookups[^1].Value % work.NumberBase);
+            }
+        }
+    }
+
+    [Fact]
+    public void SchoolbookSound_DropsHighNotesByOctaves()
+    {
+        var sound = new SchoolbookSound();
+        Assert.Equal((28, 21), sound.NotesFor(TableLookup.Add(0, 9, 40)));
+    }
+
+    [Fact]
+    public void ToneSynth_CrossfadedNotesKeepASteadyVolume()
+    {
+        // Two notes of the same pitch, half-overlapped.
+        const int rate = 44100;
+        var spacing = 0.01d;
+        var shape = ToneShape.Crossfade(spacing);
+        var first = ToneSynth.RenderSine(441d, 2 * spacing, 1f, rate, shape);
+        var second = ToneSynth.RenderSine(441d, 2 * spacing, 1f, rate, shape, delaySeconds: spacing);
+        var offset = (int)(spacing * rate);
+        for (var i = offset; i < first.Length; i++)
+        {
+            // The envelopes sum to 1 across the overlap, so the mix never exceeds a single note's peak.
+            Assert.InRange(Math.Abs(first[i] + second[i]), 0d, 1.0001d);
+        }
     }
 
     private sealed class RecordingTonePlayer : ITonePlayer
     {
-        public List<(double Frequency, double Duration, double Delay, double? Decay)> Tones { get; } = [];
+        public List<(double Frequency, double Duration, double Delay, ToneShape? Shape)> Tones { get; } = [];
 
         public void PlayTone(double frequencyHz, double durationSeconds, float volume = 0.3f,
-            double delaySeconds = 0d, double? decaySeconds = null) =>
-            Tones.Add((frequencyHz, durationSeconds, delaySeconds, decaySeconds));
+            double delaySeconds = 0d, ToneShape? shape = null) =>
+            Tones.Add((frequencyHz, durationSeconds, delaySeconds, shape));
     }
 
     private static string ResultText(SchoolbookWork work) => string.Concat(work.Cells

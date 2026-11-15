@@ -63,16 +63,19 @@ public enum TableOperation
 
 /// <summary>
 /// One fact looked up in the addition or multiplication table: column <see cref="X"/>, row <see cref="Y"/>.
-/// With <see cref="CarryIn"/>, an addition reads the table shifted by one (columns 1 through 10),
-/// as when a carried 1 is added in.
+/// An addition can also add a <see cref="Carry"/> of any size, which reads the table with its columns
+/// shifted by that much (a carried 1 makes the columns 1 through 10; a running total of 14 makes them 14 through 23).
 /// </summary>
-public readonly record struct TableLookup(TableOperation Operation, int X, int Y, bool CarryIn = false)
+public readonly record struct TableLookup(TableOperation Operation, int X, int Y, int Carry = 0)
 {
-    public static TableLookup Add(int x, int y, bool carryIn = false) => new(TableOperation.Addition, x, y, carryIn);
+    public static TableLookup Add(int x, int y, int carry = 0) => new(TableOperation.Addition, x, y, carry);
     public static TableLookup Multiply(int x, int y) => new(TableOperation.Multiplication, x, y);
 
+    /// <summary>Gets the shifted column, X plus any carry.</summary>
+    public int ShiftedX => Operation == TableOperation.Addition ? X + Carry : X;
+
     /// <summary>Gets the value in the looked-up cell.</summary>
-    public int Value => Operation == TableOperation.Addition ? X + Y + (CarryIn ? 1 : 0) : X * Y;
+    public int Value => Operation == TableOperation.Addition ? X + Y + Carry : X * Y;
 }
 
 /// <summary>
@@ -504,6 +507,8 @@ public sealed class SchoolbookWork
             var highlighted = new HashSet<int>();
             var products = new List<string>();
             var lookups = new List<TableLookup>();
+            var onesDigits = new List<int>();
+            var carryIn = carry;
             BigInteger total = carry;
             for (var i = Math.Max(0, place - bottom.Count + 1); i <= Math.Min(place, top.Count - 1); i++)
             {
@@ -511,6 +516,7 @@ public sealed class SchoolbookWork
                 total += top[i] * bottom[j];
                 products.Add($"{Digits.Char(top[i])}×{Digits.Char(bottom[j])}");
                 lookups.Add(TableLookup.Multiply(top[i], bottom[j]));
+                onesDigits.Add(top[i] * bottom[j] % numberBase);
                 highlighted.Add(topCells[i]);
                 highlighted.Add(bottomCells[j]);
             }
@@ -557,7 +563,9 @@ public sealed class SchoolbookWork
                 Highlighted = [.. highlighted],
                 Revealed = revealed,
                 Tone = (int)(total % numberBase),
-                Lookups = lookups
+                // Then add up the column: each product's last digit stays here, and its tens are
+                // already part of the carry into the next column, so these sum to the digit written.
+                Lookups = [.. lookups, .. ColumnLookups(onesDigits, (int)carryIn, numberBase)]
             });
         }
 
@@ -699,6 +707,28 @@ public sealed class SchoolbookWork
         return b.Build(title, product, toneCount: numberBase);
     }
 
+    /// <summary>
+    /// The addition facts for one column of digits, one per addition: the first two digits plus the
+    /// carry coming in, then each further digit added to the running total. The running total is
+    /// split into its last digit (X) and the rest (the carry, e.g. 10 or 20), so X + carry is always
+    /// the total so far.
+    /// </summary>
+    internal static List<TableLookup> ColumnLookups(IReadOnlyList<int> digits, int carry, int numberBase)
+    {
+        var lookups = new List<TableLookup>();
+        if (digits.Count == 0) { return lookups; }
+
+        var running = digits[0] + (digits.Count > 1 ? digits[1] : 0) + carry;
+        lookups.Add(TableLookup.Add(digits[0], digits.Count > 1 ? digits[1] : 0, carry));
+        for (var k = 2; k < digits.Count; k++)
+        {
+            var x = running % numberBase;
+            lookups.Add(TableLookup.Add(x, digits[k], running - x));
+            running += digits[k];
+        }
+        return lookups;
+    }
+
     private sealed class Builder(int numberBase, int width)
     {
         private readonly List<SchoolbookRowKind> _rows = [];
@@ -756,7 +786,7 @@ public sealed class SchoolbookWork
                 if (carryCell is { } cc) { highlighted.Add(cc); }
 
                 var total = terms.Sum() + carry;
-                var lookups = ColumnLookups(terms, carry);
+                var lookups = ColumnLookups(terms, carry, numberBase);
                 var revealed = new List<int>(extraReveals);
                 var expression = string.Join(" + ", terms.Select(Digits.Char))
                     + (carry > 0 ? $" + {Digits.Format(carry, numberBase)} carried" : "");
@@ -803,34 +833,6 @@ public sealed class SchoolbookWork
                 hide = [];
                 extraReveals = [];
             }
-        }
-
-        /// <summary>
-        /// The addition facts for one column: the first two digits (with a carried 1 as the shifted
-        /// table), then each further digit added to the running total's last digit, then any larger carry.
-        /// </summary>
-        private List<TableLookup> ColumnLookups(IReadOnlyList<int> terms, int carry)
-        {
-            var lookups = new List<TableLookup>();
-            if (terms.Count == 0) { return lookups; }
-            if (terms.Count == 1)
-            {
-                lookups.Add(TableLookup.Add(terms[0], 0, carry == 1));
-                return lookups;
-            }
-
-            var running = terms[0];
-            for (var k = 1; k < terms.Count; k++)
-            {
-                var carryIn = k == 1 && carry == 1;
-                lookups.Add(TableLookup.Add(running % numberBase, terms[k], carryIn));
-                running += terms[k] + (carryIn ? 1 : 0);
-            }
-            if (carry > 1 && carry < numberBase)
-            {
-                lookups.Add(TableLookup.Add(running % numberBase, carry));
-            }
-            return lookups;
         }
 
         public SchoolbookWork Build(string title, BigInteger result, int toneCount) =>

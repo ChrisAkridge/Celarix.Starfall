@@ -52,7 +52,7 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
 
         public override string Notes =>
             "Advance works one step at a time; Rewind steps back. The table on the right shows each fact being "
-            + "looked up, and each lookup plays a chord: the column at middle C + X, the row an octave up at C5 + Y. "
+            + "looked up, and each lookup plays a chord: the column at middle C + X + carry, the row an octave up at C5 + Y. "
             + "Problems: addition with carries, subtraction borrowing across zeros, multiplication by digit pairs and "
             + "folded, binary addition, and a long folded multiplication that plays itself in about a second "
             + "(Advance again to finish it at once).";
@@ -168,7 +168,7 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
 
         private void Work_StepTaken(object? sender, SchoolbookStep step)
         {
-            _sound.PlayStep(Runtime.Tones, step, _work!.SecondsPerStep);
+            _sound.PlayStep(Runtime.Tones, step, _work!.SecondsPerStep, _work.StepLateBySeconds);
             // Auto-play steps happen during Update, so keep the caption and table in step with them.
             UpdateCaption();
             UpdateTable();

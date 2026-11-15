@@ -11,7 +11,8 @@ namespace Celarix.Starfall.Atria.Elements;
 /// <remarks>
 /// Pairs with <see cref="SchoolbookArithmeticElement"/>: set <see cref="Lookup"/> from a step's
 /// <see cref="SchoolbookStep.Lookups"/> to show where each fact comes from. An addition lookup with
-/// a carry shifts the column headers to 1 through base, as if the carried 1 were already added.
+/// a carry shifts the column headers by the carry, as if it were already added (1 through 10 for a
+/// carried 1, 14 through 23 for a running total of 14).
 /// </remarks>
 public sealed class OperationTableElement : AtriaElement
 {
@@ -29,8 +30,8 @@ public sealed class OperationTableElement : AtriaElement
     public TableOperation Operation { get; set; }
     public int NumberBase { get; }
 
-    /// <summary>Gets or sets whether addition columns are shifted by a carried 1.</summary>
-    public bool CarryIn { get; set; }
+    /// <summary>Gets or sets how far addition columns are shifted by a carry. 0 is the plain table.</summary>
+    public int Carry { get; set; }
 
     /// <summary>
     /// Gets or sets the fact to highlight, or null for none. Setting a lookup also switches the
@@ -45,7 +46,7 @@ public sealed class OperationTableElement : AtriaElement
             if (value is { } lookup)
             {
                 Operation = lookup.Operation;
-                CarryIn = lookup.Operation == TableOperation.Addition && lookup.CarryIn;
+                Carry = lookup.Operation == TableOperation.Addition ? lookup.Carry : 0;
             }
         }
     }
@@ -69,14 +70,15 @@ public sealed class OperationTableElement : AtriaElement
         var cell = Math.Min(Size.Width, Size.Height) / count;
         var left = Position.X + (Size.Width - cell * count) / 2;
         var top = Position.Y + (Size.Height - cell * count) / 2;
-        var shift = Operation == TableOperation.Addition && CarryIn ? 1 : 0;
+        var shift = Operation == TableOperation.Addition ? Carry : 0;
 
         var font = new SFontFamily(FontFamily, null);
         var fontSize = target.FitTextToHeight("0", font, (float)(cell * 0.55));
         var widest = Operation == TableOperation.Addition
-            ? Format(2 * (NumberBase - 1) + 1)
+            ? Format(2 * (NumberBase - 1) + Math.Max(1, shift))
             : Format((NumberBase - 1) * (NumberBase - 1));
-        fontSize = Math.Min(fontSize, target.FitTextToWidth(widest, font, (float)(cell * 0.8)));
+        // Size for at least three digits, so the text doesn't jump as carries shift the table.
+        fontSize = Math.Min(fontSize, target.FitTextToWidth(widest.PadLeft(3, '0'), font, (float)(cell * 0.8)));
         var sizedFont = font.WithSize(fontSize);
 
         SRectF CellRect(int column, int row) => new(left + column * cell, top + row * cell, cell, cell);

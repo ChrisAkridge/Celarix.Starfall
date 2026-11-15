@@ -10,12 +10,9 @@ public interface ITonePlayer
     /// Schedules a tone and returns immediately. Overlapping tones mix together.
     /// </summary>
     /// <param name="delaySeconds">How long from now the tone starts, for spreading notes within a step.</param>
-    /// <param name="decaySeconds">
-    /// The time constant of an exponential fade-out, for notes that should ring and die away; null
-    /// holds the note at full volume for its whole duration.
-    /// </param>
+    /// <param name="shape">The volume envelope; null uses <see cref="ToneShape.Default"/>.</param>
     void PlayTone(double frequencyHz, double durationSeconds, float volume = 0.3f,
-        double delaySeconds = 0d, double? decaySeconds = null);
+        double delaySeconds = 0d, ToneShape? shape = null);
 }
 
 /// <summary>
@@ -28,5 +25,5 @@ public sealed class NullTonePlayer : ITonePlayer
     private NullTonePlayer() { }
 
     public void PlayTone(double frequencyHz, double durationSeconds, float volume = 0.3f,
-        double delaySeconds = 0d, double? decaySeconds = null) { }
+        double delaySeconds = 0d, ToneShape? shape = null) { }
 }

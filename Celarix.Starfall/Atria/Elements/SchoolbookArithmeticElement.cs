@@ -20,6 +20,7 @@ public sealed class SchoolbookArithmeticElement : AtriaElement
     private SchoolbookState _state;
     private double? _secondsPerStep;
     private double _secondsUntilStep;
+    private double _stepLateBySeconds;
 
     public SchoolbookArithmeticElement(string atriaIdString, SchoolbookWork work)
     {
@@ -62,6 +63,12 @@ public sealed class SchoolbookArithmeticElement : AtriaElement
     /// </summary>
     public event EventHandler<SchoolbookStep>? StepTaken;
 
+    /// <summary>
+    /// Gets, during <see cref="StepTaken"/>, how long ago the step was due. Auto-play only runs on
+    /// frames, so a step can land a few milliseconds late; sound can use this to stay on the beat.
+    /// </summary>
+    public double StepLateBySeconds => _stepLateBySeconds;
+
     public string FontFamily { get; set; } = "Cambria Math";
 
     /// <summary>Gets or sets the height of carry and borrow rows, as a fraction of a normal row.</summary>
@@ -84,6 +91,7 @@ public sealed class SchoolbookArithmeticElement : AtriaElement
         if (IsComplete) { return false; }
         StepIndex += 1;
         StepTaken?.Invoke(this, Work.Steps[_stepIndex]);
+        _stepLateBySeconds = 0d;
         return true;
     }
 
@@ -114,6 +122,7 @@ public sealed class SchoolbookArithmeticElement : AtriaElement
         _secondsUntilStep -= frameTime.Delta.TotalSeconds;
         while (_secondsUntilStep <= 0d)
         {
+            _stepLateBySeconds = -_secondsUntilStep;
             if (!StepForward())
             {
                 Pause();

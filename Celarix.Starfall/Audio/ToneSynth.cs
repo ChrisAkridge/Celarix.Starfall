@@ -9,49 +9,44 @@ public static class ToneSynth
     public const int DefaultSampleRate = 44100;
 
     /// <summary>
-    /// Renders a mono sine tone with a short fade in and out, so tones start and stop without clicks.
+    /// Renders a mono sine tone with the given envelope, after <paramref name="delaySeconds"/> of silence.
     /// </summary>
-    /// <param name="fadeSeconds">The length of each fade. Clamped to half the tone.</param>
-    /// <param name="decaySeconds">
-    /// If set, the time constant of an exponential decay after the fade-in, so the note rings and dies away.
-    /// </param>
-    /// <param name="delaySeconds">Silence to put before the tone.</param>
+    /// <param name="shape">The volume envelope; null uses <see cref="ToneShape.Default"/>. Fades are clamped to half the tone.</param>
     public static float[] RenderSine(double frequencyHz, double durationSeconds, float volume = 0.3f,
-        int sampleRate = DefaultSampleRate, double fadeSeconds = 0.005d, double? decaySeconds = null,
-        double delaySeconds = 0d)
-    {
-        var tone = RenderSineCore(frequencyHz, durationSeconds, volume, sampleRate, fadeSeconds, decaySeconds);
-        var delaySamples = Math.Max(0, (int)Math.Round(delaySeconds * sampleRate));
-        if (delaySamples == 0) { return tone; }
-
-        var delayed = new float[delaySamples + tone.Length];
-        Array.Copy(tone, 0, delayed, delaySamples, tone.Length);
-        return delayed;
-    }
-
-    private static float[] RenderSineCore(double frequencyHz, double durationSeconds, float volume,
-        int sampleRate, double fadeSeconds, double? decaySeconds)
+        int sampleRate = DefaultSampleRate, ToneShape? shape = null, double delaySeconds = 0d)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sampleRate);
+        var envelopeShape = shape ?? ToneShape.Default;
+        var delaySamples = Math.Max(0, (int)Math.Round(delaySeconds * sampleRate));
         var sampleCount = Math.Max(0, (int)Math.Round(durationSeconds * sampleRate));
-        var samples = new float[sampleCount];
-        var fadeSamples = Math.Min((int)(fadeSeconds * sampleRate), sampleCount / 2);
+        var samples = new float[delaySamples + sampleCount];
+        var fadeIn = Math.Min((int)Math.Round(envelopeShape.FadeInSeconds * sampleRate), sampleCount / 2);
+        var fadeOut = Math.Min((int)Math.Round(envelopeShape.FadeOutSeconds * sampleRate), sampleCount / 2);
         var step = 2d * Math.PI * frequencyHz / sampleRate;
 
         for (var i = 0; i < sampleCount; i++)
         {
             var envelope = 1d;
-            if (fadeSamples > 0)
+            if (i < fadeIn)
             {
-                if (i < fadeSamples) { envelope = (double)i / fadeSamples; }
-                else if (i >= sampleCount - fadeSamples) { envelope = (double)(sampleCount - 1 - i) / fadeSamples; }
+                envelope = Ramp((i + 0.5d) / fadeIn, envelopeShape.Smooth);
             }
-            if (decaySeconds is { } decay && decay > 0 && i >= fadeSamples)
+            else if (i >= sampleCount - fadeOut)
             {
-                envelope *= Math.Exp(-(i - fadeSamples) / (decay * sampleRate));
+                envelope = Ramp((sampleCount - i - 0.5d) / fadeOut, envelopeShape.Smooth);
             }
-            samples[i] = (float)(Math.Sin(step * i) * envelope * volume);
+            if (envelopeShape.DecaySeconds is { } decay && decay > 0 && i >= fadeIn)
+            {
+                envelope *= Math.Exp(-(i - fadeIn) / (decay * sampleRate));
+            }
+            samples[delaySamples + i] = (float)(Math.Sin(step * i) * envelope * volume);
         }
         return samples;
     }
+
+    /// <summary>
+    /// A fade from 0 to 1 over <paramref name="t"/> in [0, 1]: straight, or a raised cosine whose
+    /// fade-in and matching fade-out always sum to 1.
+    /// </summary>
+    private static double Ramp(double t, bool smooth) => smooth ? 0.5d - 0.5d * Math.Cos(Math.PI * t) : t;
 }
