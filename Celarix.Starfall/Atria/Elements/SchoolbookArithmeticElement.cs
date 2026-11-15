@@ -176,9 +176,31 @@ public sealed class SchoolbookArithmeticElement : AtriaElement
         var ruleThickness = (float)Math.Max(1d, cellHeight * 0.05);
         foreach (var rule in Work.Rules)
         {
+            // A rule appears along with the row it underlines.
+            if (!RowHasVisibleCell(rule.AfterRow)) { continue; }
             var y = rowTops[rule.AfterRow + 1] + cellHeight * 0.05;
             target.DrawLine(new SPointF(left + rule.FirstColumn * cellWidth, y),
                 new SPointF(left + (rule.LastColumn + 1) * cellWidth, y), Fade(RuleColor), ruleThickness);
+        }
+
+        foreach (var bracket in Work.Brackets)
+        {
+            // A line over the dividend, curving down its left side like a tall ")".
+            var bracketTop = rowTops[bracket.Row] + cellHeight * 0.02;
+            var bracketBottom = rowTops[bracket.Row + 1] - cellHeight * 0.05;
+            var x0 = left + (bracket.FirstColumn - 0.55) * cellWidth;
+            target.DrawLine(new SPointF(x0, bracketTop), new SPointF(left + (bracket.LastColumn + 1) * cellWidth, bracketTop),
+                Fade(RuleColor), ruleThickness);
+            const int segments = 12;
+            var bulge = cellWidth * 0.22;
+            var previous = new SPointF(x0, bracketTop);
+            for (var k = 1; k <= segments; k++)
+            {
+                var t = (double)k / segments;
+                var point = new SPointF(x0 + bulge * Math.Sin(Math.PI * t), bracketTop + t * (bracketBottom - bracketTop));
+                target.DrawLine(previous, point, Fade(RuleColor), ruleThickness);
+                previous = point;
+            }
         }
 
         for (var i = 0; i < Work.Cells.Count; i++)
@@ -196,6 +218,15 @@ public sealed class SchoolbookArithmeticElement : AtriaElement
                     Fade(StrikeColor), (float)Math.Max(1d, cellHeight * 0.04));
             }
         }
+    }
+
+    private bool RowHasVisibleCell(int row)
+    {
+        for (var i = 0; i < Work.Cells.Count; i++)
+        {
+            if (Work.Cells[i].Row == row && _state.Visible[i]) { return true; }
+        }
+        return false;
     }
 
     private SColor ColorFor(SchoolbookCell cell, int index)

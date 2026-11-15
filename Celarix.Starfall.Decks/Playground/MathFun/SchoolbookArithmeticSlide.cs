@@ -17,13 +17,13 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
         private static readonly SColor _backgroundColor = new(8, 0, 130, 255);
         private static readonly SchoolbookSound _sound = new();
 
-        /// <summary>How long auto-play takes to work a whole problem, however many steps it has.</summary>
-        private const double AutoPlayTotalSeconds = 1d;
 
         /// <param name="Label">Shown after the problem in the title, e.g. "folded".</param>
         /// <param name="AutoPlay">Whether Advance plays the whole problem instead of stepping it.</param>
         /// <param name="ShowTable">Whether the addition/times table appears beside the work.</param>
-        private sealed record Problem(SchoolbookWork Work, string? Label = null, bool AutoPlay = false, bool ShowTable = true);
+        /// <param name="AutoPlaySeconds">How long auto-play takes to work the whole problem, however many steps it has.</param>
+        private sealed record Problem(SchoolbookWork Work, string? Label = null, bool AutoPlay = false, bool ShowTable = true,
+            double AutoPlaySeconds = 1d);
 
         private readonly Problem[] _problems =
         [
@@ -34,6 +34,11 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
             new(SchoolbookWork.Addition(0b1011, 0b0111, numberBase: 2), "base 2"),
             new(SchoolbookWork.Multiplication(BigInteger.Parse("31415926535897932"), BigInteger.Parse("27182818284590452"),
                 layout: MultiplicationLayout.Folded), "folded", AutoPlay: true),
+            new(SchoolbookWork.LongDivision(9876, 7)),
+            new(SchoolbookWork.LongDivision(1000, 37), "two-digit divisor"),
+            new(SchoolbookWork.LongDivision(22, 7, decimalPlaces: 4), "4 decimal places"),
+            new(SchoolbookWork.LongDivision(355, 113, decimalPlaces: 10, layout: DivisionLayout.Summary), "summary", ShowTable: false),
+            new(SchoolbookWork.LongDivision(31415926, 7), "auto-play", AutoPlay: true, AutoPlaySeconds: 3d),
         ];
 
         private int _problemIndex;
@@ -54,8 +59,9 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
             "Advance works one step at a time; Rewind steps back. The table on the right shows each fact being "
             + "looked up, and each lookup plays a chord: the column at middle C + X + carry, the row an octave up at C5 + Y. "
             + "Problems: addition with carries, subtraction borrowing across zeros, multiplication by digit pairs and "
-            + "folded, binary addition, and a long folded multiplication that plays itself in about a second "
-            + "(Advance again to finish it at once).";
+            + "folded, binary addition, a long folded multiplication that plays itself in about a second "
+            + "(Advance again to finish it at once), then long division: worked, with a two-digit divisor, "
+            + "with decimals, as a summary, and a long one that plays itself.";
 
         public override void Initialize()
         {
@@ -86,7 +92,7 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
             }
             if (!_work.IsComplete && _problems[_problemIndex].AutoPlay)
             {
-                _work.Play(AutoPlayTotalSeconds / _work.Work.Steps.Count);
+                _work.Play(_problems[_problemIndex].AutoPlaySeconds / _work.Work.Steps.Count);
                 return SlideAdvanceResult.InternalStateChanged;
             }
             if (_work.StepForward())
@@ -181,7 +187,8 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
         {
             null => string.Empty,
             { CurrentStep: { } step } => step.Description,
-            _ => "Press Advance to work it column by column."
+            { Work.Steps.Count: 0 } => string.Empty,
+            _ => "Press Advance to work it step by step."
         };
     }
 }

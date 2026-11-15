@@ -95,7 +95,29 @@ public sealed record SchoolbookCell(int Row, int Column, string Text, Schoolbook
 /// <summary>
 /// A horizontal line drawn under <see cref="AfterRow"/>, spanning the given columns.
 /// </summary>
+/// <remarks>A rule is drawn once any cell in <see cref="AfterRow"/> is visible.</remarks>
 public sealed record SchoolbookRule(int AfterRow, int FirstColumn, int LastColumn);
+
+/// <summary>
+/// The long-division bracket: a line over <see cref="Row"/> from <see cref="FirstColumn"/> to
+/// <see cref="LastColumn"/>, curving down the left side of the row.
+/// </summary>
+public sealed record SchoolbookBracket(int Row, int FirstColumn, int LastColumn);
+
+/// <summary>
+/// How much of a long division to show.
+/// </summary>
+public enum DivisionLayout
+{
+    /// <summary>
+    /// Every step: find where the divisor first fits, pick the biggest multiple that fits (the Barker
+    /// term), write the product, subtract column by column, bring down the next digit, repeat.
+    /// </summary>
+    Worked,
+
+    /// <summary>Just the divisor, dividend, quotient and remainder (or decimal digits), with no steps.</summary>
+    Summary
+}
 
 /// <summary>
 /// One step of working the problem by hand. Cell lists hold indices into <see cref="SchoolbookWork.Cells"/>.
@@ -162,7 +184,7 @@ public sealed class SchoolbookWork
 {
     internal SchoolbookWork(string title, int numberBase, BigInteger result, int toneCount,
         List<SchoolbookRowKind> rows, int columnCount, List<SchoolbookCell> cells,
-        List<SchoolbookRule> rules, List<SchoolbookStep> steps)
+        List<SchoolbookRule> rules, List<SchoolbookBracket> brackets, List<SchoolbookStep> steps)
     {
         Title = title;
         NumberBase = numberBase;
@@ -172,6 +194,7 @@ public sealed class SchoolbookWork
         ColumnCount = columnCount;
         Cells = cells;
         Rules = rules;
+        Brackets = brackets;
         Steps = steps;
     }
 
@@ -187,6 +210,7 @@ public sealed class SchoolbookWork
     public int ColumnCount { get; }
     public IReadOnlyList<SchoolbookCell> Cells { get; }
     public IReadOnlyList<SchoolbookRule> Rules { get; }
+    public IReadOnlyList<SchoolbookBracket> Brackets { get; }
     public IReadOnlyList<SchoolbookStep> Steps { get; }
 
     /// <summary>
@@ -707,6 +731,275 @@ public sealed class SchoolbookWork
         return b.Build(title, product, toneCount: numberBase);
     }
 
+
+    /// <summary>
+    /// Long division of a non-negative dividend by a positive divisor, written with the divisor to
+    /// the left of the bracket and the quotient above it.
+    /// </summary>
+    /// <param name="decimalPlaces">
+    /// 0 to stop at the whole-number quotient and show a remainder; otherwise how many digits to
+    /// continue past the decimal point (stopping early if the division comes out even).
+    /// </param>
+    /// <remarks>
+    /// <see cref="Result"/> is the whole-number quotient. With decimal places, the quotient row also
+    /// carries the digits after the point.
+    /// </remarks>
+    public static SchoolbookWork LongDivision(BigInteger dividend, BigInteger divisor, int numberBase = 10,
+        int decimalPlaces = 0, DivisionLayout layout = DivisionLayout.Worked)
+    {
+        Digits.ThrowIfInvalid(numberBase);
+        if (divisor.Sign <= 0) { throw new ArgumentException("The divisor must be positive.", nameof(divisor)); }
+        if (dividend.Sign < 0) { throw new ArgumentException("The dividend must not be negative.", nameof(dividend)); }
+        ArgumentOutOfRangeException.ThrowIfNegative(decimalPlaces);
+
+        var worked = layout == DivisionLayout.Worked;
+        var divisorDigits = Digits.Of(divisor, numberBase);               // least significant first
+        var divisorText = Digits.Format(divisor, numberBase);
+        var wholeDigits = Digits.Of(dividend, numberBase);
+        wholeDigits.Reverse();                                            // most significant first
+        var wholeLength = wholeDigits.Count;
+
+        // Work out how many decimal digits we'll need before laying anything out.
+        var decimalsUsed = 0;
+        if (decimalPlaces > 0)
+        {
+            var r = dividend % divisor;
+            while (r != 0 && decimalsUsed < decimalPlaces)
+            {
+                r = r * numberBase % divisor;
+                decimalsUsed++;
+            }
+        }
+        var hasPoint = decimalsUsed > 0;
+        var digits = new List<int>(wholeDigits);
+        digits.AddRange(Enumerable.Repeat(0, decimalsUsed));
+
+        var firstColumn = divisorDigits.Count + 1; // one column of room for the bracket
+        int Col(int index) => firstColumn + index + (hasPoint && index >= wholeLength ? 1 : 0);
+        var lastColumn = Col(digits.Count - 1);
+        var pointColumn = firstColumn + wholeLength;
+
+        var wholeQuotient = dividend / divisor;
+        var finalRemainder = dividend % divisor;
+        var showRemainder = decimalPlaces == 0 && finalRemainder != 0;
+        var remainderText = Digits.Format(finalRemainder, numberBase);
+        var width = lastColumn + 1 + (showRemainder ? 2 + remainderText.Length : 0);
+
+        var b = new Builder(numberBase, width);
+        var quotientRow = b.AddRow(SchoolbookRowKind.Normal);
+        var dividendRow = b.AddRow(SchoolbookRowKind.Normal);
+        var divisorCells = new List<int>();
+        for (var k = divisorDigits.Count - 1; k >= 0; k--)
+        {
+            divisorCells.Add(b.AddCell(dividendRow, divisorDigits.Count - 1 - k, Digits.Char(divisorDigits[k]), SchoolbookCellKind.Operand, visible: true));
+        }
+        // The summary shows the dividend as given; the worked layout reveals the decimal point and
+        // zeros once it runs out of digits to bring down.
+        var dividendCells = digits
+            .Select((d, i) => i < wholeLength || worked
+                ? b.AddCell(dividendRow, Col(i), Digits.Char(d),
+                    i < wholeLength ? SchoolbookCellKind.Operand : SchoolbookCellKind.Placeholder, visible: i < wholeLength)
+                : -1)
+            .ToList();
+        var pointCells = new List<int>();
+        if (hasPoint)
+        {
+            if (worked) { pointCells.Add(b.AddCell(dividendRow, pointColumn, ".", SchoolbookCellKind.Operand, visible: false)); }
+            pointCells.Add(b.AddCell(quotientRow, pointColumn, ".", SchoolbookCellKind.Result, visible: !worked));
+        }
+        b.AddBracket(dividendRow, firstColumn, lastColumn);
+
+        BigInteger remainder = 0;
+        var started = false;
+        var currentRow = dividendRow;
+        var partialCells = new List<int>(); // most significant first
+        for (var i = 0; i < digits.Count; i++)
+        {
+            if (worked && hasPoint && i == wholeLength)
+            {
+                b.AddStep(new SchoolbookStep
+                {
+                    Description = $"No more digits to bring down, but {Digits.Format(remainder, numberBase)} is left over. "
+                        + "Write a decimal point and keep going with zeros.",
+                    Highlighted = [.. partialCells],
+                    Revealed = [.. pointCells, .. dividendCells.Skip(wholeLength)],
+                });
+            }
+
+            var partial = remainder * numberBase + digits[i];
+            if (!started)
+            {
+                if (dividendCells[i] >= 0) { partialCells.Add(dividendCells[i]); }
+            }
+            else if (worked)
+            {
+                var brought = b.AddCell(currentRow, Col(i), Digits.Char(digits[i]), SchoolbookCellKind.Operand, visible: false);
+                partialCells.Add(brought);
+                b.AddStep(new SchoolbookStep
+                {
+                    Description = $"Bring down the {Digits.Char(digits[i])}, making {Digits.Format(partial, numberBase)}.",
+                    Highlighted = [dividendCells[i]],
+                    Revealed = [brought],
+                    Tone = digits[i]
+                });
+            }
+
+            if (!started && partial < divisor && i < wholeLength - 1)
+            {
+                remainder = partial;
+                continue;
+            }
+
+            if (!started && worked)
+            {
+                var shifted = partialCells.Count > 1
+                    ? $"{divisorText} doesn't fit into {Digits.Format(partial / numberBase, numberBase)}, so start with {Digits.Format(partial, numberBase)}."
+                    : $"Start with {Digits.Format(partial, numberBase)}.";
+                b.AddStep(new SchoolbookStep
+                {
+                    Description = shifted,
+                    Highlighted = [.. partialCells, .. divisorCells],
+                    Tone = digits[i]
+                });
+            }
+            started = true;
+
+            var q = (int)(partial / divisor);
+            var product = q * divisor;
+            var newRemainder = partial - product;
+            var quotientCell = b.AddCell(quotientRow, Col(i), Digits.Char(q), SchoolbookCellKind.Result, visible: !worked);
+            if (!worked)
+            {
+                remainder = newRemainder;
+                continue;
+            }
+
+            if (q == 0)
+            {
+                b.AddStep(new SchoolbookStep
+                {
+                    Description = $"{divisorText} doesn't fit into {Digits.Format(partial, numberBase)}, so write 0.",
+                    Highlighted = [.. partialCells, .. divisorCells],
+                    Revealed = [quotientCell],
+                    Tone = 0
+                });
+                remainder = partial;
+                continue;
+            }
+
+            // The Barker term: the biggest multiple of the divisor that doesn't go over.
+            var over = q + 1 < numberBase
+                ? $" ({Digits.Char(q + 1)} × {divisorText} = {Digits.Format((q + 1) * divisor, numberBase)} would go over.)"
+                : "";
+            b.AddStep(new SchoolbookStep
+            {
+                Description = $"The Barker term: {Digits.Char(q)} × {divisorText} = {Digits.Format(product, numberBase)} "
+                    + $"is the most that fits in {Digits.Format(partial, numberBase)}.{over} Write {Digits.Char(q)}.",
+                Highlighted = [.. partialCells, .. divisorCells],
+                Revealed = [quotientCell],
+                Tone = q,
+                Lookups = [.. divisorDigits.Select(d => TableLookup.Multiply(d, q))]
+            });
+
+            var productRow = b.AddRow(SchoolbookRowKind.Normal);
+            var productDigits = Digits.Of(product, numberBase);
+            var productCells = productDigits.Select((d, p) => b.AddCell(productRow, Col(i - p), Digits.Char(d), SchoolbookCellKind.Partial, visible: false)).ToList();
+            var partialDigits = Digits.Of(partial, numberBase);
+            var leftColumn = Col(i - Math.Max(partialDigits.Count, productDigits.Count) + 1);
+            var minus = b.AddCell(productRow, leftColumn - 1, "−", SchoolbookCellKind.Operator, visible: false);
+            b.AddRule(productRow, leftColumn - 1, Col(i));
+            b.AddStep(new SchoolbookStep
+            {
+                Description = $"Write {Digits.Format(product, numberBase)} under {Digits.Format(partial, numberBase)} to subtract it.",
+                Highlighted = [quotientCell, .. divisorCells],
+                Revealed = [.. productCells, minus],
+                Tone = (int)(product % numberBase)
+            });
+
+            // Subtract column by column, borrowing as needed.
+            var remainderRow = b.AddRow(SchoolbookRowKind.Normal);
+            var remainderLength = Digits.Of(newRemainder, numberBase).Count;
+            var remainderCells = new List<int>();
+            var borrow = 0;
+            for (var p = 0; p < partialDigits.Count; p++)
+            {
+                var top = partialDigits[p];
+                var below = p < productDigits.Count ? productDigits[p] : 0;
+                var diff = top - below - borrow;
+                var nextBorrow = diff < 0 ? 1 : 0;
+                if (diff < 0) { diff += numberBase; }
+
+                var highlighted = new List<int>();
+                var partialIndex = partialCells.Count - 1 - p;
+                if (partialIndex >= 0) { highlighted.Add(partialCells[partialIndex]); }
+                if (p < productCells.Count) { highlighted.Add(productCells[p]); }
+
+                var writes = p < remainderLength && (newRemainder != 0 || p == 0);
+                if (!writes)
+                {
+                    // The rest of the columns cancel to leading zeros; don't spend steps on them.
+                    break;
+                }
+
+                var revealed = new List<int>();
+                if (writes)
+                {
+                    var cell = b.AddCell(remainderRow, Col(i - p), Digits.Char(diff), SchoolbookCellKind.Result, visible: false);
+                    revealed.Add(cell);
+                    remainderCells.Insert(0, cell);
+                }
+
+                var borrowedIn = borrow > 0 ? $" − 1 borrowed" : "";
+                var sentence = nextBorrow > 0
+                    ? $"{Digits.Char(top)} − {Digits.Char(below)}{borrowedIn} is too small, so borrow: "
+                        + $"{Digits.Format(top + numberBase, numberBase)} − {Digits.Char(below)}{borrowedIn} = {Digits.Char(diff)}."
+                    : $"{Digits.Char(top)} − {Digits.Char(below)}{borrowedIn} = {Digits.Char(diff)}.";
+                b.AddStep(new SchoolbookStep
+                {
+                    Description = sentence + $" Write {Digits.Char(diff)}.",
+                    Highlighted = highlighted,
+                    Revealed = revealed,
+                    Tone = diff,
+                    // Subtraction is the addition table read backwards: below + diff (+ borrow) = top.
+                    Lookups = [TableLookup.Add(below, diff, borrow)]
+                });
+                borrow = nextBorrow;
+            }
+
+            partialCells = remainderCells;
+            currentRow = remainderRow;
+            remainder = newRemainder;
+        }
+
+        if (showRemainder)
+        {
+            var rCell = b.AddCell(quotientRow, lastColumn + 2, "R", SchoolbookCellKind.Operator, visible: !worked);
+            var remainderTextCells = remainderText.Select((c, k) =>
+                b.AddCell(quotientRow, lastColumn + 3 + k, c.ToString(), SchoolbookCellKind.Result, visible: !worked)).ToList();
+            if (worked)
+            {
+                b.AddStep(new SchoolbookStep
+                {
+                    Description = $"Nothing left to bring down, so {remainderText} is the remainder.",
+                    Highlighted = [.. partialCells],
+                    Revealed = [rCell, .. remainderTextCells],
+                    Tone = (int)(finalRemainder % numberBase)
+                });
+            }
+        }
+        else if (worked && hasPoint && remainder != 0)
+        {
+            b.AddStep(new SchoolbookStep
+            {
+                Description = $"That's {decimalPlaces} decimal place{(decimalPlaces == 1 ? "" : "s")}, so stop here.",
+                Highlighted = [.. partialCells]
+            });
+        }
+
+        var title = $"{Digits.Format(dividend, numberBase)} ÷ {divisorText}";
+        return b.Build(title, wholeQuotient, toneCount: numberBase);
+    }
+
     /// <summary>
     /// The addition facts for one column of digits, one per addition: the first two digits plus the
     /// carry coming in, then each further digit added to the running total. The running total is
@@ -733,6 +1026,7 @@ public sealed class SchoolbookWork
     {
         private readonly List<SchoolbookRowKind> _rows = [];
         private readonly List<SchoolbookRule> _rules = [];
+        private readonly List<SchoolbookBracket> _brackets = [];
         private readonly List<SchoolbookStep> _steps = [];
 
         public List<SchoolbookCell> Cells { get; } = [];
@@ -756,6 +1050,12 @@ public sealed class SchoolbookWork
             [.. digits.Select((d, place) => AddCell(row, Column(place), Digits.Char(d), kind, visible))];
 
         public void AddRule(int afterRow) => _rules.Add(new SchoolbookRule(afterRow, 0, width - 1));
+
+        public void AddRule(int afterRow, int firstColumn, int lastColumn) =>
+            _rules.Add(new SchoolbookRule(afterRow, firstColumn, lastColumn));
+
+        public void AddBracket(int row, int firstColumn, int lastColumn) =>
+            _brackets.Add(new SchoolbookBracket(row, firstColumn, lastColumn));
 
         public void AddStep(SchoolbookStep step) => _steps.Add(step);
 
@@ -836,7 +1136,7 @@ public sealed class SchoolbookWork
         }
 
         public SchoolbookWork Build(string title, BigInteger result, int toneCount) =>
-            new(title, numberBase, result, toneCount, _rows, width, Cells, _rules, _steps);
+            new(title, numberBase, result, toneCount, _rows, width, Cells, _rules, _brackets, _steps);
     }
 }
 

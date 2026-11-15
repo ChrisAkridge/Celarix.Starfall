@@ -330,6 +330,70 @@ public sealed class SchoolbookWorkTests
         }
     }
 
+    [Theory]
+    [InlineData(9876, 7, 0, "1410", "6")]
+    [InlineData(1000, 37, 0, "27", "1")]
+    [InlineData(4732, 7, 0, "676", "")]
+    [InlineData(5, 7, 0, "0", "5")]
+    [InlineData(0, 3, 0, "0", "")]
+    [InlineData(22, 7, 4, "3.1428", "")]
+    [InlineData(1, 8, 6, "0.125", "")]
+    [InlineData(10, 4, 3, "2.5", "")]
+    [InlineData(12, 4, 3, "3", "")]
+    public void LongDivision_QuotientRowSpellsTheAnswer(int dividend, int divisor, int places, string quotient, string remainder)
+    {
+        foreach (var layout in Enum.GetValues<DivisionLayout>())
+        {
+            var work = SchoolbookWork.LongDivision(dividend, divisor, decimalPlaces: places, layout: layout);
+            var final = work.GetState(work.Steps.Count - 1);
+            var quotientRow = work.Cells
+                .Select((cell, index) => (cell, index))
+                .Where(x => x.cell.Row == 0 && final.Visible[x.index])
+                .OrderBy(x => x.cell.Column)
+                .Select(x => x.cell.Text)
+                .ToList();
+            var text = string.Concat(quotientRow);
+            var expected = remainder.Length > 0 ? $"{quotient}R{remainder}" : quotient;
+            Assert.Equal(expected, text);
+        }
+    }
+
+    [Fact]
+    public void LongDivision_SummaryHasNoSteps()
+    {
+        var work = SchoolbookWork.LongDivision(355, 113, decimalPlaces: 10, layout: DivisionLayout.Summary);
+        Assert.Empty(work.Steps);
+        Assert.Single(work.Brackets);
+    }
+
+    [Fact]
+    public void LongDivision_PicksTheBarkerTermAndSubtracts()
+    {
+        var work = SchoolbookWork.LongDivision(1000, 37);
+        var barker = work.Steps.Where(s => s.Description.StartsWith("The Barker term")).Select(s => s.Description).ToList();
+
+        Assert.Equal(2, barker.Count);
+        Assert.StartsWith("The Barker term: 2 × 37 = 74 is the most that fits in 100. (3 × 37 = 111 would go over.)", barker[0]);
+        Assert.Contains(work.Steps, s => s.Description.StartsWith("Bring down the 0, making 260."));
+    }
+
+    [Fact]
+    public void LongDivision_SubtractionLookupsLandOnTheTopDigit()
+    {
+        var work = SchoolbookWork.LongDivision(98765, 43, decimalPlaces: 5);
+        var subtractions = work.Steps.Where(s => s.Lookups.Count == 1 && s.Lookups[0].Operation == TableOperation.Addition).ToList();
+
+        Assert.NotEmpty(subtractions);
+        // below + difference + borrow is the top digit, or the top digit plus 10 after borrowing.
+        Assert.All(subtractions, s => Assert.Equal(s.Tone, s.Lookups[0].Y));
+    }
+
+    [Fact]
+    public void LongDivision_RejectsZeroDivisor()
+    {
+        Assert.Throws<ArgumentException>(() => SchoolbookWork.LongDivision(5, 0));
+    }
+
     private sealed class RecordingTonePlayer : ITonePlayer
     {
         public List<(double Frequency, double Duration, double Delay, ToneShape? Shape)> Tones { get; } = [];
