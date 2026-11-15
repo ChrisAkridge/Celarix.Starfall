@@ -80,23 +80,60 @@ public sealed class SchoolbookWorkTests
         Assert.Throws<ArgumentException>(() => SchoolbookWork.Subtraction(3, 5));
     }
 
-    [Theory]
-    [InlineData(487, 36, 10)]
-    [InlineData(105, 203, 10)]
-    [InlineData(9, 9, 10)]
-    [InlineData(1234, 7, 10)]
-    [InlineData(0, 55, 10)]
-    [InlineData(0b1101, 0b101, 2)]
-    public void Multiplication_ResultRowSpellsTheProduct(int a, int b, int numberBase)
+    public static TheoryData<int, int, int, MultiplicationLayout> MultiplicationCases()
     {
-        var work = SchoolbookWork.Multiplication(a, b, numberBase);
-        Assert.Equal(Format(a * b, numberBase), ResultText(work));
+        var data = new TheoryData<int, int, int, MultiplicationLayout>();
+        foreach (var layout in Enum.GetValues<MultiplicationLayout>())
+        {
+            data.Add(487, 36, 10, layout);
+            data.Add(105, 203, 10, layout);
+            data.Add(9, 9, 10, layout);
+            data.Add(1234, 7, 10, layout);
+            data.Add(7, 1234, 10, layout);
+            data.Add(0, 55, 10, layout);
+            data.Add(99999, 99999, 10, layout);
+            data.Add(0b1101, 0b101, 2, layout);
+        }
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(MultiplicationCases))]
+    public void Multiplication_ResultRowSpellsTheProduct(int a, int b, int numberBase, MultiplicationLayout layout)
+    {
+        var work = SchoolbookWork.Multiplication(a, b, numberBase, layout);
+        Assert.Equal(Format((long)a * b, numberBase), ResultText(work));
+        Assert.All(work.Steps, s => Assert.InRange(s.Tone ?? 0, 0, work.ToneCount - 1));
     }
 
     [Fact]
-    public void Multiplication_ShiftsPartialProductsWithPlaceholders()
+    public void Multiplication_DigitPairsWritesOneShiftedRowPerPair()
     {
-        var work = SchoolbookWork.Multiplication(487, 36);
+        var work = SchoolbookWork.Multiplication(487, 36, layout: MultiplicationLayout.DigitPairs);
+        var partialRows = work.Cells
+            .Where(c => c.Kind is SchoolbookCellKind.Partial or SchoolbookCellKind.Placeholder)
+            .GroupBy(c => c.Row)
+            .Select(g => string.Concat(g.OrderBy(c => c.Column).Select(c => c.Text)))
+            .ToList();
+
+        // 7×6, 8×6, 4×6, then 7×3, 8×3, 4×3, each shifted by its digits' places.
+        Assert.Equal(["42", "480", "2400", "210", "2400", "12000"], partialRows);
+    }
+
+    [Fact]
+    public void Multiplication_FoldedHasNoPartialRowsAndOneStepPerColumn()
+    {
+        var work = SchoolbookWork.Multiplication(487, 36, layout: MultiplicationLayout.Folded);
+
+        Assert.DoesNotContain(work.Cells, c => c.Kind is SchoolbookCellKind.Partial or SchoolbookCellKind.Placeholder);
+        Assert.Equal(3 + 2 - 1, work.Steps.Count);
+        Assert.StartsWith("The tens column: 7×3 + 8×6 + 4 carried = 73.", work.Steps[1].Description);
+    }
+
+    [Fact]
+    public void Multiplication_RowCarriesShiftsPartialProductsWithPlaceholders()
+    {
+        var work = SchoolbookWork.Multiplication(487, 36, layout: MultiplicationLayout.RowCarries);
         var partialRows = work.Cells
             .Where(c => c.Kind is SchoolbookCellKind.Partial or SchoolbookCellKind.Placeholder)
             .GroupBy(c => c.Row)
@@ -109,7 +146,7 @@ public sealed class SchoolbookWorkTests
     [Fact]
     public void Multiplication_ClearsCarriesBetweenPartialProducts()
     {
-        var work = SchoolbookWork.Multiplication(487, 36);
+        var work = SchoolbookWork.Multiplication(487, 36, layout: MultiplicationLayout.RowCarries);
         var finalState = work.GetState(work.Steps.Count - 1);
         var visibleMultiplicationCarries = work.Cells
             .Select((cell, index) => (cell, index))

@@ -3,6 +3,7 @@ using Celarix.Starfall.Atria.Elements;
 using Celarix.Starfall.Audio;
 using Celarix.Starfall.Mathematics.Schoolbook;
 using Celarix.Starfall.Rendering.Models;
+using System.Numerics;
 
 namespace Celarix.Starfall.Decks.Playground.MathFun
 {
@@ -16,12 +17,21 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
         private static readonly SColor _backgroundColor = new(8, 0, 130, 255);
         private static readonly PitchMapper _pitch = new();
 
-        private readonly SchoolbookWork[] _problems =
+        private const double AutoPlaySecondsPerStep = 0.12d;
+
+        /// <param name="Label">Shown after the problem in the title, e.g. "folded".</param>
+        /// <param name="AutoPlay">Whether Advance plays the whole problem instead of stepping it.</param>
+        private sealed record Problem(SchoolbookWork Work, string? Label = null, bool AutoPlay = false);
+
+        private readonly Problem[] _problems =
         [
-            SchoolbookWork.Addition(4738, 2594),
-            SchoolbookWork.Subtraction(5003, 1867),
-            SchoolbookWork.Multiplication(487, 36),
-            SchoolbookWork.Addition(0b1011, 0b0111, numberBase: 2),
+            new(SchoolbookWork.Addition(4738, 2594)),
+            new(SchoolbookWork.Subtraction(5003, 1867)),
+            new(SchoolbookWork.Multiplication(487, 36), "digit pairs"),
+            new(SchoolbookWork.Multiplication(487, 36, layout: MultiplicationLayout.Folded), "folded"),
+            new(SchoolbookWork.Addition(0b1011, 0b0111, numberBase: 2), "base 2"),
+            new(SchoolbookWork.Multiplication(BigInteger.Parse("31415926535897932"), BigInteger.Parse("27182818284590452"),
+                layout: MultiplicationLayout.Folded), "folded", AutoPlay: true),
         ];
 
         private int _problemIndex;
@@ -34,11 +44,12 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
         {
         }
 
-        public override string CurrentBeat => $"{TitleFor(_work?.Work)}: {CaptionFor(_work)}";
+        public override string CurrentBeat => $"{TitleFor(_problems[_problemIndex])}: {CaptionFor(_work)}";
 
         public override string Notes =>
-            "Advance works one column at a time; Rewind steps back. Four problems: addition with carries, "
-            + "subtraction borrowing across zeros, long multiplication, and binary addition.";
+            "Advance works one step at a time; Rewind steps back. Problems: addition with carries, subtraction "
+            + "borrowing across zeros, multiplication by digit pairs and folded, binary addition, and a long folded "
+            + "multiplication that plays itself (Advance again to finish it at once).";
 
         public override void Initialize()
         {
@@ -59,10 +70,19 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
 
         public override SlideAdvanceResult Advance()
         {
-            if (_work!.StepForward())
+            if (_work!.IsPlaying)
             {
-                PlayCurrentTone();
+                _work.ShowComplete();
                 UpdateCaption();
+                return SlideAdvanceResult.InternalStateChanged;
+            }
+            if (!_work.IsComplete && _problems[_problemIndex].AutoPlay)
+            {
+                _work.Play(AutoPlaySecondsPerStep);
+                return SlideAdvanceResult.InternalStateChanged;
+            }
+            if (_work.StepForward())
+            {
                 return SlideAdvanceResult.InternalStateChanged;
             }
             if (_problemIndex < _problems.Length - 1)
@@ -90,38 +110,42 @@ namespace Celarix.Starfall.Decks.Playground.MathFun
 
         private void ShowProblem(int index, bool atEnd)
         {
-            if (_work != null) { Remove([_work]); }
+            if (_work != null)
+            {
+                _work.StepTaken -= Work_StepTaken;
+                Remove([_work]);
+            }
 
             _problemIndex = index;
-            var work = _problems[index];
-            _work = new SchoolbookArithmeticElement($"#schoolbook{index}", work)
+            var problem = _problems[index];
+            _work = new SchoolbookArithmeticElement($"#schoolbook{index}", problem.Work)
             {
-                Size = new SSizeF(Size.Width * 0.6d, Size.Height * 0.6d),
-                StepIndex = atEnd ? work.Steps.Count - 1 : -1
+                Size = new SSizeF(Size.Width * 0.8d, Size.Height * 0.6d),
+                StepIndex = atEnd ? problem.Work.Steps.Count - 1 : -1
             };
+            _work.StepTaken += Work_StepTaken;
             _work.AnchorCenterTo(_workAnchor!);
             Add([_work]);
 
-            _title!.SetTextAndKeepFontSize(MeasurementService, TitleFor(work));
+            _title!.SetTextAndKeepFontSize(MeasurementService, TitleFor(problem));
             UpdateCaption();
         }
 
         private void UpdateCaption() => _caption!.SetTextAndKeepFontSize(MeasurementService, CaptionFor(_work));
 
-        private void PlayCurrentTone()
+        private void Work_StepTaken(object? sender, SchoolbookStep step)
         {
-            if (_work?.CurrentStep?.Tone is { } tone)
+            if (step.Tone is { } tone)
             {
-                Runtime.Tones.PlayTone(_pitch.FrequencyFor(tone, _work.Work.ToneCount), ToneSeconds);
+                var duration = _work!.IsPlaying ? AutoPlaySecondsPerStep : ToneSeconds;
+                Runtime.Tones.PlayTone(_pitch.FrequencyFor(tone, _work.Work.ToneCount), duration);
             }
+            // Auto-play steps happen during Update, so keep the caption in step with them.
+            UpdateCaption();
         }
 
-        private static string TitleFor(SchoolbookWork? work) => work switch
-        {
-            null => string.Empty,
-            { NumberBase: 10 } => work.Title,
-            _ => $"{work.Title} (base {work.NumberBase})"
-        };
+        private static string TitleFor(Problem problem) =>
+            problem.Label is { } label ? $"{problem.Work.Title} ({label})" : problem.Work.Title;
 
         private static string CaptionFor(SchoolbookArithmeticElement? element) => element switch
         {

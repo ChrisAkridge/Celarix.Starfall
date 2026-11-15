@@ -9,13 +9,17 @@ namespace Celarix.Starfall.Atria.Elements;
 /// through it one column at a time, highlighting the digits each step reads and writes.
 /// </summary>
 /// <remarks>
-/// The grid is scaled to fit <see cref="AtriaElement.Size"/> and centered in it. Set
-/// <see cref="StepIndex"/> directly, or call <see cref="StepForward"/> and <see cref="StepBack"/>.
+/// The grid is scaled to fit <see cref="AtriaElement.Size"/> and centered in it, so long problems
+/// simply get smaller. Drive it by hand with <see cref="StepIndex"/>, <see cref="StepForward"/> and
+/// <see cref="StepBack"/>; let it run on its own with <see cref="Play"/>; or show the finished
+/// work at once with <see cref="ShowComplete"/>.
 /// </remarks>
 public sealed class SchoolbookArithmeticElement : AtriaElement
 {
     private int _stepIndex = -1;
     private SchoolbookState _state;
+    private double? _secondsPerStep;
+    private double _secondsUntilStep;
 
     public SchoolbookArithmeticElement(string atriaIdString, SchoolbookWork work)
     {
@@ -47,6 +51,14 @@ public sealed class SchoolbookArithmeticElement : AtriaElement
 
     public bool IsComplete => _stepIndex == Work.Steps.Count - 1;
 
+    /// <summary>Gets whether <see cref="Play"/> is stepping through the work.</summary>
+    public bool IsPlaying => _secondsPerStep != null;
+
+    /// <summary>
+    /// Raised whenever <see cref="StepForward"/> or <see cref="Play"/> works a step, e.g. to play its tone.
+    /// </summary>
+    public event EventHandler<SchoolbookStep>? StepTaken;
+
     public string FontFamily { get; set; } = "Cambria Math";
 
     /// <summary>Gets or sets the height of carry and borrow rows, as a fraction of a normal row.</summary>
@@ -68,12 +80,50 @@ public sealed class SchoolbookArithmeticElement : AtriaElement
     {
         if (IsComplete) { return false; }
         StepIndex += 1;
+        StepTaken?.Invoke(this, Work.Steps[_stepIndex]);
         return true;
+    }
+
+    /// <summary>
+    /// Works the remaining steps on its own, one every <paramref name="secondsPerStep"/> seconds,
+    /// raising <see cref="StepTaken"/> for each. Stops when the work is complete.
+    /// </summary>
+    public void Play(double secondsPerStep)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(secondsPerStep);
+        _secondsPerStep = secondsPerStep;
+        _secondsUntilStep = 0d;
+    }
+
+    public void Pause() => _secondsPerStep = null;
+
+    /// <summary>Jumps straight to the finished work, without raising <see cref="StepTaken"/>.</summary>
+    public void ShowComplete()
+    {
+        Pause();
+        StepIndex = Work.Steps.Count - 1;
+    }
+
+    public override void Update(FrameTime frameTime)
+    {
+        if (_secondsPerStep is not { } secondsPerStep) { return; }
+
+        _secondsUntilStep -= frameTime.Delta.TotalSeconds;
+        while (_secondsUntilStep <= 0d)
+        {
+            if (!StepForward())
+            {
+                Pause();
+                return;
+            }
+            _secondsUntilStep += secondsPerStep;
+        }
     }
 
     /// <summary>Moves to the previous step. Returns false if no steps have been worked.</summary>
     public bool StepBack()
     {
+        Pause();
         if (_stepIndex < 0) { return false; }
         StepIndex -= 1;
         return true;

@@ -30,6 +30,29 @@ public enum SchoolbookCellKind
 }
 
 /// <summary>
+/// How long multiplication is written out.
+/// </summary>
+public enum MultiplicationLayout
+{
+    /// <summary>
+    /// Every digit of the multiplier times every digit of the multiplicand, each product on its own
+    /// shifted row (n × m rows), then all of them added up.
+    /// </summary>
+    DigitPairs,
+
+    /// <summary>
+    /// One row per multiplier digit, carrying within the row as it goes, then the rows added up.
+    /// </summary>
+    RowCarries,
+
+    /// <summary>
+    /// The partial products folded away: just the factors and the answer, worked one column at a
+    /// time by summing the digit products that land in each column. Good for very long numbers.
+    /// </summary>
+    Folded
+}
+
+/// <summary>
 /// The height of a row: normal rows hold the problem and answer, small rows hold carries and borrows.
 /// </summary>
 public enum SchoolbookRowKind
@@ -319,14 +342,198 @@ public sealed class SchoolbookWork
     }
 
     /// <summary>
-    /// Long multiplication: one partial product per digit of the multiplier (shifted left with
-    /// placeholder zeros), then the partial products added up. A one-digit multiplier skips the addition.
+    /// Long multiplication of two non-negative numbers, laid out in the given style.
     /// </summary>
-    public static SchoolbookWork Multiplication(BigInteger multiplicand, BigInteger multiplier, int numberBase = 10)
+    public static SchoolbookWork Multiplication(BigInteger multiplicand, BigInteger multiplier, int numberBase = 10,
+        MultiplicationLayout layout = MultiplicationLayout.DigitPairs)
     {
         Digits.ThrowIfInvalid(numberBase);
         if (multiplicand.Sign < 0 || multiplier.Sign < 0) { throw new ArgumentException("Factors must not be negative."); }
 
+        return layout switch
+        {
+            MultiplicationLayout.DigitPairs => MultiplyByDigitPairs(multiplicand, multiplier, numberBase),
+            MultiplicationLayout.RowCarries => MultiplyWithRowCarries(multiplicand, multiplier, numberBase),
+            MultiplicationLayout.Folded => MultiplyFolded(multiplicand, multiplier, numberBase),
+            _ => throw new ArgumentOutOfRangeException(nameof(layout))
+        };
+    }
+
+    /// <summary>
+    /// One partial product per pair of digits (n × m rows, each shifted with placeholder zeros), then the sum.
+    /// </summary>
+    private static SchoolbookWork MultiplyByDigitPairs(BigInteger multiplicand, BigInteger multiplier, int numberBase)
+    {
+        var top = Digits.Of(multiplicand, numberBase);
+        var bottom = Digits.Of(multiplier, numberBase);
+        var product = multiplicand * multiplier;
+        var width = Math.Max(Digits.Of(product, numberBase).Count, Math.Max(top.Count, bottom.Count)) + 1;
+        var b = new Builder(numberBase, width);
+
+        var topRow = b.AddRow(SchoolbookRowKind.Normal);
+        var topCells = b.AddNumber(topRow, top, SchoolbookCellKind.Operand, visible: true);
+        var bottomRow = b.AddRow(SchoolbookRowKind.Normal);
+        var bottomCells = b.AddNumber(bottomRow, bottom, SchoolbookCellKind.Operand, visible: true);
+        b.AddCell(bottomRow, 0, "×", SchoolbookCellKind.Operator, visible: true);
+        b.AddRule(bottomRow);
+
+        var pairCount = top.Count * bottom.Count;
+        if (pairCount == 1)
+        {
+            // One digit times one digit: the only partial product is the answer.
+            var resultRow = b.AddRow(SchoolbookRowKind.Normal);
+            var value = top[0] * bottom[0];
+            var resultCells = b.AddNumber(resultRow, Digits.Of(value, numberBase), SchoolbookCellKind.Result, visible: false);
+            b.AddStep(new SchoolbookStep
+            {
+                Description = $"{Digits.Char(top[0])} × {Digits.Char(bottom[0])} = {Digits.Format(value, numberBase)}.",
+                Highlighted = [topCells[0], bottomCells[0]],
+                Revealed = resultCells,
+                Tone = value % numberBase
+            });
+            return b.Build($"{Digits.Format(multiplicand, numberBase)} × {Digits.Format(multiplier, numberBase)}", product, numberBase);
+        }
+
+        var sumCarryRow = b.AddRow(SchoolbookRowKind.Small);
+        var partialDigits = new List<IReadOnlyList<int>>();
+        var partialCells = new List<int[]>();
+        var lastPartialRow = -1;
+        for (var j = 0; j < bottom.Count; j++)
+        {
+            for (var i = 0; i < top.Count; i++)
+            {
+                var row = b.AddRow(SchoolbookRowKind.Normal);
+                lastPartialRow = row;
+                var value = top[i] * bottom[j];
+                var shift = i + j;
+                var digits = new List<int>();
+                var cells = new List<int>();
+                for (var p = 0; p < shift; p++)
+                {
+                    digits.Add(0);
+                    cells.Add(b.AddCell(row, b.Column(p), "0", SchoolbookCellKind.Placeholder, visible: false));
+                }
+                foreach (var digit in Digits.Of(value, numberBase))
+                {
+                    cells.Add(b.AddCell(row, b.Column(digits.Count), Digits.Char(digit), SchoolbookCellKind.Partial, visible: false));
+                    digits.Add(digit);
+                }
+                partialDigits.Add(digits);
+                partialCells.Add([.. cells]);
+
+                var zeros = shift switch { 0 => "", 1 => ", shifted one place", _ => $", shifted {shift} places" };
+                b.AddStep(new SchoolbookStep
+                {
+                    Description = $"{Digits.Char(top[i])} × {Digits.Char(bottom[j])} = {Digits.Format(value, numberBase)}{zeros}.",
+                    Highlighted = [topCells[i], bottomCells[j]],
+                    Revealed = cells,
+                    Tone = value % numberBase
+                });
+            }
+        }
+
+        var plus = b.AddCell(lastPartialRow, 0, "+", SchoolbookCellKind.Operator, visible: false);
+        b.AddRule(lastPartialRow);
+        var sumRow = b.AddRow(SchoolbookRowKind.Normal);
+        b.AddColumns(partialDigits, partialCells, sumCarryRow, sumRow, Digits.Of(product, numberBase).Count, SchoolbookCellKind.Result,
+            firstStepHides: [], firstStepReveals: [plus], announceSum: true);
+
+        return b.Build($"{Digits.Format(multiplicand, numberBase)} × {Digits.Format(multiplier, numberBase)}", product, numberBase);
+    }
+
+    /// <summary>
+    /// Only the factors and the answer. Each step works one column of the answer: the sum of every
+    /// digit product that lands in that column, plus the carry.
+    /// </summary>
+    private static SchoolbookWork MultiplyFolded(BigInteger multiplicand, BigInteger multiplier, int numberBase)
+    {
+        var top = Digits.Of(multiplicand, numberBase);
+        var bottom = Digits.Of(multiplier, numberBase);
+        var product = multiplicand * multiplier;
+        var productLength = Digits.Of(product, numberBase).Count;
+        var width = Math.Max(productLength, Math.Max(top.Count, bottom.Count)) + 1;
+        var b = new Builder(numberBase, width);
+
+        var topRow = b.AddRow(SchoolbookRowKind.Normal);
+        var topCells = b.AddNumber(topRow, top, SchoolbookCellKind.Operand, visible: true);
+        var bottomRow = b.AddRow(SchoolbookRowKind.Normal);
+        var bottomCells = b.AddNumber(bottomRow, bottom, SchoolbookCellKind.Operand, visible: true);
+        b.AddCell(bottomRow, 0, "×", SchoolbookCellKind.Operator, visible: true);
+        b.AddRule(bottomRow);
+        var carryRow = b.AddRow(SchoolbookRowKind.Small);
+        var resultRow = b.AddRow(SchoolbookRowKind.Normal);
+
+        var lastPlace = top.Count + bottom.Count - 2;
+        BigInteger carry = 0;
+        int? carryCell = null;
+        for (var place = 0; place <= lastPlace; place++)
+        {
+            var highlighted = new HashSet<int>();
+            var products = new List<string>();
+            BigInteger total = carry;
+            for (var i = Math.Max(0, place - bottom.Count + 1); i <= Math.Min(place, top.Count - 1); i++)
+            {
+                var j = place - i;
+                total += top[i] * bottom[j];
+                products.Add($"{Digits.Char(top[i])}×{Digits.Char(bottom[j])}");
+                highlighted.Add(topCells[i]);
+                highlighted.Add(bottomCells[j]);
+            }
+            if (carryCell is { } cc) { highlighted.Add(cc); }
+
+            var terms = products.Count <= 4
+                ? string.Join(" + ", products)
+                : $"{products.Count} digit products";
+            var expression = terms + (carry > 0 ? $" + {Digits.Format(carry, numberBase)} carried" : "");
+            var revealed = new List<int>();
+            string description;
+            if (place == lastPlace)
+            {
+                var totalDigits = Digits.Of(total, numberBase);
+                for (var k = 0; k < totalDigits.Count; k++)
+                {
+                    if (place + k > 0 && place + k >= productLength) { continue; }
+                    revealed.Add(b.AddCell(resultRow, b.Column(place + k), Digits.Char(totalDigits[k]), SchoolbookCellKind.Result, visible: false));
+                }
+                description = $"{Places.ColumnTitle(place, numberBase)}: {expression} = {Digits.Format(total, numberBase)}. "
+                    + $"Write {Digits.Format(total, numberBase)}.";
+                carryCell = null;
+            }
+            else
+            {
+                var digit = (int)(total % numberBase);
+                var nextCarry = total / numberBase;
+                revealed.Add(b.AddCell(resultRow, b.Column(place), Digits.Char(digit), SchoolbookCellKind.Result, visible: false));
+                carryCell = null;
+                if (nextCarry > 0)
+                {
+                    var newCarry = b.AddCell(carryRow, b.Column(place + 1), Digits.Format(nextCarry, numberBase), SchoolbookCellKind.Carry, visible: false);
+                    revealed.Add(newCarry);
+                    carryCell = newCarry;
+                }
+                description = $"{Places.ColumnTitle(place, numberBase)}: {expression} = {Digits.Format(total, numberBase)}. "
+                    + $"Write {Digits.Char(digit)}" + (nextCarry > 0 ? $", carry {Digits.Format(nextCarry, numberBase)}." : ".");
+                carry = nextCarry;
+            }
+
+            b.AddStep(new SchoolbookStep
+            {
+                Description = description,
+                Highlighted = [.. highlighted],
+                Revealed = revealed,
+                Tone = (int)(total % numberBase)
+            });
+        }
+
+        return b.Build($"{Digits.Format(multiplicand, numberBase)} × {Digits.Format(multiplier, numberBase)}", product, numberBase);
+    }
+
+    /// <summary>
+    /// Long multiplication: one partial product per digit of the multiplier (shifted left with
+    /// placeholder zeros), then the partial products added up. A one-digit multiplier skips the addition.
+    /// </summary>
+    private static SchoolbookWork MultiplyWithRowCarries(BigInteger multiplicand, BigInteger multiplier, int numberBase)
+    {
         var top = Digits.Of(multiplicand, numberBase);
         var bottom = Digits.Of(multiplier, numberBase);
         var product = multiplicand * multiplier;
