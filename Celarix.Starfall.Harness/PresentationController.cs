@@ -1,5 +1,6 @@
 using Avalonia.Threading;
 using Celarix.Starfall.Atria;
+using Celarix.Starfall.Audio;
 using Celarix.Starfall.Harness.Rendering;
 using Celarix.Starfall.Rendering.Targets;
 
@@ -14,6 +15,7 @@ internal sealed class PresentationController : IDisposable
     private readonly AtriaLayoutEngine _engine;
     private bool _rewindOccurred;
     private TimeSpan? _lastFrameTimestamp;
+    private readonly NAudioTonePlayer? _tonePlayer;
 
     public PresentationController(PresentationDefinition presentation, int viewportWidth, int viewportHeight, IPresenterInput input)
     {
@@ -23,6 +25,18 @@ internal sealed class PresentationController : IDisposable
         _engine = new AtriaLayoutEngine(viewportWidth, viewportHeight);
         _engine.Attach(Target);
         _engine.Runtime!.Input = input;
+        if (OperatingSystem.IsWindows())
+        {
+            try
+            {
+                _tonePlayer = new NAudioTonePlayer();
+                _engine.Runtime.Tones = _tonePlayer;
+            }
+            catch (Exception)
+            {
+                // No usable output device; slides stay silent.
+            }
+        }
         _engine.OnException += Engine_OnException;
     }
 
@@ -126,6 +140,10 @@ internal sealed class PresentationController : IDisposable
         }
         Target.Dispose();
         Framebuffer.Dispose();
+        if (OperatingSystem.IsWindows())
+        {
+            _tonePlayer?.Dispose();
+        }
     }
 
     private void GoToSlide(int index, bool resetRewind)
