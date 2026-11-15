@@ -1,3 +1,4 @@
+using Celarix.Starfall.Audio;
 using Celarix.Starfall.Rendering;
 using Celarix.Starfall.Rendering.Models;
 
@@ -18,6 +19,11 @@ public sealed class AtriaRuntime
     /// replace it with dialogs or recorded answers.
     /// </summary>
     public IPresenterInput Input { get; set; } = new ConsolePresenterInput();
+
+    /// <summary>
+    /// Gets or sets where slides send tones. Defaults to silence; hosts that can play audio replace it.
+    /// </summary>
+    public ITonePlayer Tones { get; set; } = NullTonePlayer.Instance;
 
     public AtriaRuntime(MeasurementService measurementService,
         DebugMode debugMode,

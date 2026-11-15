@@ -34,6 +34,10 @@ namespace Celarix.Starfall.Decks.Playground
                 {
                     Description = "Libra math typesetting."
                 },
+                new("Schoolbook Arithmetic", runtime => new SchoolbookArithmeticSlide(runtime, runtime.ViewportSize))
+                {
+                    Description = "Long addition, subtraction and multiplication worked column by column, with a tone per step."
+                },
                 new("Stats", runtime => new StatsSlide(runtime, runtime.ViewportSize))
                 {
                     Description = "Bar chart display."
